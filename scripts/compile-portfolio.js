@@ -1,0 +1,135 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const workspaceRoot = path.resolve(__dirname, '..');
+const aboutMePath = path.join(workspaceRoot, 'about me');
+const projectsPath = path.join(workspaceRoot, 'projects');
+const outputPath = path.join(workspaceRoot, 'front-web/src/data/portfolioData.js');
+const publicProjectsPath = path.join(workspaceRoot, 'front-web/public/projects');
+
+function compile() {
+  console.log('Compiling portfolio data...');
+
+  // Create symlink for project assets if it doesn't exist
+  if (!fs.existsSync(publicProjectsPath)) {
+    try {
+      fs.symlinkSync(projectsPath, publicProjectsPath, 'dir');
+      console.log('Created projects symlink in front-web/public/projects');
+    } catch (err) {
+      console.warn('Could not create symlink, trying copying assets instead:', err.message);
+    }
+  }
+  
+  // 1. Read about me files
+  const aboutMe = {};
+  if (fs.existsSync(aboutMePath)) {
+    const files = fs.readdirSync(aboutMePath);
+    files.forEach(file => {
+      const filePath = path.join(aboutMePath, file);
+      if (fs.statSync(filePath).isFile()) {
+        const ext = path.extname(file);
+        if (ext === '.md') {
+          const name = path.basename(file, ext).toLowerCase();
+          aboutMe[name] = fs.readFileSync(filePath, 'utf8');
+        }
+      }
+    });
+  }
+
+  // 2. Read projects
+  const projects = [];
+  if (fs.existsSync(projectsPath)) {
+    const projectDirs = fs.readdirSync(projectsPath);
+    projectDirs.forEach(dir => {
+      const dirPath = path.join(projectsPath, dir);
+      if (fs.statSync(dirPath).isDirectory()) {
+        const readmePath = path.join(dirPath, 'README.md');
+        const assetsPath = path.join(dirPath, 'assets');
+        
+        let readme = '';
+        if (fs.existsSync(readmePath)) {
+          readme = fs.readFileSync(readmePath, 'utf8');
+        }
+
+        const images = [];
+        if (fs.existsSync(assetsPath)) {
+          try {
+            const files = fs.readdirSync(assetsPath);
+            files.forEach(file => {
+              if (/\.(jpeg|jpg|png|gif|svg|webp)$/i.test(file)) {
+                // Return relative path from front-web public directory or imports
+                // We'll copy or reference them. Since they are in the projects folder,
+                // we can symlink or copy the projects folder to front-web/public/projects,
+                // or compile references that the frontend can fetch.
+                // Let's resolve the path relative to the front-web/public directory!
+                images.push(`/projects/${dir}/assets/${file}`);
+              }
+            });
+          } catch (err) {
+            console.error(`Error reading assets for ${dir}:`, err);
+          }
+        }
+
+        // Try to parse basic metadata from readme
+        const title = dir;
+        let summary = '';
+        let tags = [];
+        
+        if (readme) {
+          // Extract first paragraph as summary (strip markdown bold/links)
+          const paragraphs = readme.split('\n\n').map(p => p.trim()).filter(Boolean);
+          const firstParagraph = paragraphs.find(p => !p.startsWith('#') && !p.startsWith('**') && !p.startsWith('!'));
+          if (firstParagraph) {
+            summary = firstParagraph.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1').slice(0, 180) + '...';
+          } else {
+            summary = `Project details for ${dir}.`;
+          }
+
+          // Extract Technology Stack from README
+          const techSectionMatch = readme.match(/### 🛠️ Technology Stack([\s\S]*?)(###|$)/) || 
+                                   readme.match(/### Technology Stack([\s\S]*?)(###|$)/) ||
+                                   readme.match(/### Tech Stack([\s\S]*?)(###|$)/);
+          if (techSectionMatch) {
+            const listItems = techSectionMatch[1].match(/\*\s+\*\*([^*]+)\*\*/g) || 
+                              techSectionMatch[1].match(/\*([^*]+)/g);
+            if (listItems) {
+              tags = listItems.map(item => item.replace(/\*\s+\*\*/g, '').replace(/\*\*/g, '').replace(/\*/g, '').trim());
+            }
+          }
+        }
+
+        projects.push({
+          id: dir.replace(/\s+/g, '-').toLowerCase(),
+          title,
+          summary,
+          tags: tags.length ? tags : ['Software Dev'],
+          readme,
+          images,
+          folderName: dir
+        });
+      }
+    });
+  }
+
+  // Generate output file
+  const fileContent = `// Compiled Portfolio Data (Auto-Generated)
+export const aboutMe = ${JSON.stringify(aboutMe, null, 2)};
+
+export const projects = ${JSON.stringify(projects, null, 2)};
+`;
+
+  // Create directories if they don't exist
+  const outputDir = path.dirname(outputPath);
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  fs.writeFileSync(outputPath, fileContent, 'utf8');
+  console.log(`Portfolio data compiled successfully to ${outputPath}!`);
+}
+
+compile();

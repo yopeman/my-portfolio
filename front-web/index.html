@@ -4,9 +4,28 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>front-web</title>
+    <title>Yohanes Debebe | Backend-Focused Software Developer Portfolio</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- FOUC prevention script -->
+    <script>
+      (function() {
+        const theme = localStorage.getItem('portfolio-theme') || 'system';
+        if (theme === 'dark' || theme === 'night') {
+          document.documentElement.classList.add(theme);
+        } else if (theme === 'system') {
+          if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+          }
+        }
+      })();
+    </script>
   </head>
-  <body>
+  <body class="bg-slate-50 dark:bg-slate-900 night:bg-black text-slate-800 dark:text-slate-200 night:text-slate-300 transition-colors duration-300 antialiased font-sans">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
