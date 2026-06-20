@@ -1,13 +1,20 @@
-import { useState, useEffect } from 'react';
-import { Sun, Moon, Sparkles } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Sun, Moon, Sparkles, Monitor } from 'lucide-react';
 
-// Cycle: light → dark → night → light
-const THEMES = ['light', 'dark', 'night'];
+// Cycle: light → dark → night → system → light
+const THEMES = ['light', 'dark', 'night', 'system'];
+
+function getSystemPreference() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
 
 function applyTheme(theme) {
   const root = document.documentElement;
   root.classList.remove('dark', 'night');
-  if (theme === 'dark') {
+
+  const resolved = theme === 'system' ? getSystemPreference() : theme;
+
+  if (resolved === 'dark') {
     root.classList.add('dark');
   } else if (theme === 'night') {
     root.classList.add('dark', 'night');
@@ -17,20 +24,40 @@ function applyTheme(theme) {
 export default function ThemeToggle() {
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('portfolio-theme');
-    // If saved value is 'system' (legacy), default to 'light'
     if (saved && THEMES.includes(saved)) return saved;
     return 'light';
   });
 
+  const mediaQueryRef = useRef(null);
+  const handlerRef = useRef(null);
+
+  // Apply theme whenever it changes
   useEffect(() => {
     applyTheme(theme);
     localStorage.setItem('portfolio-theme', theme);
   }, [theme]);
 
-  // Apply theme on mount immediately (handles page refresh)
+  // Listen to OS preference changes only when in system mode
   useEffect(() => {
-    applyTheme(theme);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // Clean up any previous listener
+    if (mediaQueryRef.current && handlerRef.current) {
+      mediaQueryRef.current.removeEventListener('change', handlerRef.current);
+    }
+
+    if (theme === 'system') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      const handler = () => applyTheme('system');
+      mq.addEventListener('change', handler);
+      mediaQueryRef.current = mq;
+      handlerRef.current = handler;
+    }
+
+    return () => {
+      if (mediaQueryRef.current && handlerRef.current) {
+        mediaQueryRef.current.removeEventListener('change', handlerRef.current);
+      }
+    };
+  }, [theme]);
 
   const cycleTheme = () => {
     const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
@@ -49,7 +76,7 @@ export default function ThemeToggle() {
       <div className="flex items-center gap-2 text-sm font-medium">
         {theme === 'light' && (
           <>
-            <Sun className="w-4 h-4 text-amber-500 animate-spin-slow" />
+            <Sun className="w-4 h-4 text-amber-500" />
             <span className="hidden sm:inline">Light</span>
           </>
         )}
@@ -63,6 +90,12 @@ export default function ThemeToggle() {
           <>
             <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
             <span className="hidden sm:inline text-purple-400">Night</span>
+          </>
+        )}
+        {theme === 'system' && (
+          <>
+            <Monitor className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+            <span className="hidden sm:inline">System</span>
           </>
         )}
       </div>
