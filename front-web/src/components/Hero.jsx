@@ -12,7 +12,7 @@ export default function Hero() {
         {/* Left – text */}
         <div className="py-24 sm:py-32 lg:pr-16 space-y-8 relative z-10">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-violet-400 border border-indigo-100/50 dark:border-indigo-900/30 text-xs font-bold uppercase tracking-wider">
-            <Terminal className="w-3.5 h-3.5" /> Full-Stack Portfolio
+            <Terminal className="w-3.5 h-3.5" /> Full-Stack Developer
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-none">
