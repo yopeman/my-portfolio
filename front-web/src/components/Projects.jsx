@@ -50,19 +50,9 @@ export default function Projects() {
   };
 
   return (
-    <section id="projects" className="py-20 px-4 sm:px-6 lg:px-8 border-t border-slate-200/50 dark:border-slate-800/50">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white night:text-transparent night:bg-clip-text night:bg-gradient-to-r night:from-purple-400 night:to-indigo-400">
-            Featured Projects
-          </h2>
-          <p className="mt-4 max-w-2xl mx-auto text-lg text-slate-500 dark:text-slate-400">
-            A showcase of systems, APIs, mobile applications, and AI integrations I've built.
-          </p>
-        </div>
-
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <>
+      {/* Projects Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {projects.map((project) => {
             const links = extractLinks(project.readme);
             return (
@@ -272,7 +262,6 @@ export default function Projects() {
             </div>
           </div>
         )}
-      </div>
-    </section>
+    </>
   );
 }
