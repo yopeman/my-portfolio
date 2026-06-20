@@ -9,7 +9,7 @@ import { ChatOllama } from '@langchain/ollama';
 import { SystemMessage, HumanMessage, AIMessage } from '@langchain/core/messages';
 
 // Import the pre-compiled and summarized portfolio data
-import { aboutMe, projects } from '../front-web/src/data/portfolioData.js';
+import { aboutMe, projects } from './data/portfolioData.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

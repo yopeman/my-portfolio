@@ -8,7 +8,8 @@ const __dirname = path.dirname(__filename);
 const workspaceRoot = path.resolve(__dirname, '..');
 const aboutMePath = path.join(workspaceRoot, 'about-me');
 const projectsPath = path.join(workspaceRoot, 'projects');
-const outputPath = path.join(workspaceRoot, 'front-web/src/data/portfolioData.js');
+const frontendOutputPath = path.join(workspaceRoot, 'front-web/src/data/portfolioData.js');
+const backendOutputPath = path.join(workspaceRoot, 'backend-api/data/portfolioData.js');
 const publicProjectsPath = path.join(workspaceRoot, 'front-web/public/projects');
 
 function compile() {
@@ -139,14 +140,21 @@ export const aboutMe = ${JSON.stringify(aboutMe, null, 2)};
 export const projects = ${JSON.stringify(projects, null, 2)};
 `;
 
-  // Create directories if they don't exist
-  const outputDir = path.dirname(outputPath);
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
+  // For frontend
+  const frontendOutputDir = path.dirname(frontendOutputPath);
+  if (!fs.existsSync(frontendOutputDir)) {
+    fs.mkdirSync(frontendOutputDir, { recursive: true });
   }
+  fs.writeFileSync(frontendOutputPath, fileContent, 'utf8');
+  console.log(`Portfolio data compiled successfully to ${frontendOutputPath}!`);
 
-  fs.writeFileSync(outputPath, fileContent, 'utf8');
-  console.log(`Portfolio data compiled successfully to ${outputPath}!`);
+  // For backend
+  const backendOutputDir = path.dirname(backendOutputPath);
+  if (!fs.existsSync(backendOutputDir)) {
+    fs.mkdirSync(backendOutputDir, { recursive: true });
+  }
+  fs.writeFileSync(backendOutputPath, fileContent, 'utf8');
+  console.log(`Portfolio data compiled successfully to ${backendOutputPath}!`);
 }
 
 compile();
