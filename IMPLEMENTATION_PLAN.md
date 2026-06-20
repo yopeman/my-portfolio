@@ -78,7 +78,7 @@ We will install Tailwind CSS and other helpful UI packages (like `lucide-react` 
 
 ### Backend: [backend-api](file:///home/yope/.projects/code/portfolio/backend-api)
 
-We will configure an Express.js server, loading biography data from `about me/` and projects metadata from `projects/` at startup to contextualize the LangChain + Ollama model.
+We will configure an Express.js server, loading biography data from `about-me/` and projects metadata from `projects/` at startup to contextualize the LangChain + Ollama model.
 
 #### [MODIFY] [package.json](file:///home/yope/.projects/code/portfolio/backend-api/package.json)
 - Add dependencies: `express`, `cors`, `dotenv`, `nodemailer`, `@langchain/ollama`, `@langchain/core`.
@@ -86,7 +86,7 @@ We will configure an Express.js server, loading biography data from `about me/` 
 
 #### [NEW] [index.js](file:///home/yope/.projects/code/portfolio/backend-api/index.js)
 - Express entrypoint initializing middleware (`cors`, `express.json`).
-- Reads all files inside `/about me/` and `/projects/` on startup. Combines them into a concise, contextual profile database.
+- Reads all files inside `/about-me/` and `/projects/` on startup. Combines them into a concise, contextual profile database.
 - Registers routes:
   1. `POST /api/contact`: sends details (Name, Email, Message) using nodemailer SMTP transporter.
   2. `POST /api/subscribe`: sends subscribe confirmation.

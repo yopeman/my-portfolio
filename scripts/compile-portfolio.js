@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const workspaceRoot = path.resolve(__dirname, '..');
-const aboutMePath = path.join(workspaceRoot, 'about me');
+const aboutMePath = path.join(workspaceRoot, 'about-me');
 const projectsPath = path.join(workspaceRoot, 'projects');
 const outputPath = path.join(workspaceRoot, 'front-web/src/data/portfolioData.js');
 const publicProjectsPath = path.join(workspaceRoot, 'front-web/public/projects');
