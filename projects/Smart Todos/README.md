@@ -18,7 +18,7 @@ The project is built with a modern, full-stack architecture:
 *   **Mobile App**: A cross-platform mobile app built with **React Native** and **Expo**, using **NativeWind** (Tailwind for React Native).
 *   **Other Services**: Uses **Node mailer** for emails and **Passport.js** with the Google OAuth 2.0 strategy for authentication.
 
-### 🗄️ Database Schema
+### Database Schema
 The data model is well-thought-out for a project management tool, featuring soft deletes (`is_deleted`, `deleted_at`) on all entities.
 
 *   **Users**: Standard fields like `id`, `email`, `name`, `avatar`, plus OAuth provider details (`provider`, `provider_id`).
