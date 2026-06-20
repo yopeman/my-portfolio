@@ -54,12 +54,12 @@ export default function Hero() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <a href="#projects" className="px-8 py-3.5 text-sm font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 dark:bg-violet-600 dark:hover:bg-violet-500 night:bg-purple-600 night:hover:bg-purple-500 text-white shadow-lg shadow-indigo-600/15 transition-colors text-center">
-              Explore Projects
+          <div className="flex flex-col sm:flex-row gap-3 pt-3">
+            <a href="/about/resume.pdf" target="_blank" rel="noreferrer" className="px-8 py-3.5 text-sm font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 dark:bg-violet-600 dark:hover:bg-violet-500 night:bg-purple-600 night:hover:bg-purple-500 text-white shadow-lg shadow-indigo-600/15 transition-colors text-center">
+              View Resume
             </a>
-            <a href="#contact" className="px-8 py-3.5 text-sm font-bold rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800 night:border-purple-900/30 night:hover:bg-purple-950/20 text-slate-700 dark:text-slate-300 night:text-purple-400 transition-colors text-center">
-              Contact Me
+            <a href="/about/transcript.pdf" target="_blank" rel="noreferrer" className="px-8 py-3.5 text-sm font-bold rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 transition-colors text-center">
+              View Transcript
             </a>
           </div>
         </div>
