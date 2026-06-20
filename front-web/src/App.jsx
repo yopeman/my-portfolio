@@ -202,7 +202,7 @@ export default function App() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 overflow-hidden ticks-bg border-b border-slate-100 dark:border-slate-850 night:border-purple-900/10">
+      <section className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 overflow-hidden ticks-bg border-b border-slate-100 dark:border-slate-850 night:border-purple-900/10" style={{minHeight: '100vh'}}>
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-8">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-violet-400 border border-indigo-100/50 dark:border-indigo-900/30 text-xs font-bold uppercase tracking-wider">
             <Terminal className="w-3.5 h-3.5" /> Full-Stack Portfolio
@@ -267,7 +267,7 @@ export default function App() {
       </section>
 
       {/* About Me Section */}
-      <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+      <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto" style={{minHeight: '100vh'}}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           
           {/* Bio Column */}
@@ -308,7 +308,7 @@ export default function App() {
       </section>
 
       {/* Skills & Technologies Section */}
-      <section id="skills" className="py-20 px-4 sm:px-6 lg:px-8 border-t border-slate-200/50 dark:border-slate-800/50 bg-slate-800/50 dark:bg-slate-850/20 night:bg-slate-300/10">
+      <section id="skills" className="py-20 px-4 sm:px-6 lg:px-8 border-t border-slate-200/50 dark:border-slate-800/50 bg-slate-800/50 dark:bg-slate-850/20 night:bg-slate-300/10" style={{minHeight: '100vh'}}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -332,7 +332,7 @@ export default function App() {
       <Projects />
 
       {/* Contact Section */}
-      <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 border-t border-slate-200/50 dark:border-slate-800/50 max-w-6xl mx-auto">
+      <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 border-t border-slate-200/50 dark:border-slate-800/50 max-w-6xl mx-auto" style={{minHeight: '100vh'}}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           
           {/* Contact Details Side */}
