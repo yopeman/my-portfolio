@@ -306,7 +306,7 @@ export default function App() {
       </section>
 
       {/* Skills & Technologies Section */}
-      <section id="skills" className="py-20 px-4 sm:px-6 lg:px-8 border-t border-slate-200/50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-850/20 night:bg-black/10">
+      <section id="skills" className="py-20 px-4 sm:px-6 lg:px-8 border-t border-slate-200/50 dark:border-slate-800/50 bg-slate-800/50 dark:bg-slate-850/20 night:bg-slate-300/10">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -388,7 +388,7 @@ export default function App() {
                 <button
                   type="submit"
                   disabled={isSubLoading}
-                  className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 night:bg-purple-650 night:hover:bg-purple-550 text-white font-semibold text-xs tracking-wider uppercase transition-colors shrink-0 flex items-center justify-center cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-violet-700 dark:hover:bg-violet-600 night:bg-purple-700 night:hover:bg-purple-600 text-white font-semibold text-xs tracking-wider uppercase transition-colors shrink-0 flex items-center justify-center cursor-pointer"
                 >
                   {isSubLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Subscribe'}
                 </button>

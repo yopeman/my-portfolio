@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Force dark: variant to only respond to the .dark class, never to OS preference */
+@variant dark (&:where(.dark, .dark *));
+
+/* Night mode variant — OLED black with purple accents */
+@variant night (&:where(.night, .night *));
+
 @theme {
   --font-sans: 'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif;
   --font-heading: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;

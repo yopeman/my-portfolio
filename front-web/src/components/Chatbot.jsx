@@ -157,10 +157,10 @@ export default function Chatbot() {
             {/* AI Typing Indicator */}
             {isLoading && (
               <div className="flex gap-2.5 max-w-[80%]">
-                <div className="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400">
+                <div className="w-7 h-7 rounded-md bg-slate-100 dark:bg-violet-900/40 night:bg-purple-950/60 flex items-center justify-center text-slate-500 dark:text-violet-300 night:text-purple-300">
                   <Bot className="w-4 h-4" />
                 </div>
-                <div className="p-3 bg-white border border-slate-100 dark:bg-slate-800 dark:border-slate-700/50 night:bg-black/60 night:border-purple-900/10 rounded-2xl rounded-tl-none text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                <div className="p-3 bg-white border border-slate-100 dark:bg-slate-800 dark:border-slate-700/50 night:bg-black/60 night:border-purple-900/10 rounded-2xl rounded-tl-none text-slate-400 dark:text-violet-400 night:text-purple-400 flex items-center gap-1">
                   <span className="typing-dot"></span>
                   <span className="typing-dot"></span>
                   <span className="typing-dot"></span>

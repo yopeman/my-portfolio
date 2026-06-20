@@ -1,61 +1,40 @@
 import { useState, useEffect } from 'react';
 import { Sun, Moon, Sparkles } from 'lucide-react';
 
+// Cycle: light → dark → night → light
+const THEMES = ['light', 'dark', 'night'];
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  root.classList.remove('dark', 'night');
+  if (theme === 'dark') {
+    root.classList.add('dark');
+  } else if (theme === 'night') {
+    root.classList.add('dark', 'night');
+  }
+}
+
 export default function ThemeToggle() {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('portfolio-theme') || 'system';
+    const saved = localStorage.getItem('portfolio-theme');
+    // If saved value is 'system' (legacy), default to 'light'
+    if (saved && THEMES.includes(saved)) return saved;
+    return 'light';
   });
 
   useEffect(() => {
-    const root = document.documentElement;
-    
-    // Resolve theme setting
-    let activeTheme = theme;
-    if (theme === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      activeTheme = prefersDark ? 'dark' : 'light';
-    }
-
-    // Apply class names
-    if (activeTheme === 'light') {
-      root.classList.remove('dark', 'night');
-    } else if (activeTheme === 'dark') {
-      root.classList.add('dark');
-      root.classList.remove('night');
-    } else if (activeTheme === 'night') {
-      root.classList.add('dark', 'night');
-    }
-
+    applyTheme(theme);
     localStorage.setItem('portfolio-theme', theme);
   }, [theme]);
 
-  // Listen for system preference changes if theme is set to 'system'
+  // Apply theme on mount immediately (handles page refresh)
   useEffect(() => {
-    if (theme !== 'system') return;
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleSystemChange = (e) => {
-      const root = document.documentElement;
-      if (e.matches) {
-        root.classList.add('dark');
-        root.classList.remove('night');
-      } else {
-        root.classList.remove('dark', 'night');
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleSystemChange);
-    return () => mediaQuery.removeEventListener('change', handleSystemChange);
-  }, [theme]);
+    applyTheme(theme);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cycleTheme = () => {
-    if (theme === 'light') {
-      setTheme('dark');
-    } else if (theme === 'dark') {
-      setTheme('night');
-    } else {
-      setTheme('light');
-    }
+    const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+    setTheme(next);
   };
 
   return (
