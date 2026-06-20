@@ -14,7 +14,7 @@ export default function SlideImage({ className = '' }) {
   });
 
   useEffect(() => {
-    const id = setInterval(() => setActive((a) => (a + 1) % images.length), 5000);
+    const id = setInterval(() => setActive((a) => (a + 1) % images.length), 10_000);
     return () => clearInterval(id);
   }, [images]);
 
@@ -25,7 +25,7 @@ export default function SlideImage({ className = '' }) {
           key={src}
           src={src}
           alt=""
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-5000"
           style={{ opacity: i === active ? 1 : 0 }}
           loading="lazy"
         />
