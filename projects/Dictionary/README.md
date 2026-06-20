@@ -1,15 +1,15 @@
 Based on the repository, the **Dictionary-App-By-Flask-API-and-Angular** is a straightforward, full-stack web application for managing a bilingual English-Amharic dictionary.
 
-### 🎯 Core Purpose
+### Core Purpose
 The project is a practical exercise in building an **end-to-end dictionary application**. It serves as a simple translator and dictionary manager, allowing users to look up word translations and perform basic CRUD (Create, Read, Update, Delete) operations on the dictionary database.
 
-### 🏗️ Architecture
+### Architecture
 The application is split into two main parts:
 
 *   **Backend (Flask API)**: A Python Flask server that provides a RESTful API. It handles all the business logic and database interactions.
 *   **Frontend (AngularJS Client)**: A web-based user interface built with AngularJS (version 1.8.2). It consumes the backend API to provide a user-friendly interface for interacting with the dictionary.
 
-### ✨ Key Features
+### Key Features
 The frontend consists of two main pages, offering distinct functionalities:
 
 *   **`index.htm` - The Translator**: This is the main interface for end-users. It allows users to translate words between **English** and **Amharic** and displays the results.
@@ -20,12 +20,12 @@ The frontend consists of two main pages, offering distinct functionalities:
     *   **Edit**: Modify existing entries.
     *   **Delete**: Remove individual words or clear the entire dictionary.
 
-### 🛠️ Technology Stack
+### Technology Stack
 *   **Backend**: Python with the Flask framework and Flask-CORS for handling cross-origin requests.
 *   **Database**: SQLite3 (stored in `word.db`).
 *   **Frontend**: AngularJS (version 1.8.2), HTML, and JavaScript.
 
-### 📁 Project Structure
+### Project Structure
 The repository is neatly organized:
 *   `main.py`: The main Flask application file defining all API routes.
 *   `word.py`: A helper class that handles all direct interactions with the SQLite database.

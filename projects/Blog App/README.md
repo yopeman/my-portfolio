@@ -2,7 +2,7 @@ The **graph_blog** project is a comprehensive, educational collection of GraphQL
 
 Here's a breakdown of the project:
 
-### 🏗️ Core Concept: Three Servers, One Schema
+### Core Concept: Three Servers, One Schema
 The core idea is to show three distinct GraphQL server implementations that share the exact same functionality and data structure:
 
 1.  **Apollo Server (Node.js)**: An implementation using Apollo Server 5 with a Sequelize ORM and an SQLite database.
@@ -11,7 +11,7 @@ The core idea is to show three distinct GraphQL server implementations that shar
 
 All three servers provide a complete CRUD API for the same data model.
 
-### ✨ Key Features
+### Key Features
 *   **Complete GraphQL API**: Supports both queries and mutations for all operations.
 *   **Soft Delete**: Records are marked as deleted instead of being permanently removed from the database.
 *   **Relational Data**: The API manages `Users`, `Posts`, and `Comments` with proper relationships between them.
@@ -19,7 +19,7 @@ All three servers provide a complete CRUD API for the same data model.
 *   **Consistent Schema**: A single, unified GraphQL schema is used across all three server implementations.
 *   **Lightweight Database**: Uses SQLite, making it ideal for development and testing.
 
-### 🛠️ Technology Stack
+### Technology Stack
 | Implementation | GraphQL Server | Database ORM | Runtime |
 | :--- | :--- | :--- | :--- |
 | **Apollo Server** | Apollo Server 5 | Sequelize | Node.js |

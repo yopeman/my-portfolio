@@ -112,8 +112,7 @@ function compile() {
           }
 
           // Extract Technology Stack from README
-          const techSectionMatch = readme.match(/### 🛠️ Technology Stack([\s\S]*?)(###|$)/) || 
-                                   readme.match(/### Technology Stack([\s\S]*?)(###|$)/) ||
+          const techSectionMatch = readme.match(/### Technology Stack([\s\S]*?)(###|$)/) ||
                                    readme.match(/### Tech Stack([\s\S]*?)(###|$)/);
           if (techSectionMatch) {
             const listItems = techSectionMatch[1].match(/\*\s+\*\*([^*]+)\*\*/g) || 

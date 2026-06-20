@@ -1,6 +1,6 @@
 The **smart-todo-app** is an ambitious, AI-powered project management platform designed to go far beyond a simple to-do list. It's a full-stack application that leverages AI to automate project creation and task updates, generate reports, and even enable voice interactions. It's built as a modern, collaborative workspace with role-based access control.
 
-### ✨ Key Features & Business Rules
+### Key Features & Business Rules
 *   **AI-Powered Management**: The core differentiator is its deep integration of AI. The app can create and update projects and tasks based on user prompts. It can also automatically generate reports on project progress.
 *   **Voice Interaction**: Users can communicate with the AI using Speech-to-Text (STT) and Text-to-Speech (TTS), allowing for a hands-free experience.
 *   **Collaboration & Permissions**: The platform supports multi-user collaboration. Project owners can manage privileges for shared projects, assigning roles like `admin`, `editor`, or `viewer` to other users.
@@ -8,7 +8,7 @@ The **smart-todo-app** is an ambitious, AI-powered project management platform d
 *   **Notifications**: The system can send notifications to users.
 *   **Decentralized System**: Interestingly, the project is designed without an admin role, emphasizing a user-driven model.
 
-### 🛠️ Technology Stack
+### Technology Stack
 The project is built with a modern, full-stack architecture:
 
 *   **Backend API**: Built with **Node.js**, **Express**, and **Apollo Server** using **TypeScript**. It exposes a **GraphQL API** for flexible data fetching.
@@ -29,13 +29,13 @@ The data model is well-thought-out for a project management tool, featuring soft
 *   **Project History**: An audit log tracking changes (`create | update | delete | status change`) to `project` or `task` entities, including a `change_summary` and who made the change.
 *   **AI Interaction**: Stores the `prompt`, `response`, and `action_type` (`create | edit | report`) for each AI interaction, linked to a `user_id` and optionally a `project_id`.
 
-### 📁 Project Structure
+### Project Structure
 The repository is organized into two main directories:
 
 *   `backend/`: Houses the Node.js/Express/GraphQL server.
 *   `front-web/`: Contains the React web application.
 
-### 📊 Current State
+### Current State
 *   **Status**: Actively developed, with the latest commit on **March 29, 2026**. It has a history of **60 commits**.
 *   **Community**: Has **1 star** and **0 forks**.
 *   **Languages**: Primarily written in **TypeScript (65.1%)** and **JavaScript (34.6%)**.

@@ -1,9 +1,9 @@
 Based on the repository, the **Gololcha-Detergent-Backend** project is the backend API for an e-commerce platform specifically for a detergent brand called "Gololcha Detergent".
 
-### 🎯 Core Purpose
+### Core Purpose
 The primary goal of this project is to provide a RESTful API to power an online store. It handles all the server-side logic for user management, product inventory, order processing, payments, and notifications.
 
-### ✨ Key Features
+### Key Features
 The API is built around managing the core entities of an e-commerce platform:
 
 *   **User Management**: Handles user registration and authentication, with two roles: `admin` and regular `user`.
@@ -12,14 +12,14 @@ The API is built around managing the core entities of an e-commerce platform:
 *   **Payment Handling**: Manages payments linked to orders, tracking the `amount` and `status` (`pending`, `completed`, `failed`).
 *   **Notifications**: A system to send notifications to users.
 
-### 🛠️ Technology Stack
+### Technology Stack
 *   **Runtime**: Node.js
 *   **Framework**: Express.js
 *   **Database ORM**: Sequelize
 *   **Database**: (Implied) SQL-based (MySQL, PostgreSQL, or SQLite), as it uses Sequelize
 *   **Language**: JavaScript (100%)
 
-### 📁 Project Structure
+### Project Structure
 The project follows a standard Model-View-Controller (MVC) architecture for a Node.js API:
 *   `app.js`: The main application entry point that sets up the Express server, middleware, and routes.
 *   `models/`: Contains Sequelize model definitions for `User`, `Product`, `Order`, `Payment`, and `Notification`.
