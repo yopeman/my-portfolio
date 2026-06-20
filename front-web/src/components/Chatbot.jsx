@@ -102,7 +102,7 @@ export default function Chatbot() {
       {/* Chat Window Panel */}
       {isOpen && (
         <div 
-          className="w-[360px] sm:w-[400px] h-[500px] rounded-3xl bg-white dark:bg-slate-900 night:bg-black border border-slate-200/80 dark:border-slate-800 night:border-purple-900/30 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-200 origin-bottom-right"
+          className="w-[360px] sm:w-[400px] h-[500px] rounded-3xpl bg-white dark:bg-slate-900 night:bg-black border border-slate-200/80 dark:border-slate-800 night:border-purple-900/30 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-200 origin-bottom-right"
           style={{ transform: `scale(${zoom})`, transformOrigin: 'bottom right' }}
         >
           

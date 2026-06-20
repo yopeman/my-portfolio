@@ -33,28 +33,11 @@ export default function Projects() {
     );
   };
 
-  // Helper to extract links from markdown
-  const extractLinks = (readme) => {
-    const links = { github: '', website: '' };
-    if (!readme) return links;
-    
-    // Find github links
-    const ghMatch = readme.match(/https:\/\/github\.com\/[^\s\)\*]+/);
-    if (ghMatch) links.github = ghMatch[0];
-
-    // Find vercel/website links
-    const webMatch = readme.match(/https:\/\/[^\s\)\*]+\.(vercel\.app|app|com|org|net)/);
-    if (webMatch) links.website = webMatch[0];
-
-    return links;
-  };
-
   return (
     <>
       {/* Projects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {projects.map((project) => {
-            const links = extractLinks(project.readme);
             return (
               <div
                 key={project.id}
@@ -110,9 +93,9 @@ export default function Projects() {
 
                     {/* Quick Links */}
                     <div className="flex items-center gap-4 text-xs font-semibold text-slate-600 dark:text-slate-400 night:text-purple-400" onClick={e => e.stopPropagation()}>
-                      {links.github && (
+                      {project.repository && (
                         <a
-                          href={links.github}
+                          href={project.repository}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-1 hover:text-indigo-600 dark:hover:text-violet-400"
@@ -120,9 +103,9 @@ export default function Projects() {
                           <Github className="w-3.5 h-3.5" /> Repository
                         </a>
                       )}
-                      {links.website && (
+                      {project.website && (
                         <a
-                          href={links.website}
+                          href={project.website}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-1 hover:text-indigo-600 dark:hover:text-violet-400"
@@ -234,9 +217,9 @@ export default function Projects() {
                     <div className="space-y-2">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Actions</h4>
                       <div className="flex flex-col gap-2">
-                        {extractLinks(selectedProject.readme).github && (
+                        {selectedProject.repository && (
                           <a
-                            href={extractLinks(selectedProject.readme).github}
+                            href={selectedProject.repository}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700 text-sm font-semibold transition-all border border-slate-800/80"
@@ -244,9 +227,9 @@ export default function Projects() {
                             <Github className="w-4 h-4" /> Github Repo
                           </a>
                         )}
-                        {extractLinks(selectedProject.readme).website && (
+                        {selectedProject.website && (
                           <a
-                            href={extractLinks(selectedProject.readme).website}
+                            href={selectedProject.website}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-all shadow-md shadow-indigo-600/10"

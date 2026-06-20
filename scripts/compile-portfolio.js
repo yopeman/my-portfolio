@@ -78,6 +78,8 @@ function compile() {
         const title = dir;
         let summary = '';
         let tags = [];
+        let repository = '';
+        let website = '';
         
         if (readme) {
           // Extract first paragraph as summary (strip markdown bold/links)
@@ -100,6 +102,19 @@ function compile() {
               tags = listItems.map(item => item.replace(/\*\s+\*\*/g, '').replace(/\*\*/g, '').replace(/\*/g, '').trim());
             }
           }
+
+          // Extract project links from README
+          const linksSectionMatch = readme.match(/###\s*Links:\s*([\s\S]*?)(?:\n###|$)/i);
+          if (linksSectionMatch) {
+            const linksSection = linksSectionMatch[1];
+            const linkLines = linksSection.split('\n').map(line => line.trim().replace(/^\*+\s*/, '').replace(/\*\*/g, ''));
+            linkLines.forEach(line => {
+              const repoMatch = line.match(/^Repositories?\s*:\s*(https?:\/\/\S+)/i);
+              const websiteMatch = line.match(/^Website\s*:\s*(https?:\/\/\S+)/i);
+              if (repoMatch) repository = repoMatch[1].trim();
+              if (websiteMatch) website = websiteMatch[1].trim();
+            });
+          }
         }
 
         projects.push({
@@ -107,6 +122,8 @@ function compile() {
           title,
           summary,
           tags: tags.length ? tags : ['Software Dev'],
+          repository,
+          website,
           readme,
           images,
           folderName: dir
