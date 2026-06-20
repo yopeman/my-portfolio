@@ -6,7 +6,7 @@ export default function Index() {
     <WebView
       style={styles.container}
       originWhitelist={['*']}
-      source={{ uri: 'https://fidelai.vercel.app/' }}
+      source={{ uri: 'file:///android_asset/html/index.html' }}
       dom={{ matchContents: true }}
 
     />
