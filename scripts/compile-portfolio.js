@@ -37,7 +37,9 @@ function compile() {
   }
   
   // 1. Read about me files
-  const aboutMe = {};
+  const aboutMe = {
+    images: []
+  };
   if (fs.existsSync(aboutMePath)) {
     const files = fs.readdirSync(aboutMePath);
     files.forEach(file => {
@@ -50,6 +52,12 @@ function compile() {
         }
       }
     });
+
+    const aboutAssetsPath = path.join(aboutMePath, 'assets');
+    if (fs.existsSync(aboutAssetsPath)) {
+      const assetFiles = fs.readdirSync(aboutAssetsPath).filter(file => /\.(jpeg|jpg|png|gif|svg|webp)$/i.test(file));
+      aboutMe.images = assetFiles.map(file => `/about/assets/${file}`);
+    }
   }
 
   // 2. Read projects

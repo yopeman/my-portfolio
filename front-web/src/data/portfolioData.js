@@ -1,5 +1,17 @@
 // Compiled Portfolio Data (Auto-Generated)
 export const aboutMe = {
+  "images": [
+    "/about/assets/image1.jpg",
+    "/about/assets/image10.jpg",
+    "/about/assets/image2.jpeg",
+    "/about/assets/image3.png",
+    "/about/assets/image4.png",
+    "/about/assets/image5.JPG",
+    "/about/assets/image6.JPG",
+    "/about/assets/image7.jpg",
+    "/about/assets/image8.jpg",
+    "/about/assets/image9.JPG"
+  ],
   "about": "# About Me\n\nHello! I’m Yohanes Debebe, a backend-focused software developer with strong frontend knowledge and a passion for building reliable systems. I graduated from Bahir Dar University in 2026 with a Bachelor’s degree in Computer Science, earning a CGPA of 3.81 out of 4.00.\n\nI specialize in backend development and have hands-on experience integrating modern AI frameworks into applications. I have also completed an internship that enhanced my practical skills, helped me collaborate effectively with teams, and strengthened my ability to deliver production-ready software.\n\nI speak Amharic natively and English fluently, which helps me communicate clearly with diverse teams and stakeholders.\n\nI enjoy solving complex problems, designing scalable services, and using emerging technologies to create smart, maintainable solutions. My academic background and real-world experience make me a motivated and capable developer ready to contribute to backend systems and AI-enabled software.\n\n## Video:\n*   **Youtube Video**: https://www.youtube.com/watch?v=_o756nHwl98",
   "contact": "# Contact\n\n- Phone: +251 930 531 637 / +251 991 095 431\n- Email: yopeman318@gmail.com\n- GitHub: https://github.com/yopeman\n- LinkedIn: https://www.linkedin.com/in/yohanes-debebe-71a93136b\n- Telegram: https://t.me/yope_man\n- Location: Addis Ababa, Ethiopia\n",
   "skills": "# Skills\n\n## Programming Languages\n- Python\n- JavaScript\n- TypeScript\n\n## Backend\n- FastAPI\n- Flask\n- Express.js\n- Node.js\n- GraphQL (Apollo Server, Strawberry, Ariadne)\n- RESTful API Design\n\n## Frontend\n- React\n- React Native / Expo\n- Tailwind CSS\n\n## Databases\n- PostgreSQL\n- MySQL\n- SQLite\n- MongoDB\n\n## ORMs\n- SQLAlchemy\n- Sequelize\n- Mongoose\n\n## AI & Emerging Tech\n- LangChain\n- LangGraph\n\n## Tools\n- Git\n- GitHub\n- Postman\n- Swagger (OpenAPI)\n- Linux\n\n## Soft Skills\n- Problem-solving\n- Quick learner\n- Strong work ethic\n- Team collaboration and communication\n"

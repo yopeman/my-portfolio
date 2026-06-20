@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
+import { aboutMe } from '../data/portfolioData';
 
 export default function SlideImage({ className = '' }) {
   const [active, setActive] = useState(0);
   const [images] = useState(() => {
-    const all = [
-      '/about/image1.jpg', '/about/image2.jpeg', '/about/image3.png', '/about/image4.png',
-      '/about/image5.JPG', '/about/image6.JPG', '/about/image7.jpg', '/about/image8.jpg',
-      '/about/image9.JPG', '/about/image10.jpg',
-    ];
+    const all = aboutMe.images;
     // Fisher‑Yates shuffle
     for (let i = all.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -17,7 +14,7 @@ export default function SlideImage({ className = '' }) {
   });
 
   useEffect(() => {
-    const id = setInterval(() => setActive((a) => (a + 1) % images.length), 60_000);
+    const id = setInterval(() => setActive((a) => (a + 1) % images.length), 5000);
     return () => clearInterval(id);
   }, [images]);
 
