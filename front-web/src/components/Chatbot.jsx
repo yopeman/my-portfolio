@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, HelpCircle, Loader2 } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, HelpCircle, Loader2, Plus, Minus } from 'lucide-react';
 import Markdown from 'markdown-to-jsx';
 import { markdownOverrides } from './markdownComponents';
 
@@ -13,6 +13,7 @@ export default function Chatbot() {
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [zoom, setZoom] = useState(1); // 1 = default, 1.5 = large, 0.8 = small
 
   const messagesEndRef = useRef(null);
 
@@ -100,7 +101,10 @@ export default function Chatbot() {
 
       {/* Chat Window Panel */}
       {isOpen && (
-        <div className="w-[360px] sm:w-[400px] h-[500px] rounded-3xl bg-white dark:bg-slate-900 night:bg-black border border-slate-200/80 dark:border-slate-800 night:border-purple-900/30 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-200">
+        <div 
+          className="w-[360px] sm:w-[400px] h-[500px] rounded-3xl bg-white dark:bg-slate-900 night:bg-black border border-slate-200/80 dark:border-slate-800 night:border-purple-900/30 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-200 origin-bottom-right"
+          style={{ transform: `scale(${zoom})`, transformOrigin: 'bottom right' }}
+        >
           
           {/* Header */}
           <div className="px-5 py-4 bg-slate-50 dark:bg-slate-800/50 night:bg-purple-950/10 border-b border-slate-100 dark:border-slate-800/80 night:border-purple-900/20 flex items-center justify-between">
@@ -115,12 +119,30 @@ export default function Chatbot() {
                 </span>
               </div>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1 rounded-lg hover:bg-slate-150 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              {/* Zoom controls */}
+              <button
+                onClick={() => setZoom(z => Math.min(1.75, z + 0.2))}
+                className="p-1 rounded hover:bg-slate-150 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
+                title="Expand"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setZoom(z => Math.max(0.8, z - 0.2))}
+                className="p-1 rounded hover:bg-slate-150 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
+                title="Shrink"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1 rounded-lg hover:bg-slate-150 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors ml-1"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Messages View */}
