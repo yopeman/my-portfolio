@@ -4,6 +4,7 @@ import ThemeToggle from './components/ThemeToggle';
 import Projects from './components/Projects';
 import Chatbot from './components/Chatbot';
 import Markdown from 'markdown-to-jsx';
+import { markdownOverrides } from './components/markdownComponents';
 import confetti from 'canvas-confetti';
 import { 
   Phone, Mail, Github, Linkedin, Send, MapPin, ExternalLink,
@@ -142,27 +143,28 @@ export default function App() {
   // Markdown renderer options for skills to automatically convert into nice badges
   const skillsMarkdownOptions = {
     overrides: {
-      h1: { component: () => null }, // hide main heading
+      ...markdownOverrides,
+      h1: { component: () => null }, // hide top-level heading
       h2: {
         component: ({ children }) => (
           <h4 className="text-sm font-bold text-indigo-600 dark:text-violet-400 uppercase tracking-wider mb-3 pl-1">
             {children}
           </h4>
-        )
+        ),
       },
       ul: {
         component: ({ children }) => (
           <div className="flex flex-wrap gap-2 mb-8">{children}</div>
-        )
+        ),
       },
       li: {
         component: ({ children }) => (
           <span className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200/70 dark:bg-slate-800 dark:hover:bg-slate-700/80 night:bg-purple-950/20 night:border-purple-900/10 text-slate-700 dark:text-slate-200 night:text-purple-300 border border-slate-200/50 dark:border-slate-700/60 transition-colors shadow-sm">
             {children}
           </span>
-        )
-      }
-    }
+        ),
+      },
+    },
   };
 
   return (
@@ -274,7 +276,7 @@ export default function App() {
               About Me
             </h2>
             <div className="prose prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-400 leading-relaxed text-md space-y-4">
-              <Markdown overrides={{ h1: { component: () => null }, h2: { component: () => null } }}>
+              <Markdown options={{ overrides: { ...markdownOverrides, h1: { component: () => null }, h2: { component: () => null } } }}>
                 {aboutMe.about || ''}
               </Markdown>
             </div>

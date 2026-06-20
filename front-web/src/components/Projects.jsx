@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { projects } from '../data/portfolioData';
 import { X, ExternalLink, Github, ChevronLeft, ChevronRight, Code } from 'lucide-react';
 import Markdown from 'markdown-to-jsx';
+import { markdownOverrides } from './markdownComponents';
 
 export default function Projects() {
   const [selectedProject, setSelectedProject] = useState(null);
@@ -219,10 +220,8 @@ export default function Projects() {
                   <div className="md:col-span-3 space-y-4">
                     <h4 className="text-lg font-bold text-slate-900 dark:text-white">Project Description</h4>
                     {/* Markdown rendering of full README */}
-                    <div className="prose prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 text-sm leading-relaxed
-                      prose-headings:font-bold prose-headings:text-slate-900 dark:prose-headings:text-white prose-headings:mt-6 prose-headings:mb-2
-                      prose-h3:text-base prose-h4:text-sm prose-ul:list-disc prose-ul:pl-5 prose-li:my-1 prose-a:text-indigo-600 dark:prose-a:text-violet-400 hover:prose-a:underline">
-                      <Markdown>{selectedProject.readme || selectedProject.summary}</Markdown>
+                    <div className="max-w-none text-sm leading-relaxed">
+                      <Markdown options={{ overrides: markdownOverrides }}>{selectedProject.readme || selectedProject.summary}</Markdown>
                     </div>
                   </div>
 
