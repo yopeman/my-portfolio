@@ -141,7 +141,7 @@ const createTransporter = () => {
 
 // Endpoint: Contact form email sender
 app.post('/api/contact', async (req, res) => {
-  const { name, email, message } = req.body;
+  const { name, email, phone, message } = req.body;
 
   if (!name || !email || !message) {
     return res.status(400).json({ error: 'Name, email, and message are required fields.' });
@@ -151,18 +151,22 @@ app.post('/api/contact', async (req, res) => {
     const transporter = createTransporter();
     const receiver = process.env.RECEIVER_EMAIL || 'yopeman318@gmail.com';
 
+    const phoneDisplay = phone ? `<p><strong>Phone:</strong> <a href="tel:${phone}">${phone}</a></p>` : '';
+    const phoneText = phone ? `\nPhone: ${phone}` : '';
+
     const mailOptions = {
-      from: `"${name}" <${process.env.SMTP_USER}>`, // Use authenticated user as sender to avoid SMTP blocks
+      from: `"${name}" <${process.env.SMTP_USER}>`,
       replyTo: email,
       to: receiver,
       subject: `Portfolio Contact: Message from ${name}`,
       text: `You have received a new contact message from your portfolio website.\n\n` +
             `Name: ${name}\n` +
-            `Email: ${email}\n\n` +
+            `Email: <${email}>${phoneText}\n\n` +
             `Message:\n${message}`,
       html: `<h3>New Portfolio Message</h3>` +
             `<p><strong>Name:</strong> ${name}</p>` +
             `<p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>` +
+            `${phoneDisplay}` +
             `<p><strong>Message:</strong></p>` +
             `<div style="padding: 10px; background: #f3f4f6; border-radius: 5px;">${message.replace(/\n/g, '<br>')}</div>`,
     };

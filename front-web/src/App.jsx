@@ -55,6 +55,7 @@ export default function App() {
   // Contact Form State
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [contactMessage, setContactMessage] = useState('');
   const [isContactLoading, setIsContactLoading] = useState(false);
   const [contactStatus, setContactStatus] = useState({ type: '', text: '' });
@@ -107,7 +108,7 @@ export default function App() {
       const response = await fetch('http://localhost:5000/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: contactName, email: contactEmail, message: contactMessage }),
+        body: JSON.stringify({ name: contactName, email: contactEmail, phone: contactPhone, message: contactMessage }),
       });
       const data = await response.json();
       if (response.ok) {
@@ -453,10 +454,17 @@ export default function App() {
             <div className="p-6 sm:p-8 bg-white/80 dark:bg-slate-900/50 night:bg-black/60 backdrop-blur-sm rounded-3xl border border-slate-200/50 dark:border-slate-800/80 night:border-purple-900/10 shadow-sm space-y-5">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">Send a Message</h3>
               <form onSubmit={handleContactSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Name</label>
-                  <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Your Name" required
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white dark:bg-slate-800 night:bg-black dark:text-white night:border-purple-900/15 focus:outline-none focus:border-indigo-500" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Name</label>
+                    <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Your Name" required
+                      className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white dark:bg-slate-800 night:bg-black dark:text-white night:border-purple-900/15 focus:outline-none focus:border-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Phone</label>
+                    <input type="tel" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+251 9XX XXX XXXX"
+                      className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white dark:bg-slate-800 night:bg-black dark:text-white night:border-purple-900/15 focus:outline-none focus:border-indigo-500" />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email</label>
