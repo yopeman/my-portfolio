@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
-import Markdown from 'markdown-to-jsx';
+import ReactMarkdown from 'react-markdown';
 import { BookOpen } from 'lucide-react';
-import { markdownOverrides } from './markdownComponents';
+import { markdownComponents } from './markdownComponents';
 import SlideImage from './SlideImage';
 
 export default function About({ aboutMe }) {
@@ -31,9 +30,9 @@ export default function About({ aboutMe }) {
             About Me
           </h2>
           <div className="prose prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-400 leading-relaxed">
-            <Markdown options={{ overrides: { ...markdownOverrides, h1: { component: () => null }, h2: { component: () => null } } }}>
+            <ReactMarkdown components={markdownComponents}>
               {aboutMe.about || ''}
-            </Markdown>
+            </ReactMarkdown>
           </div>
 
           {/* YouTube embed */}

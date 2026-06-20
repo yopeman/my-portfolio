@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
 import Markdown from 'markdown-to-jsx';
-import { markdownOverrides } from './markdownComponents';
+import { markdownComponents } from './markdownComponents';
 import SlideImage from './SlideImage';
 
 export default function Skills({ aboutMe }) {
   // Skill badge markdown options
   const skillsMarkdownOptions = {
     overrides: {
-      ...markdownOverrides,
+      ...markdownComponents,
       h1: { component: () => null },
       h2: {
         component: ({ children }) => (

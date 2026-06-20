@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, HelpCircle, Loader2, Plus, Minus } from 'lucide-react';
-import Markdown from 'markdown-to-jsx';
-import { markdownOverrides } from './markdownComponents';
+import ReactMarkdown from 'react-markdown';
+import { markdownComponents } from './markdownComponents';
 
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -169,7 +169,7 @@ export default function Chatbot() {
                     <p className="whitespace-pre-line">{msg.content}</p>
                   ) : (
                     <div className="prose prose-sm dark:prose-invert max-w-none">
-                      <Markdown options={{ overrides: markdownOverrides }}>{msg.content}</Markdown>
+                      <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
                     </div>
                   )}
                 </div>
