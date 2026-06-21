@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, HelpCircle, Loader2, Plus, Minus } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { markdownComponents } from './markdownComponents';
+import { BASE_URL } from '../data/constants';
 
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -47,7 +48,7 @@ export default function Chatbot() {
 
     try {
       // Send chat log to express backend
-      const response = await fetch('http://localhost:5000/api/chat', {
+      const response = await fetch(`${BASE_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

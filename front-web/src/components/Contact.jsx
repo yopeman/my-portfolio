@@ -5,6 +5,7 @@ import {
   SendHorizonal, Globe, Check, AlertCircle, Loader2
 } from 'lucide-react';
 import SlideImage from './SlideImage';
+import { BASE_URL } from '../data/constants';
 
 export default function Contact({ aboutMe }) {
   // Contact Form State
@@ -60,7 +61,7 @@ export default function Contact({ aboutMe }) {
     setIsContactLoading(true);
     setContactStatus({ type: '', text: '' });
     try {
-      const response = await fetch('http://localhost:5000/api/contact', {
+      const response = await fetch(`${BASE_URL}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: contactName, email: contactEmail, phone: contactPhone, message: contactMessage }),
@@ -86,7 +87,7 @@ export default function Contact({ aboutMe }) {
     setIsSubLoading(true);
     setSubStatus({ type: '', text: '' });
     try {
-      const response = await fetch('http://localhost:5000/api/subscribe', {
+      const response = await fetch(`${BASE_URL}/api/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: subEmail }),
