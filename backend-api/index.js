@@ -234,6 +234,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date() });
 });
 
+// Home page redirect to the website
+app.get('/', (req, res) => {
+  res.redirect('https://yohanesdbb.vercel.app');
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

@@ -13,26 +13,47 @@ const backendOutputPath = path.join(workspaceRoot, 'backend-api/data/portfolioDa
 const publicProjectsPath = path.join(workspaceRoot, 'front-web/public/projects');
 const publicAboutPath = path.join(workspaceRoot, 'front-web/public/about');
 
+function copyDirectory(src, dest) {
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  entries.forEach(entry => {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      copyDirectory(srcPath, destPath);
+    } else if (entry.isFile()) {
+      fs.copyFileSync(srcPath, destPath);
+    } else if (entry.isSymbolicLink()) {
+      const linkTarget = fs.readlinkSync(srcPath);
+      fs.symlinkSync(linkTarget, destPath);
+    }
+  });
+}
+
 function compile() {
   console.log('Compiling portfolio data...');
 
-  // Create symlink for project assets if it doesn't exist
+  // Copy project assets into the frontend public directory if it doesn't already exist
   if (!fs.existsSync(publicProjectsPath)) {
     try {
-      fs.symlinkSync(projectsPath, publicProjectsPath, 'dir');
-      console.log('Created projects symlink in front-web/public/projects');
+      copyDirectory(projectsPath, publicProjectsPath);
+      console.log('Copied projects directory to front-web/public/projects');
     } catch (err) {
-      console.warn('Could not create symlink, trying copying assets instead:', err.message);
+      console.warn('Could not copy projects directory:', err.message);
     }
   }
 
-  // Create symlink for about me files if it doesn't exist
+  // Copy about me files into the frontend public directory if it doesn't already exist
   if (!fs.existsSync(publicAboutPath)) {
     try {
-      fs.symlinkSync(aboutMePath, publicAboutPath, 'dir');
-      console.log('Created about symlink in front-web/public/about');
+      copyDirectory(aboutMePath, publicAboutPath);
+      console.log('Copied about directory to front-web/public/about');
     } catch (err) {
-      console.warn('Could not create about symlink, please check permissions or fallback if needed:', err.message);
+      console.warn('Could not copy about directory:', err.message);
     }
   }
   
