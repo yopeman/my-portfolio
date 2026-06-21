@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Yohanes Debebe's Portfolio",
-    "slug": "front-app",
+    "name": "Yohanes Debebe",
+    "slug": "yohanes-debebe-portfolio",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -19,7 +19,8 @@
         "monochromeImage": "./assets/icon.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.j16912031.yohanesdebebeportfolio"
     },
     "web": {
       "output": "static",
@@ -43,6 +44,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5e411301-0efd-4ee0-a3f9-9f95b53dd7d7"
+      }
+    },
+    "owner": "j16912031"
   }
 }
