@@ -5,7 +5,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
-import { ChatOllama } from '@langchain/ollama';
+// import { ChatOllama } from '@langchain/ollama';
+import { ChatGroq } from '@langchain/groq'
 import { SystemMessage, HumanMessage, AIMessage } from '@langchain/core/messages';
 
 // Import the pre-compiled and summarized portfolio data
@@ -63,11 +64,12 @@ function getTargetedContext(query) {
 }
 
 // Ollama Chat model setup
-const chatModel = new ChatOllama({
-  baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-  model: 'qwen2.5:0.5b',
-  temperature: 0.5, // slightly lower temperature for higher factual consistency
-});
+// const chatModel = new ChatOllama({
+//   baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+//   model: 'qwen2.5:0.5b',
+//   temperature: 0.5, // slightly lower temperature for higher factual consistency
+// });
+const chatModel = new ChatGroq({ model: 'compound-beta' })
 
 // Endpoint: Chat with the portfolio assistant
 app.post('/api/chat', async (req, res) => {
@@ -100,6 +102,7 @@ Guidelines:
 3. If a visitor asks something unrelated, politely steer the conversation back to Yohanes' work or refuse to answer.
 4. Under no circumstances should you make up or hallucinate details. Do not mix details between different projects.
 5. Keep your responses short, natural, and friendly. Output in plain text (Markdown is fine, but keep it simple).
+6. Don't use table in your answers.
 `;
 
     // Map incoming messages to Langchain message instances
