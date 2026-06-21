@@ -36,23 +36,27 @@ export default function About({ aboutMe }) {
           </div>
 
           {/* YouTube embed */}
-          <div className="relative aspect-video rounded-2xl overflow-hidden shadow-lg border border-slate-200/50 dark:border-slate-800 night:border-purple-900/20 bg-slate-900">
-            {embedUrl ? (
-              <iframe
-                src={embedUrl}
-                title="Yohanes Debebe Introduction Video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full border-0"
-              />
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2">
-                <BookOpen className="w-10 h-10 text-indigo-500/40" />
-                <span className="text-sm">Introduction video placeholder</span>
+          {embedUrl && (
+            <>
+              <div className="relative aspect-video rounded-2xl overflow-hidden shadow-lg border border-slate-200/50 dark:border-slate-800 night:border-purple-900/20 bg-slate-900">
+                {embedUrl ? (
+                  <iframe
+                    src={embedUrl}
+                    title="Yohanes Debebe Introduction Video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full border-0"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2">
+                    <BookOpen className="w-10 h-10 text-indigo-500/40" />
+                    <span className="text-sm">Introduction video placeholder</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <p className="text-xs text-slate-400">Check out my video presentation to learn more about my coding philosophy.</p>
+              <p className="text-xs text-slate-400">Check out my video presentation to learn more about my coding philosophy.</p>
+            </>
+          )}
         </div>
       </div>
     </section>
