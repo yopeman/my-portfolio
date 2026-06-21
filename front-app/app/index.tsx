@@ -1,20 +1,16 @@
 import { WebView } from 'react-native-webview';
-import { StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 
-export default function Index() {
+export default function Index() {  
   return (
-    <WebView
-      style={styles.container}
-      originWhitelist={['*']}
-      source={{ uri: 'https://yohanesdbb.vercel.app/' }}
-      dom={{ matchContents: true }}
-
-    />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }}>
+      <StatusBar style='light' backgroundColor="#000000" />
+      <WebView
+        originWhitelist={['*']}
+        source={{ uri: 'https://yohanesdbb.vercel.app/' }}
+        dom={{ matchContents: true }}
+      />
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
