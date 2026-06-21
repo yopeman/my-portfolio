@@ -1,79 +1,83 @@
 export const markdownComponents = {
   // Headings
-  h1: ({node, ...props}) => <h1 className="text-4xl font-bold mt-8 mb-4" {...props} />,
-  h2: ({node, ...props}) => <h2 className="text-3xl font-bold mt-6 mb-3" {...props} />,
-  h3: ({node, ...props}) => <h3 className="text-2xl font-bold mt-5 mb-3" {...props} />,
-  h4: ({node, ...props}) => <h4 className="text-xl font-bold mt-4 mb-2" {...props} />,
-  h5: ({node, ...props}) => <h5 className="text-lg font-bold mt-3 mb-2" {...props} />,
-  h6: ({node, ...props}) => <h6 className="text-base font-bold mt-3 mb-2" {...props} />,
+  h1: ({...props}) => <h1 className="text-4xl font-bold mt-8 mb-4 text-slate-900 dark:text-white scroll-mt-24" {...props} />,
+  h2: ({...props}) => <h2 className="text-3xl font-bold mt-6 mb-3 text-slate-900 dark:text-white scroll-mt-24" {...props} />,
+  h3: ({...props}) => <h3 className="text-2xl font-bold mt-5 mb-3 text-slate-900 dark:text-white" {...props} />,
+  h4: ({...props}) => <h4 className="text-xl font-bold mt-4 mb-2 text-slate-900 dark:text-white" {...props} />,
+  h5: ({...props}) => <h5 className="text-lg font-bold mt-3 mb-2 text-slate-900 dark:text-white" {...props} />,
+  h6: ({...props}) => <h6 className="text-base font-bold mt-3 mb-2 text-slate-900 dark:text-white" {...props} />,
 
   // Text elements
-  p: ({node, ...props}) => <p className="mb-4 leading-relaxed" {...props} />,
-  strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
-  em: ({node, ...props}) => <em className="italic" {...props} />,
-  del: ({node, ...props}) => <del className="line-through text-muted-foreground" {...props} />,
-  blockquote: ({node, ...props}) => (
-    <blockquote className="border-l-4 border-primary/30 dark:border-secondary/30 pl-4 my-4 italic text-muted-foreground" {...props} />
+  p: ({...props}) => <p className="mb-4 leading-relaxed text-slate-700 dark:text-slate-300" {...props} />,
+  strong: ({...props}) => <strong className="font-semibold text-slate-900 dark:text-white" {...props} />,
+  em: ({...props}) => <em className="italic text-slate-700 dark:text-slate-300" {...props} />,
+  del: ({...props}) => <del className="line-through text-slate-500 dark:text-slate-400" {...props} />,
+  blockquote: ({...props}) => (
+    <blockquote className="border-l-4 border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/70 rounded-3xl px-5 py-4 my-6 italic text-slate-600 dark:text-slate-300 shadow-sm" {...props} />
   ),
 
   // Code
-  code: ({node, className, ...props}) => {
+  code: ({className, ...props}) => {
     const isInline = !className;
-    return isInline ? (
-      <code className="px-1.5 py-0.5 bg-primary/10 dark:bg-secondary/10 rounded text-sm font-mono text-primary dark:text-secondary" {...props} />
-    ) : (
-      <code className={className} {...props} />
-    );
+    const codeClass = isInline
+      ? 'inline-block px-1.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm font-mono'
+      : `block rounded-3xl px-4 py-3 text-sm font-mono bg-slate-950 text-slate-100 shadow-sm overflow-x-auto ${className}`;
+
+    return <code className={codeClass} {...props} />;
   },
-  pre: ({node, ...props}) => (
-    <pre className="p-4 bg-primary/5 dark:bg-secondary/5 rounded-xl overflow-x-auto border border-primary/10 dark:border-secondary/10 my-4" {...props} />
+  pre: ({...props}) => (
+    <pre className="p-4 bg-slate-950 text-slate-100 rounded-3xl overflow-x-auto border border-slate-800/70 my-4 shadow-sm" {...props} />
   ),
 
   // Lists
-  ul: ({node, ...props}) => <ul className="list-disc list-inside mb-4 space-y-2" {...props} />,
-  ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-4 space-y-2" {...props} />,
-  li: ({node, ...props}) => <li className="text-foreground" {...props} />,
+  ul: ({...props}) => <ul className="list-disc list-inside mb-4 space-y-2 text-slate-700 dark:text-slate-300" {...props} />,
+  ol: ({...props}) => <ol className="list-decimal list-inside mb-4 space-y-2 text-slate-700 dark:text-slate-300" {...props} />,
+  li: ({...props}) => <li className="text-slate-700 dark:text-slate-300" {...props} />,
 
   // Links
-  a: ({node, ...props}) => (
-    <a 
-      className="text-primary dark:text-secondary underline decoration-primary/30 dark:decoration-secondary/30 hover:decoration-primary dark:hover:decoration-secondary transition-colors" 
-      target="_blank" 
-      rel="noopener noreferrer" 
-      {...props} 
+  a: ({...props}) => (
+    <a
+      className="text-indigo-600 dark:text-violet-300 underline decoration-indigo-200/70 dark:decoration-violet-500/40 hover:text-indigo-500 dark:hover:text-violet-200 transition-colors"
+      target="_blank"
+      rel="noopener noreferrer"
+      {...props}
     />
   ),
 
   // Images
-  img: ({node, ...props}) => (
-    <img 
-      className="rounded-lg max-w-full h-auto my-4 shadow-md" 
-      loading="lazy" 
-      {...props} 
+  img: ({...props}) => (
+    <img
+      className="rounded-3xl max-w-full h-auto my-4 shadow-lg border border-slate-200/70 dark:border-slate-800/70"
+      loading="lazy"
+      {...props}
     />
   ),
 
   // Tables (GFM)
-  table: ({node, ...props}) => (
-    <div className="overflow-x-auto my-4">
-      <table className="w-full border-collapse border border-primary/10 dark:border-secondary/10" {...props} />
+  table: ({...props}) => (
+    <div className="overflow-x-auto my-4 rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50 dark:bg-slate-950">
+      <table className="w-full border-collapse" {...props} />
     </div>
   ),
-  thead: ({node, ...props}) => <thead className="bg-primary/5 dark:bg-secondary/5" {...props} />,
-  tbody: ({node, ...props}) => <tbody {...props} />,
-  tr: ({node, ...props}) => <tr className="border-b border-primary/10 dark:border-secondary/10" {...props} />,
-  th: ({node, ...props}) => <th className="px-4 py-2 text-left font-semibold border-r border-primary/10 dark:border-secondary/10 last:border-r-0" {...props} />,
-  td: ({node, ...props}) => <td className="px-4 py-2 border-r border-primary/10 dark:border-secondary/10 last:border-r-0" {...props} />,
+  thead: ({...props}) => <thead className="bg-slate-100 dark:bg-slate-900/80" {...props} />,
+  tbody: ({...props}) => <tbody {...props} />,
+  tr: ({...props}) => <tr className="odd:bg-slate-50 even:bg-white dark:odd:bg-slate-950 dark:even:bg-slate-900 border-b border-slate-200/70 dark:border-slate-800/70" {...props} />,
+  th: ({...props}) => (
+    <th className="px-4 py-3 text-left font-semibold text-slate-900 dark:text-slate-100 border border-slate-200/70 dark:border-slate-800/70" {...props} />
+  ),
+  td: ({...props}) => (
+    <td className="px-4 py-3 text-slate-700 dark:text-slate-300 border border-slate-200/70 dark:border-slate-800/70" {...props} />
+  ),
 
   // Horizontal rule
-  hr: ({node, ...props}) => <hr className="my-8 border-primary/10 dark:border-secondary/10" {...props} />,
+  hr: ({...props}) => <hr className="my-8 border-slate-200 dark:border-slate-800" {...props} />,
 
   // Task lists (GFM)
-  input: ({node, ...props}) => {
+  input: ({...props}) => {
     if (props.type === 'checkbox') {
-      return <input type="checkbox" className="mr-2 rounded border-primary/30 dark:border-secondary/30" disabled {...props} />;
+      return <input type="checkbox" className="mr-2 h-4 w-4 rounded border-slate-300 dark:border-slate-600 accent-indigo-600 dark:accent-violet-400" disabled {...props} />;
     } else if (props.type === 'radio') {
-      return <input type="radio" className="mr-2 rounded border-primary/30 dark:border-secondary/30" disabled {...props} />;
+      return <input type="radio" className="mr-2 h-4 w-4 rounded-full border-slate-300 dark:border-slate-600 accent-indigo-600 dark:accent-violet-400" disabled {...props} />;
     }
     return <input {...props} />;
   },
