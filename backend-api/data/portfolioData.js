@@ -97,6 +97,25 @@ export const projects = [
     "folderName": "Dictionary"
   },
   {
+    "id": "distributed-chat-app",
+    "title": "Distributed Chat App",
+    "summary": "The **JavaFX-Chat-App** (ChatFX) project is a desktop chat application built with JavaFX....",
+    "tags": [
+      "Java",
+      "JavaFX",
+      "Java networking / sockets"
+    ],
+    "repository": "https://github.com/yopeman/JavaFX-Chat-App",
+    "website": "https://jchat.vercel.app",
+    "readme": "The **JavaFX-Chat-App** (ChatFX) project is a desktop chat application built with JavaFX.\n\n### What it solves\nIt solves the need for a real-time messaging client by providing a desktop chat interface, network communication, and user profile support in Java.\n\n### Technology Stack\n* Java\n* JavaFX\n* Java networking / sockets\n\n### Links:\n*   **Repositories**: https://github.com/yopeman/JavaFX-Chat-App\n*   **Website**: https://jchat.vercel.app\n",
+    "images": [
+      "/projects/Distributed Chat App/assets/K84JT5kp.jpeg",
+      "/projects/Distributed Chat App/assets/rsC5_YQA.jpeg",
+      "/projects/Distributed Chat App/assets/sPYiFrZR.jpeg"
+    ],
+    "folderName": "Distributed Chat App"
+  },
+  {
     "id": "distributed-ecommerce",
     "title": "Distributed eCommerce",
     "summary": "The **Java-eCommerce-Console-App** project is a distributed client-server e-commerce system built with Java and Java RMI....",
@@ -177,23 +196,26 @@ export const projects = [
     "folderName": "Gololcha Detergenet"
   },
   {
-    "id": "javafx-chat-app",
-    "title": "JavaFx Chat App",
-    "summary": "The **JavaFX-Chat-App** (ChatFX) project is a desktop chat application built with JavaFX....",
+    "id": "school-e-assistant",
+    "title": "School e-Assistant",
+    "summary": "The **School e-Assistant** project is a full-stack, AI-powered educational platform designed to support students and educators with study assistance, content management, and progre...",
     "tags": [
-      "Java",
-      "JavaFX",
-      "Java networking / sockets"
+      "Node.js, Express, MongoDB",
+      "React, Vite",
+      "Expo (React Native)",
+      "LangChain, Google GenAI",
+      "Tesseract (OCR), Cloudinary",
+      "JWT Authentication"
     ],
-    "repository": "https://github.com/yopeman/JavaFX-Chat-App",
-    "website": "https://jchat.vercel.app",
-    "readme": "The **JavaFX-Chat-App** (ChatFX) project is a desktop chat application built with JavaFX.\n\n### What it solves\nIt solves the need for a real-time messaging client by providing a desktop chat interface, network communication, and user profile support in Java.\n\n### Technology Stack\n* Java\n* JavaFX\n* Java networking / sockets\n\n### Links:\n*   **Repositories**: https://github.com/yopeman/JavaFX-Chat-App\n*   **Website**: https://jchat.vercel.app\n",
+    "repository": "https://github.com/yopeman/School-eAssistant.git",
+    "website": "https://school-e-assistant.vercel.app",
+    "readme": "The **School e-Assistant** project is a full-stack, AI-powered educational platform designed to support students and educators with study assistance, content management, and progress tracking.\n\n### What it solves\nSchool e-Assistant solves the problem of fragmented learning systems by centralizing AI-driven study assistance, content parsing, knowledge base management, user authentication, payment handling, and progress tracking into one comprehensive platform.\n\n### Technology Stack\n* Node.js, Express, MongoDB\n* React, Vite\n* Expo (React Native)\n* LangChain, Google GenAI\n* Tesseract (OCR), Cloudinary\n* JWT Authentication\n\n### Links:\n*   **Repositories**: https://github.com/yopeman/School-eAssistant.git\n*   **Website**: https://school-e-assistant.vercel.app\n",
     "images": [
-      "/projects/JavaFx Chat App/assets/K84JT5kp.jpeg",
-      "/projects/JavaFx Chat App/assets/rsC5_YQA.jpeg",
-      "/projects/JavaFx Chat App/assets/sPYiFrZR.jpeg"
+      "/projects/School e-Assistant/assets/asss1.jpeg",
+      "/projects/School e-Assistant/assets/asss3.jpeg",
+      "/projects/School e-Assistant/assets/asss4.jpeg"
     ],
-    "folderName": "JavaFx Chat App"
+    "folderName": "School e-Assistant"
   },
   {
     "id": "smart-todos",
