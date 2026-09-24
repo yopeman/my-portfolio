@@ -1,13 +1,17 @@
 # Users
-- id
 - name
 - email
 - password hash
 - role: owner, admin, member
-- timestamp (created at, updated at, deleted at)
+- Permission:
+  - profile: [READ, CREATE, UPDATE, DELETE]
+  - project []
+  - request []
+  - subscriber []
+  - blog []
+- timestamps (created at, updated at, deleted at)
 
 # Profile
-- id
 - bio
 - headline
 - Contacts:
@@ -23,9 +27,9 @@
   - path
   - size
   - mime type
+- timestamps
 
 # Projects
-- id
 - name
 - slug
 - description
@@ -33,7 +37,7 @@
 - solution
 - summary
 - order (float)
-- tags (comma separated string)
+- tags []
 - Features:
   - name
   - description
@@ -51,36 +55,39 @@
 - Comments:
   - name
   - content
-  - like count
-  - dislike count
-  - love count
-  - Replays:
+  - Reactions:
+    - like (int)
+    - dislike (int)
+    - love (int)
+  - Replies:
     - name
     - content
-    - like count
-    - dislike count
-    - love count
+    - Reactions:
+      - like (int)
+      - dislike (int)
+      - love (int)
+- timestamps
 
 # Requests
-- id
 - name
 - email
 - phone
 - message
 - is read
+- timestamps
 
 # Subscribers
-- id
 - email
+- timestamps
 
 # Blogs
-- id
 - slug
 - content
-- tags
-- like count
-- dislike count
-- love count
+- tags []
+- Reactions:
+  - like (int)
+  - dislike (int)
+  - love (int)
 - Links:
   - type
   - link
@@ -92,12 +99,15 @@
 - Comments:
   - name
   - content
-  - like count
-  - dislike count
-  - love count
-  - Replays:
+  - Reactions:
+    - like (int)
+    - dislike (int)
+    - love (int)
+  - Replies:
     - name
     - content
-    - like count
-    - dislike count
-    - love count
+    - Reactions:
+      - like (int)
+      - dislike (int)
+      - love (int)
+- timestamps
