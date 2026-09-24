@@ -4,6 +4,7 @@
 - phone (unique)
 - email (unique)
 - additional contact information (str)
+- bio
 - password hash
 - role: owner, admin, member, user
 - Permission:
