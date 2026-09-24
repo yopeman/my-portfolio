@@ -9,7 +9,7 @@
 - role: owner, admin, member, user
 - Permission:
   - users: [READ, CREATE, UPDATE, DELETE]
-  - profile: [...]
+  - about: [...]
   - projects: [...]
   - requests: [...]
   - subscribers: [...]
@@ -112,7 +112,7 @@
 - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Feedback:
-  - parent entity: profile, project, blog, plan
+  - parent entity: about, project, blog, plan
   - parent id
   - type: feedback, comment, reply
   - user id
@@ -120,14 +120,14 @@
   - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Reactions:
-  - parent entity: profile, project, blog, plan, feedback
+  - parent entity: about, project, blog, plan, feedback
   - parent id
   - user id
   - type: like, dislike, love
   - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Files:
-  - parent entity: user, profile, project, blog, plan
+  - parent entity: user, about, project, blog, plan
   - parent id
   - order
   - title
