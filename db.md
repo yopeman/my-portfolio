@@ -5,11 +5,11 @@
 - role: owner, admin, member
 - Permission:
   - profile: [READ, CREATE, UPDATE, DELETE]
-  - project []
-  - request []
-  - subscriber []
-  - blog []
-- timestamps (created at, updated at, deleted at)
+  - project: [...]
+  - request: [...]
+  - subscriber: [...]
+  - blog: [...]
+- timestamps (createdAt, updatedAt, deletedAt)
 
 # Profile
 - bio
@@ -22,12 +22,13 @@
   - category
   - name
   - progress (int e.g 91%)
+  - order (float)
 - Files:
   - name
   - path
   - size
   - mime type
-- timestamps
+- timestamps (createdAt, updatedAt, deletedAt)
 
 # Projects
 - name
@@ -36,8 +37,9 @@
 - problem
 - solution
 - summary
-- order (float)
+- order
 - tags []
+- type: product, case study, tutorial
 - Features:
   - name
   - description
@@ -55,6 +57,7 @@
 - Comments:
   - name
   - content
+  - timestamps (createdAt, updatedAt, deletedAt)
   - Reactions:
     - like (int)
     - dislike (int)
@@ -62,11 +65,20 @@
   - Replies:
     - name
     - content
+    - timestamps (createdAt, updatedAt, deletedAt)
     - Reactions:
       - like (int)
       - dislike (int)
       - love (int)
-- timestamps
+- Quotes:
+  - name
+  - email
+  - phone
+  - timeline
+  - requirements (str)
+  - min budget
+  - max budget
+- timestamps (createdAt, updatedAt, deletedAt)
 
 # Requests
 - name
@@ -74,11 +86,12 @@
 - phone
 - message
 - is read
-- timestamps
+- attached project id
+- timestamps (createdAt, readAt, deletedAt)
 
 # Subscribers
 - email
-- timestamps
+- timestamps (createdAt, unsubscribedAt, deletedAt)
 
 # Blogs
 - slug
@@ -99,6 +112,7 @@
 - Comments:
   - name
   - content
+  - timestamps (createdAt, updatedAt, deletedAt)
   - Reactions:
     - like (int)
     - dislike (int)
@@ -106,8 +120,10 @@
   - Replies:
     - name
     - content
+    - timestamps (createdAt, updatedAt, deletedAt)
     - Reactions:
       - like (int)
       - dislike (int)
       - love (int)
-- timestamps
+- timestamps (createdAt, updatedAt, publishedAt, deletedAt)
+
