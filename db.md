@@ -30,12 +30,6 @@
   - name
   - progress (1-100)
   - order (float)
-- Files:
-  - order
-  - alt
-  - path
-  - size
-  - mime type
 - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Projects
@@ -60,12 +54,6 @@
   - type e.g. github, website, youtube
   - link
   - order
-- Attachments:
-  - name
-  - path
-  - size
-  - mime type
-  - order
 - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Requests
@@ -87,6 +75,7 @@
 
 ## Blogs
 - slug (unique)
+- type: event, article, blog
 - title
 - content
 - excerpt
@@ -97,12 +86,6 @@
 - Links:
   - type
   - link
-- Attachments:
-  - name
-  - path
-  - size
-  - mime type
-  - order
 - timestamps (createdAt, updatedAt, publishedAt, deletedAt)
 
 ## Plans
@@ -125,17 +108,11 @@
 - start date
 - end date
 - assigned to: user ids[]
-- Attachments:
-  - name
-  - path
-  - size
-  - mime type
-  - order
 - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Feedback:
   - parent entity: profile, project, blog, plan
-  - parent id (null for feedback to system/platform)
+  - parent id
   - type: feedback, comment, reply
   - user id
   - content
@@ -148,5 +125,17 @@
   - type: like, dislike, love
   - timestamps (createdAt, updatedAt, deletedAt)
 
+## Files:
+  - parent entity: user, profile, project, blog, plan
+  - parent id
+  - order
+  - title
+  - alt
+  - name
+  - path
+  - size
+  - mime type
+  - uploaded by
+  - timestamps (createdAt, updatedAt, deletedAt)
 
 <!-- for all use Use partial unique indexes e.g., { email: 1 }, { unique: true, partialFilterExpression: { deletedAt: null } } -->
