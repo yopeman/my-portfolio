@@ -17,7 +17,7 @@
 - source
 - timestamps (createdAt, updatedAt, deletedAt)
 
-## Profile
+## About
 - bio
 - headline
 - Contacts:
