@@ -1,7 +1,7 @@
 # My Portfolio Database Schema (MongoDB)
 ## Users
 - name
-- phone
+- phone (unique)
 - email (unique)
 - additional contact information (str)
 - password hash
@@ -24,6 +24,7 @@
   - name
   - title
   - link
+  - order
 - skills:
   - category
   - name
@@ -35,22 +36,6 @@
   - path
   - size
   - mime type
-- Comments:
-  - user id
-  - content
-  - timestamps (createdAt, updatedAt, deletedAt)
-  - Reactions:
-    - like: user ids[]
-    - dislike: user ids[]
-    - love: user ids[]
-  - Replies:
-    - user id
-    - content
-    - timestamps (createdAt, updatedAt, deletedAt)
-    - Reactions:
-      - like: user ids[]
-      - dislike: user ids[]
-      - love: user ids[]
 - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Projects
@@ -66,39 +51,21 @@
 - Features:
   - name
   - description
+  - order
 - Stacks:
   - name
   - description
+  - order
 - Links:
   - type e.g. github, website, youtube
   - link
+  - order
 - Attachments:
   - name
   - path
   - size
   - mime type
-- Comments:
-  - user id
-  - content
-  - timestamps (createdAt, updatedAt, deletedAt)
-  - Reactions:
-    - like
-    - dislike
-    - love
-  - Replies:
-    - user id
-    - content
-    - timestamps (createdAt, updatedAt, deletedAt)
-    - Reactions:
-      - like
-      - dislike
-      - love
-- Quotes:
-  - user id
-  - timeline
-  - requirements (str)
-  - min budget
-  - max budget
+  - order
 - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Requests
@@ -108,6 +75,10 @@
 - attached project id
 - status
 - assigned to
+- timeline
+- requirements (str)
+- min budget
+- max budget
 - timestamps (createdAt, readAt, repliedAt, deletedAt)
 
 ## Subscribers
@@ -123,10 +94,6 @@
 - author id
 - status
 - reading time
-- Reactions:
-  - like
-  - dislike
-  - love
 - Links:
   - type
   - link
@@ -135,27 +102,12 @@
   - path
   - size
   - mime type
-- Comments:
-  - user id
-  - content
-  - timestamps (createdAt, updatedAt, deletedAt)
-  - Reactions:
-    - like
-    - dislike
-    - love
-  - Replies:
-    - user id
-    - content
-    - timestamps (createdAt, updatedAt, deletedAt)
-    - Reactions:
-      - like
-      - dislike
-      - love
+  - order
 - timestamps (createdAt, updatedAt, publishedAt, deletedAt)
 
 ## Plans
 - slug (unique)
-- visibility: owner, admin, member, user, guest
+- visibility: [] value in (owner, admin, member, user, guest)
 - period: year, half, quarter, month, week, day
 - year (e.g. 2026)
 - periodNumber
@@ -173,4 +125,28 @@
 - start date
 - end date
 - assigned to: user ids[]
+- Attachments:
+  - name
+  - path
+  - size
+  - mime type
+  - order
 - timestamps (createdAt, updatedAt, deletedAt)
+
+## Feedback:
+  - parent entity: profile, project, blog, plan
+  - parent id (null for feedback to system/platform)
+  - type: feedback, comment, reply
+  - user id
+  - content
+  - timestamps (createdAt, updatedAt, deletedAt)
+
+## Reactions:
+  - parent entity: profile, project, blog, plan, feedback
+  - parent id
+  - user id
+  - type: like, dislike, love
+  - timestamps (createdAt, updatedAt, deletedAt)
+
+
+<!-- for all use Use partial unique indexes e.g., { email: 1 }, { unique: true, partialFilterExpression: { deletedAt: null } } -->
