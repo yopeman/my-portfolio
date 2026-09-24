@@ -1,17 +1,23 @@
-# Users
+# My Portfolio Database Schema (MongoDB)
+## Users
 - name
+- phone
 - email
+- additional contact information (str)
 - password hash
-- role: owner, admin, member
+- role: owner, admin, member, user
 - Permission:
-  - profile: [READ, CREATE, UPDATE, DELETE]
+  - users: [READ, CREATE, UPDATE, DELETE]
+  - profile: [...]
   - project: [...]
   - request: [...]
   - subscriber: [...]
   - blog: [...]
+  - plans: [...]
 - timestamps (createdAt, updatedAt, deletedAt)
+- src
 
-# Profile
+## Profile
 - bio
 - headline
 - Contacts:
@@ -28,9 +34,25 @@
   - path
   - size
   - mime type
+- Comments:
+  - user id
+  - content
+  - timestamps (createdAt, updatedAt, deletedAt)
+  - Reactions:
+    - like: user ids[]
+    - dislike: user ids[]
+    - love: user ids[]
+  - Replies:
+    - user id
+    - content
+    - timestamps (createdAt, updatedAt, deletedAt)
+    - Reactions:
+      - like: user ids[]
+      - dislike: user ids[]
+      - love: user ids[]
 - timestamps (createdAt, updatedAt, deletedAt)
 
-# Projects
+## Projects
 - name
 - slug
 - description
@@ -55,52 +77,48 @@
   - size
   - mime type
 - Comments:
-  - name
+  - user id
   - content
   - timestamps (createdAt, updatedAt, deletedAt)
   - Reactions:
-    - like (int)
-    - dislike (int)
-    - love (int)
+    - like
+    - dislike
+    - love
   - Replies:
-    - name
+    - user id
     - content
     - timestamps (createdAt, updatedAt, deletedAt)
     - Reactions:
-      - like (int)
-      - dislike (int)
-      - love (int)
+      - like
+      - dislike
+      - love
 - Quotes:
-  - name
-  - email
-  - phone
+  - user id
   - timeline
   - requirements (str)
   - min budget
   - max budget
 - timestamps (createdAt, updatedAt, deletedAt)
 
-# Requests
-- name
-- email
-- phone
+## Requests
+- user id
 - message
 - is read
 - attached project id
 - timestamps (createdAt, readAt, deletedAt)
 
-# Subscribers
+## Subscribers
 - email
 - timestamps (createdAt, unsubscribedAt, deletedAt)
 
-# Blogs
+## Blogs
 - slug
 - content
 - tags []
 - Reactions:
-  - like (int)
-  - dislike (int)
-  - love (int)
+  - like
+  - dislike
+  - love
 - Links:
   - type
   - link
@@ -114,16 +132,36 @@
   - content
   - timestamps (createdAt, updatedAt, deletedAt)
   - Reactions:
-    - like (int)
-    - dislike (int)
-    - love (int)
+    - like
+    - dislike
+    - love
   - Replies:
     - name
     - content
     - timestamps (createdAt, updatedAt, deletedAt)
     - Reactions:
-      - like (int)
-      - dislike (int)
+      - like
+      - dislike
       - love (int)
 - timestamps (createdAt, updatedAt, publishedAt, deletedAt)
 
+## Plans
+- slug
+- visibility: owner, admin, member, user, guest
+- period: year, half, quarter, month, week, day
+- year (e.g. 2026)
+- periodNumber
+- parent plan (ObjectId → Plans, null for years)
+- title
+- description
+- goal
+- target
+- Checklists:
+  - title
+  - description
+  - status: pending, in progress, completed, cancelled, failed
+  - timestamps (createdAt, updatedAt, deletedAt)
+- start date
+- end date
+- assigned to: user ids[]
+- timestamps (createdAt, updatedAt, deletedAt)
