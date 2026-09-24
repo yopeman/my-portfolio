@@ -2,20 +2,20 @@
 ## Users
 - name
 - phone
-- email
+- email (unique)
 - additional contact information (str)
 - password hash
 - role: owner, admin, member, user
 - Permission:
   - users: [READ, CREATE, UPDATE, DELETE]
   - profile: [...]
-  - project: [...]
-  - request: [...]
-  - subscriber: [...]
-  - blog: [...]
+  - projects: [...]
+  - requests: [...]
+  - subscribers: [...]
+  - blogs: [...]
   - plans: [...]
+- source
 - timestamps (createdAt, updatedAt, deletedAt)
-- src
 
 ## Profile
 - bio
@@ -27,10 +27,11 @@
 - skills:
   - category
   - name
-  - progress (int e.g 91%)
+  - progress (1-100)
   - order (float)
 - Files:
-  - name
+  - order
+  - alt
   - path
   - size
   - mime type
@@ -54,7 +55,7 @@
 
 ## Projects
 - name
-- slug
+- slug (unique)
 - description
 - problem
 - solution
@@ -105,16 +106,23 @@
 - message
 - is read
 - attached project id
-- timestamps (createdAt, readAt, deletedAt)
+- status
+- assigned to
+- timestamps (createdAt, readAt, repliedAt, deletedAt)
 
 ## Subscribers
-- email
+- email (unique)
 - timestamps (createdAt, unsubscribedAt, deletedAt)
 
 ## Blogs
-- slug
+- slug (unique)
+- title
 - content
+- excerpt
 - tags []
+- author id
+- status
+- reading time
 - Reactions:
   - like
   - dislike
@@ -128,7 +136,7 @@
   - size
   - mime type
 - Comments:
-  - name
+  - user id
   - content
   - timestamps (createdAt, updatedAt, deletedAt)
   - Reactions:
@@ -136,17 +144,17 @@
     - dislike
     - love
   - Replies:
-    - name
+    - user id
     - content
     - timestamps (createdAt, updatedAt, deletedAt)
     - Reactions:
       - like
       - dislike
-      - love (int)
+      - love
 - timestamps (createdAt, updatedAt, publishedAt, deletedAt)
 
 ## Plans
-- slug
+- slug (unique)
 - visibility: owner, admin, member, user, guest
 - period: year, half, quarter, month, week, day
 - year (e.g. 2026)
@@ -160,6 +168,7 @@
   - title
   - description
   - status: pending, in progress, completed, cancelled, failed
+  - order
   - timestamps (createdAt, updatedAt, deletedAt)
 - start date
 - end date
