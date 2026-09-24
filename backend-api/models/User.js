@@ -23,6 +23,9 @@ const userSchema = new Schema(
 );
 
 userSchema.index({ email: 1 }, { unique: true, partialFilterExpression: { deletedAt: null } });
-userSchema.index({ phone: 1 }, { unique: true, partialFilterExpression: { deletedAt: null } });
+userSchema.index(
+  { phone: 1 },
+  { unique: true, partialFilterExpression: { deletedAt: null, phone: { $type: 'string' } } }
+);
 
 export default mongoose.model('User', userSchema);

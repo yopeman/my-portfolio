@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import authRoutes from './auth.routes.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendMail } from '../services/email.service.js';
 import { handleChat } from '../services/chat.service.js';
@@ -6,6 +7,8 @@ import { isDbReady } from '../config/db.js';
 import { env } from '../config/env.js';
 
 const router = Router();
+
+router.use('/api/auth', authRoutes);
 
 router.post('/api/chat', asyncHandler(async (req, res) => {
   const { messages } = req.body;
