@@ -40,7 +40,7 @@ export default function Hero() {
               </div>
               <div>
                 <div className="text-xs text-slate-400 font-semibold uppercase tracking-wider">CGPA</div>
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-100">3.81 / 4.00</div>
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-100">3.8 / 4.0</div>
               </div>
             </div>
             <div className="p-4 rounded-2xl bg-white/80 dark:bg-slate-800/60 night:bg-black/60 border border-slate-200/50 dark:border-slate-700/60 backdrop-blur-sm flex items-center gap-3">
