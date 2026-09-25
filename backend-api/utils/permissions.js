@@ -30,3 +30,15 @@ export const ROLE_DEFAULTS = {
   },
   user: map(RESOURCES, NONE),
 };
+
+export function hasPermission(user, resource, action) {
+  if (!user) return false;
+  if (user.role === 'owner') return true;
+
+  const perms =
+    typeof user.permissions?.get === 'function'
+      ? user.permissions.get(resource)
+      : user.permissions?.[resource];
+
+  return Array.isArray(perms) && perms.includes(action);
+}

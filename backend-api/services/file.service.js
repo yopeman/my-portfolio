@@ -3,18 +3,7 @@ import path from 'path';
 import { env } from '../config/env.js';
 import { getCloudinaryClient } from '../config/cloudinary.js';
 
-export const PARENT_ENTITIES = ['user', 'about', 'project', 'blog', 'plan'];
-
-export function parentResource(entity) {
-  const map = {
-    user: 'users',
-    about: 'about',
-    project: 'projects',
-    blog: 'blogs',
-    plan: 'plans',
-  };
-  return map[entity] || null;
-}
+export { PARENT_ENTITIES, parentResource } from '../utils/entities.js';
 
 export async function persistUpload(file) {
   if (env.uploadDriver === 'cloudinary' && file.buffer) {

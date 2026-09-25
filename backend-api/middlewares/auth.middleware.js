@@ -1,4 +1,5 @@
 import { ApiError } from '../utils/ApiError.js';
+import { hasPermission } from '../utils/permissions.js';
 import { User } from '../models/index.js';
 import { verifyToken } from '../services/auth.service.js';
 
@@ -46,14 +47,7 @@ export async function optionalAuth(req, res, next) {
 export function authorize(resource, action) {
   return (req, res, next) => {
     if (!req.user) return next(ApiError.unauthorized('Authentication required'));
-    if (req.user.role === 'owner') return next();
-
-    const perms = typeof req.user.permissions?.get === 'function'
-      ? req.user.permissions.get(resource)
-      : req.user.permissions?.[resource];
-
-    if (Array.isArray(perms) && perms.includes(action)) return next();
-
+    if (hasPermission(req.user, resource, action)) return next();
     return next(ApiError.forbidden(`Missing permission: ${action} on ${resource}`));
   };
 }

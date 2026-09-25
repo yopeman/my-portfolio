@@ -7,6 +7,8 @@ import subscriberRoutes from './subscriber.routes.js';
 import blogRoutes from './blog.routes.js';
 import planRoutes from './plan.routes.js';
 import fileRoutes from './file.routes.js';
+import feedbackRoutes from './feedback.routes.js';
+import reactionRoutes from './reaction.routes.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendMail } from '../services/email.service.js';
 import { handleChat } from '../services/chat.service.js';
@@ -23,6 +25,8 @@ router.use('/api/subscribers', subscriberRoutes);
 router.use('/api/blogs', blogRoutes);
 router.use('/api/plans', planRoutes);
 router.use('/api/files', fileRoutes);
+router.use('/api/feedback', feedbackRoutes);
+router.use('/api/reactions', reactionRoutes);
 
 router.post('/api/chat', asyncHandler(async (req, res) => {
   const { messages } = req.body;
