@@ -11,6 +11,7 @@ const fileSchema = new Schema(
     alt: { type: String, trim: true },
     name: { type: String, trim: true },
     path: { type: String },
+    storageKey: { type: String },
     size: { type: Number },
     mimeType: { type: String },
     uploadedBy: { type: Schema.Types.ObjectId, ref: 'User' },

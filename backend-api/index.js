@@ -11,6 +11,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+if (env.uploadDriver !== 'cloudinary') {
+  app.use('/uploads', express.static(env.localUploadDir, { fallthrough: true, redirect: false }));
+}
+
 app.use(routes);
 
 app.use(notFoundHandler);
