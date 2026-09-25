@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Inbox, LoaderCircle, Paperclip, Search, UploadCloud, X } from 'lucide-react';
 
 export function Field({ label, hint, error, required = false, children, className = '' }) {
@@ -110,18 +111,19 @@ export function Modal({ open, onClose, title, description, eyebrow, children }) 
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || typeof document === 'undefined') return null;
 
-  return (
-    <div className="fixed inset-0 z-[70] overflow-hidden bg-slate-950/60 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose?.(); }}>
-      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden bg-white/95 shadow-2xl shadow-slate-950/20 backdrop-blur-xl dark:bg-slate-950/95">
+  return createPortal(
+    <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-slate-950/60 p-3 backdrop-blur-sm sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose?.(); }}>
+      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 shadow-2xl shadow-slate-950/20 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/95">
         <div className="flex shrink-0 items-start justify-between gap-5 border-b border-slate-200/70 px-5 py-5 sm:px-7">
           <div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-indigo-600 dark:text-violet-400">{eyebrow}</p><h2 id={titleId} className="mt-1 text-xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-2xl">{title}</h2>{description && <p className="mt-1.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{description}</p>}</div>
           <button type="button" onClick={onClose} aria-label="Close dialog" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white"><X className="h-4 w-4" /></button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-7">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
