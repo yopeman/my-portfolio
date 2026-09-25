@@ -9,6 +9,7 @@ import planRoutes from './plan.routes.js';
 import fileRoutes from './file.routes.js';
 import feedbackRoutes from './feedback.routes.js';
 import reactionRoutes from './reaction.routes.js';
+import userRoutes from './user.routes.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendMail } from '../services/email.service.js';
 import { handleChat } from '../services/chat.service.js';
@@ -27,6 +28,7 @@ router.use('/api/plans', planRoutes);
 router.use('/api/files', fileRoutes);
 router.use('/api/feedback', feedbackRoutes);
 router.use('/api/reactions', reactionRoutes);
+router.use('/api/users', userRoutes);
 
 router.post('/api/chat', asyncHandler(async (req, res) => {
   const { messages } = req.body;

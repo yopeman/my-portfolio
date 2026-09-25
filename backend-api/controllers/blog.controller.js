@@ -3,6 +3,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { pick, slugify } from '../utils/helpers.js';
 import { parsePagination, pageMeta } from '../utils/pagination.js';
+import { hasPermission } from '../utils/permissions.js';
 
 const BLOG_FIELDS = ['slug', 'type', 'title', 'content', 'excerpt', 'tags', 'status', 'links'];
 
@@ -11,18 +12,19 @@ function computeReadingTime(content) {
   return Math.max(1, Math.round(words / 200));
 }
 
-function publicFilter(query) {
+function publicFilter(query, isStaff) {
   const filter = { deletedAt: null };
   if (query.type) filter.type = query.type;
   if (query.tag) filter.tags = query.tag;
   if (query.status) filter.status = query.status;
-  else filter.status = 'published';
+  else if (!isStaff) filter.status = 'published';
   return filter;
 }
 
 export const listBlogs = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
-  const filter = publicFilter(req.query);
+  const isStaff = !!req.user && hasPermission(req.user, 'blogs', 'READ');
+  const filter = publicFilter(req.query, isStaff);
   const [items, total] = await Promise.all([
     Blog.find(filter).sort({ publishedAt: -1, createdAt: -1 }).skip(skip).limit(limit),
     Blog.countDocuments(filter),
