@@ -1,5 +1,11 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes.js';
+import aboutRoutes from './about.routes.js';
+import projectRoutes from './project.routes.js';
+import requestRoutes from './request.routes.js';
+import subscriberRoutes from './subscriber.routes.js';
+import blogRoutes from './blog.routes.js';
+import planRoutes from './plan.routes.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendMail } from '../services/email.service.js';
 import { handleChat } from '../services/chat.service.js';
@@ -9,6 +15,12 @@ import { env } from '../config/env.js';
 const router = Router();
 
 router.use('/api/auth', authRoutes);
+router.use('/api/about', aboutRoutes);
+router.use('/api/projects', projectRoutes);
+router.use('/api/requests', requestRoutes);
+router.use('/api/subscribers', subscriberRoutes);
+router.use('/api/blogs', blogRoutes);
+router.use('/api/plans', planRoutes);
 
 router.post('/api/chat', asyncHandler(async (req, res) => {
   const { messages } = req.body;
