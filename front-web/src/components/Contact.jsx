@@ -10,6 +10,10 @@ import { useStaggerReveal } from '../hooks/useScrollReveal';
 import { BASE_URL } from '../data/constants';
 import { requestsApi } from '../api/requests.js';
 
+function isContactLink(value) {
+  return /^(?:https?:|mailto:|tel:)/i.test(String(value || ''));
+}
+
 export default function Contact({ aboutMe }) {
   const images = aboutMe?.images || [];
   const { ref: staggerRef, isRevealed } = useStaggerReveal({ threshold: 0.1 });
@@ -146,7 +150,7 @@ export default function Contact({ aboutMe }) {
                 <div className="overflow-hidden">
                   <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{item.label}</div>
                   <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
-                    {item.value.startsWith('http') ? (
+                    {isContactLink(item.value) ? (
                       <a href={item.value} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-violet-400 flex items-center gap-0.5 animated-underline">
                         Link <ExternalLink className="w-3 h-3 ml-1" />
                       </a>

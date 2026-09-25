@@ -98,7 +98,8 @@ export const updateFile = asyncHandler(async (req, res) => {
 });
 
 export const deleteFile = asyncHandler(async (req, res) => {
+  const deletedAt = new Date();
+  await File.findByIdAndUpdate(req.fileDoc._id, { deletedAt });
   await deleteFromStorage(req.fileDoc);
-  await File.findByIdAndUpdate(req.fileDoc._id, { deletedAt: new Date() });
   return res.json({ success: true });
 });
