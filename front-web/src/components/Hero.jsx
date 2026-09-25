@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import {
   Terminal, GraduationCap, Award, Calendar
 } from 'lucide-react';

@@ -28,12 +28,12 @@ export default function Contact({ aboutMe }) {
     const lines = markdown.split('\n');
     const items = [];
     lines.forEach(line => {
-      const match = line.match(/^\-\s+([^:]+):\s+(.+)$/);
+      const match = line.match(/^-\s+([^:]+):\s+(.+)$/);
       if (match) {
         let label = match[1].trim();
         let value = match[2].trim();
         if (value.startsWith('[') && value.includes('](')) {
-          const urlMatch = value.match(/\]\(([^\)]+)\)/);
+          const urlMatch = value.match(/\]\(([^)]+)\)/);
           if (urlMatch) value = urlMatch[1];
         }
         items.push({ label, value });

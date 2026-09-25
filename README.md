@@ -1,46 +1,52 @@
 # Portfolio Monorepo
 
-This repository is a personal portfolio monorepo containing a web site, an Expo app, a backend API, and several project pages and assets.
+Personal portfolio monorepo: a full-stack web site (Vite + React), an Express + MongoDB API, an Expo app, and per-project pages/assets.
 
 **Overview**
 
 - **Purpose:** Source for a portfolio site and companion apps showcasing projects and skills.
-- **Contents:** Static web frontend, mobile app, a small Node.js API, project folders, and build scripts.
+- **Architecture:** `front-web` (React 19 / Tailwind v4 / Vite) talks to `backend-api` (Express 5 + Mongoose) which persists to MongoDB. See `IMPLEMENTATION_PLAN.md` for the phased build (all 10 phases complete) and `db.md` for the 10-collection schema.
 
 **Repository Structure**
 
 - [about-me](about-me) — Markdown content and assets used across builds.
-- [backend-api](backend-api) — Minimal Node.js backend serving portfolio data and APIs.
+- [backend-api](backend-api) — Express + MongoDB API (`models`, `controllers`, `routes`, `services`, `middlewares`, `utils`, `config`).
 - [front-app](front-app) — Expo / React Native application (mobile) and example app.
-- [front-web](front-web) — Vite + React web frontend (production site).
+- [front-web](front-web) — Vite + React web frontend (production site) with public pages and a guarded `/admin` dashboard (projects, blogs, requests, subscribers, users, about, plans, files).
 - [projects](projects) — Individual project folders and README files.
 - [scripts](scripts) — Utility scripts (e.g., `compile-portfolio.js`).
 
-**Quick Start (Prerequisites)**
+**Prerequisites**
 
 - Node.js (v16+ recommended)
-- npm or yarn
-- For `front-app`: Expo CLI (`npm install -g expo-cli`) or use `npx expo`
+- MongoDB running locally (default `mongodb://127.0.0.1:27017/portfolio`), or set `MONGODB_URI`
+- npm
 
 **Run Backend (development)**
 
 ```bash
 cd backend-api
 npm install
-npm start
+cp .env.example .env   # fill in secrets (JWT_SECRET required)
+npm run seed           # idempotent: creates owner + about + 13 projects + files
+npm start              # http://localhost:5000
 ```
 
-The backend reads sample data from [backend-api/data/portfolioData.js](backend-api/data/portfolioData.js).
+The API serves `/api/about`, `/api/projects`, `/api/blogs`, `/api/plans`, `/api/requests`, `/api/subscribers`, `/api/auth`, `/api/users`, `/api/files`, `/api/feedback`, `/api/reactions`, plus `/api/contact`, `/api/subscribe`, `/api/chat`.
+
+Default seeded owner login: `owner@test.com` / `ownerpass123` (overridable via `SEED_OWNER_*` in `.env`).
 
 **Run Frontend (web, development)**
 
 ```bash
 cd front-web
 npm install
-npm run dev
+npm run dev            # http://localhost:5173
 ```
 
-Open the local dev server (usually http://localhost:5173) to view the site.
+By default the frontend calls `http://localhost:5000`. Override with `VITE_API_URL` if the API runs elsewhere.
+
+Sign in as the owner (or any user with a staff role) and open `/admin` for the CRUD dashboard.
 
 **Run Front App (Expo)**
 
@@ -50,40 +56,26 @@ npm install
 npx expo start
 ```
 
-Follow the Expo instructions to run on a simulator or a physical device.
-
-**Build (production)**
-
-- Front-web:
+**Build & checks (production)**
 
 ```bash
 cd front-web
-npm run build
+npm run lint           # eslint (expects 0 errors)
+npm run build          # vite production build to dist/
 ```
 
-- Front-app: follow Expo build/eas instructions if producing a native binary.
-- Backend: deploy `backend-api` to your Node host or serverless platform.
+Backend: deploy `backend-api` to your Node host or serverless platform. Set `UPLOAD_DRIVER` to `local` (default) or `cloudinary` (needs `CLOUDINARY_*`).
 
 **Data & Assets**
 
-- Primary portfolio data sources:
-  - [backend-api/data/portfolioData.js](backend-api/data/portfolioData.js)
-  - [front-web/src/data/portfolioData.js](front-web/src/data/portfolioData.js)
-- Content in the `about-me` and `front-web/public/about` folders is used for static pages.
+- MongoDB is the source of truth once seeded; `scripts/seed.js` migrates existing portfolio data and assets (idempotent).
+- Static fallbacks still ship in [front-web/src/data/portfolioData.js](front-web/src/data/portfolioData.js) for offline/guest rendering.
 
 **Scripts**
 
-- `scripts/compile-portfolio.js` — helper script to prepare or compile portfolio data for the site.
-
-**Contributing**
-
-- Open an issue or submit a pull request with changes.
-- Run relevant apps locally to validate changes before submitting.
+- `backend-api` `npm run seed` — idempotent migration of portfolio data into MongoDB.
+- `scripts/compile-portfolio.js` — helper script to prepare or compile portfolio data.
 
 **License**
 
 This repository does not include a LICENSE file. Add one (e.g., MIT) if you want to make licensing explicit.
-
----
-
-If you want, I can: add a `LICENSE`, expand setup instructions with exact Node/npm versions, or add CI and deployment notes.

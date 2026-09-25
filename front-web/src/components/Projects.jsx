@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { staticProjectsAsCards } from '../services/adapters.js';
 import { X, ExternalLink, Github, ChevronLeft, ChevronRight, Code } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -11,13 +11,20 @@ export default function Projects({ projects = staticProjectsAsCards() }) {
   const openProject = (project) => {
     setSelectedProject(project);
     setCurrentImageIndex(0);
-    document.body.style.overflow = 'hidden';
   };
 
   const closeProject = () => {
     setSelectedProject(null);
-    document.body.style.overflow = 'auto';
   };
+
+  useEffect(() => {
+    if (!selectedProject) return undefined;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [selectedProject]);
 
   const nextImage = (e) => {
     e.stopPropagation();
