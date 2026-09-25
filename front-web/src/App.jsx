@@ -1,24 +1,23 @@
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import About from './components/About';
-import Skills from './components/Skills';
-import ProjectsSection from './components/ProjectsSection';
-import Contact from './components/Contact';
-import Footer from './components/Footer';
-import Chatbot from './components/Chatbot';
-import { aboutMe } from './data/portfolioData';
+import { Route, Routes } from 'react-router-dom';
+import GuardedRoute from './components/GuardedRoute.jsx';
+import HomePage from './pages/HomePage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import AdminPage from './pages/admin/AdminPage.jsx';
 
 export default function App() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <Hero />
-      <About aboutMe={aboutMe} />
-      <Skills aboutMe={aboutMe} />
-      <ProjectsSection />
-      <Contact aboutMe={aboutMe} />
-      <Footer />
-      <Chatbot />
-    </div>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/admin"
+        element={
+          <GuardedRoute>
+            <AdminPage />
+          </GuardedRoute>
+        }
+      />
+      <Route path="*" element={<HomePage />} />
+    </Routes>
   );
 }
