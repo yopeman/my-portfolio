@@ -17,4 +17,16 @@ export const filesApi = {
   },
   update: (id, data) => http.patch(`/files/${id}`, data),
   remove: (id) => http.delete(`/files/${id}`),
+  uploadMany: async (parentEntity, parentId, files, onProgress) => {
+    const uploadFiles = files || [];
+    const uploaded = [];
+    for (const [index, file] of uploadFiles.entries()) {
+      const result = await filesApi.upload(parentEntity, parentId, file, (event) => {
+        const percent = event.total ? Math.round((event.loaded / event.total) * 100) : 0;
+        onProgress?.({ file, index, total: uploadFiles.length, percent });
+      });
+      uploaded.push(result.file);
+    }
+    return uploaded;
+  },
 };

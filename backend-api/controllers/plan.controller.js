@@ -1,8 +1,27 @@
-import { Plan } from '../models/index.js';
+import { Plan, File } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { pick, slugify } from '../utils/helpers.js';
 import { parsePagination, pageMeta } from '../utils/pagination.js';
+
+async function attachFiles(plans) {
+  if (!plans.length) return;
+  const ids = plans.map((plan) => plan._id);
+  const files = await File.find({
+    parentEntity: 'plan',
+    parentId: { $in: ids },
+    deletedAt: null,
+  }).sort({ order: 1, createdAt: 1 });
+  const byParent = new Map();
+  for (const file of files) {
+    const key = file.parentId.toString();
+    if (!byParent.has(key)) byParent.set(key, []);
+    byParent.get(key).push(file);
+  }
+  for (const plan of plans) {
+    plan._doc.files = byParent.get(plan._id.toString()) || [];
+  }
+}
 
 const PLAN_FIELDS = [
   'slug',
@@ -39,6 +58,7 @@ export const listPlans = asyncHandler(async (req, res) => {
   const all = await Plan.find(filter).sort({ year: -1, periodNumber: 1, createdAt: -1 });
   const visible = all.filter((p) => canView(p, req.user));
   const items = visible.slice(skip, skip + limit);
+  await attachFiles(items);
 
   return res.json({ items, meta: pageMeta(page, limit, visible.length) });
 });
@@ -46,6 +66,7 @@ export const listPlans = asyncHandler(async (req, res) => {
 export const getPlanBySlug = asyncHandler(async (req, res) => {
   const plan = await Plan.findOne({ slug: req.params.slug, deletedAt: null });
   if (!plan || !canView(plan, req.user)) throw ApiError.notFound('Plan not found');
+  await attachFiles([plan]);
   return res.json({ plan });
 });
 
@@ -64,6 +85,7 @@ export const createPlan = asyncHandler(async (req, res) => {
   }
 
   const plan = await Plan.create(data);
+  await attachFiles([plan]);
   return res.status(201).json({ plan });
 });
 
@@ -79,6 +101,7 @@ export const updatePlan = asyncHandler(async (req, res) => {
   if (!existing) throw ApiError.notFound('Plan not found');
 
   const plan = await Plan.findByIdAndUpdate(existing._id, data, { new: true, runValidators: true });
+  await attachFiles([plan]);
   return res.json({ plan });
 });
 

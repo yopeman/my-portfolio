@@ -1,120 +1,130 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Pencil, Trash2, Plus } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { CalendarRange, Pencil, Plus, Trash2 } from 'lucide-react';
+import { filesApi } from '../../api/files.js';
 import { plansApi } from '../../api/plans.js';
-import { Badge, Field, Select, TextArea, TextInput, ActionButton } from '../../components/admin/form.jsx';
+import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, Badge, Field, LoadingRows, Modal, SearchInput, Select, TableEmpty, TextArea, TextInput } from '../../components/admin/form.jsx';
 
-const EMPTY = { title: '', slug: '', period: 'year', year: new Date().getFullYear(), description: '', goal: '', visibility: ['guest'] };
+const EMPTY = { title: '', slug: '', period: 'year', year: new Date().getFullYear(), description: '', goal: '', visibility: ['guest'], attachments: [], existingFiles: [] };
 const PERIODS = ['year', 'half', 'quarter', 'month', 'week', 'day'];
+const VISIBILITIES = ['guest', 'user', 'member', 'admin', 'owner'];
+
+function toForm(item) {
+  const visibility = Array.isArray(item.visibility) && item.visibility.length > 0 ? item.visibility : ['guest'];
+  return { ...EMPTY, ...item, visibility, checklists: item.checklists || [], attachments: [], existingFiles: item.files || [] };
+}
 
 export default function PlansAdmin() {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [removingFileId, setRemovingFileId] = useState('');
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
 
-  const load = useCallback(() => {
-    plansApi.list({ limit: 100 }).then((r) => setItems(r.items)).catch(() => {});
+  const load = useCallback(async () => {
+    try {
+      const result = await plansApi.list({ limit: 100 });
+      setItems(result.items || []);
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Unable to load plans.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    load();
+    const timer = window.setTimeout(load, 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
 
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const filteredItems = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return query ? items.filter((item) => `${item.title} ${item.slug} ${item.period}`.toLowerCase().includes(query)) : items;
+  }, [items, search]);
+
+  const set = (key) => (e) => setForm((current) => ({ ...current, [key]: e.target.value }));
+
+  async function removeAttachment(file) {
+    if (!window.confirm(`Remove “${file.name || 'this attachment'}” from the plan?`)) return;
+    setRemovingFileId(file._id);
+    setError('');
+    try {
+      await filesApi.remove(file._id);
+      setForm((value) => ({ ...value, existingFiles: value.existingFiles.filter((item) => item._id !== file._id) }));
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to remove attachment.');
+    } finally {
+      setRemovingFileId('');
+    }
+  }
 
   async function save(e) {
     e.preventDefault();
     setSaving(true);
     setError('');
-    const payload = {
-      ...form,
-      year: Number(form.year) || undefined,
-      visibility: typeof form.visibility === 'string' ? [form.visibility] : form.visibility,
-      checklists: form.checklists || [],
-    };
-    delete payload._id;
+    const { attachments, ...payload } = form;
+    delete payload.existingFiles;
+    delete payload.files;
+    payload.year = Number(form.year) || undefined;
+    payload.visibility = Array.isArray(form.visibility) ? form.visibility : [form.visibility];
+    payload.checklists = form.checklists || [];
     try {
-      if (form._id) await plansApi.update(form._id, payload);
-      else await plansApi.create(payload);
+      const result = form._id ? await plansApi.update(form._id, payload) : await plansApi.create(payload);
+      const plan = result.plan;
+      if (attachments.length > 0) {
+        try {
+          await filesApi.uploadMany('plan', plan._id, attachments);
+        } catch {
+          setForm((value) => ({ ...value, _id: plan._id, existingFiles: plan.files || value.existingFiles }));
+          setError('Plan saved, but one or more attachments could not be uploaded. Try again.');
+          return;
+        }
+      }
       setForm(null);
-      load();
+      await load();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to save plan');
+      setError(err.response?.data?.error || 'Failed to save plan.');
     } finally {
       setSaving(false);
     }
   }
 
   async function remove(item) {
-    await plansApi.remove(item._id);
-    load();
+    if (!window.confirm(`Delete “${item.title}”? This cannot be undone.`)) return;
+    setError('');
+    try {
+      await plansApi.remove(item._id);
+      await load();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to delete plan.');
+    }
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Plans</h1>
-        <ActionButton variant="primary" onClick={() => setForm({ ...EMPTY })}>
-          <Plus className="w-4 h-4" /> New plan
-        </ActionButton>
-      </div>
+    <div className="space-y-7">
+      <AdminHeader eyebrow="Workspace / Planning" title="Plans" description="Organize your goals, milestones, and visibility in one place." actions={<ActionButton onClick={() => { setError(''); setForm({ ...EMPTY, visibility: ['guest'], attachments: [], existingFiles: [] }); }}><Plus className="h-4 w-4" /> New plan</ActionButton>} />
+      {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
 
-      {form && (
-        <form onSubmit={save} className="admin-surface rounded-2xl p-5 space-y-4 max-w-2xl">
-          <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">{form._id ? 'Edit plan' : 'New plan'}</h2>
-          {error && <p className="text-sm text-rose-600">{error}</p>}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field label="Title" className="md:col-span-2"><TextInput value={form.title} onChange={set('title')} required /></Field>
-            <Field label="Slug"><TextInput value={form.slug} onChange={set('slug')} placeholder="auto" /></Field>
-            <Field label="Period"><Select value={form.period} onChange={set('period')} options={PERIODS} /></Field>
-            <Field label="Year"><TextInput type="number" value={form.year} onChange={set('year')} /></Field>
-            <Field label="Visibility">
-              <Select value={form.visibility[0] || 'guest'} onChange={(e) => setForm((f) => ({ ...f, visibility: [e.target.value] }))} options={['guest', 'user', 'member', 'admin', 'owner']} />
-            </Field>
-          </div>
-          <Field label="Description"><TextArea rows={2} value={form.description} onChange={set('description')} /></Field>
-          <Field label="Goal"><TextArea rows={2} value={form.goal} onChange={set('goal')} /></Field>
-          <div className="flex gap-2">
-            <ActionButton variant="primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save'}</ActionButton>
-            <ActionButton variant="neutral" type="button" onClick={() => setForm(null)}>Cancel</ActionButton>
-          </div>
-        </form>
-      )}
+      <Modal open={!!form} onClose={() => !saving && setForm(null)} eyebrow={form?._id ? 'Editing plan' : 'New plan'} title="Plan the next milestone" description="Give the plan a clear outcome and audience.">
+        {form && <form onSubmit={save}>
+          <fieldset disabled={saving} className="space-y-6 border-0 p-0">
+            {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
+            <div className="grid gap-5 md:grid-cols-3"><Field label="Title" className="md:col-span-2" required><TextInput value={form.title} onChange={set('title')} required autoFocus /></Field><Field label="Slug"><TextInput value={form.slug} onChange={set('slug')} placeholder="auto" /></Field><Field label="Period"><Select value={form.period} onChange={set('period')} options={PERIODS} /></Field><Field label="Year"><TextInput type="number" value={form.year} onChange={set('year')} /></Field><Field label="Visibility"><Select value={form.visibility?.[0] || 'guest'} onChange={(e) => setForm((value) => ({ ...value, visibility: [e.target.value] }))} options={VISIBILITIES} /></Field></div>
+            <div className="h-px bg-slate-200/70 dark:bg-slate-800/70" />
+            <Field label="Description"><TextArea rows={3} value={form.description} onChange={set('description')} /></Field>
+            <Field label="Goal"><TextArea rows={4} value={form.goal} onChange={set('goal')} /></Field>
+            <AttachmentField label="Plan attachments" hint="Upload images or supporting files here. They will be linked automatically after the plan is created." files={form.attachments} existingFiles={form.existingFiles} onChange={(attachments) => setForm((value) => ({ ...value, attachments }))} onRemoveExisting={(file) => removeAttachment(file)} disabled={saving || !!removingFileId} />
+            <div className="flex justify-end gap-2 border-t border-slate-200/70 pt-5 dark:border-slate-800/70"><ActionButton type="button" variant="neutral" onClick={() => setForm(null)}>Cancel</ActionButton><ActionButton type="submit" loading={saving}>{saving ? 'Saving…' : form._id ? 'Save changes' : 'Create plan'}</ActionButton></div>
+          </fieldset>
+        </form>}
+      </Modal>
 
-      <div className="admin-surface rounded-2xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 dark:bg-slate-800/60 text-left text-xs text-slate-400 uppercase tracking-wider">
-            <tr>
-              <th className="px-4 py-3">Title</th>
-              <th className="px-4 py-3 hidden sm:table-cell">Period</th>
-              <th className="px-4 py-3">Year</th>
-              <th className="px-4 py-3">Visible to</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {items.map((item) => (
-              <tr key={item._id}>
-                <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">{item.title}</td>
-                <td className="px-4 py-3 hidden sm:table-cell"><Badge tone="slate">{item.period}</Badge></td>
-                <td className="px-4 py-3 text-slate-500">{item.year ?? '—'}</td>
-                <td className="px-4 py-3 text-slate-500">{(item.visibility || []).join(', ')}</td>
-                <td className="px-4 py-3 text-right space-x-1">
-                  <ActionButton variant="subtle" onClick={() => setForm({ ...EMPTY, ...item, visibility: item.visibility || ['guest'] })}>
-                    <Pencil className="w-4 h-4" />
-                  </ActionButton>
-                  <ActionButton variant="subtle" onClick={() => remove(item)}>
-                    <Trash2 className="w-4 h-4" />
-                  </ActionButton>
-                </td>
-              </tr>
-            ))}
-            {items.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-10 text-center text-slate-400">No plans yet.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <AdminPanel className="overflow-hidden">
+        <AdminToolbar><div><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">All plans <span className="ml-1 text-xs font-medium text-slate-400">({filteredItems.length})</span></h2><p className="mt-1 text-xs text-slate-400">Search your planning history.</p></div><SearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search plans…" className="w-full sm:w-64" /></AdminToolbar>
+        <div className="overflow-x-auto"><table className="w-full min-w-[700px] text-sm"><thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">Plan</th><th className="hidden px-4 py-3 md:table-cell">Period</th><th className="px-4 py-3">Year</th><th className="px-4 py-3">Visible to</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{loading ? <LoadingRows rows={5} /> : filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-300"><CalendarRange className="h-4 w-4" /></div><p className="font-bold text-slate-800 dark:text-slate-200">{item.title || 'Untitled plan'}</p></div></td><td className="hidden px-4 py-4 md:table-cell"><Badge tone="slate" dot>{item.period}</Badge></td><td className="px-4 py-4 text-slate-500">{item.year ?? '—'}</td><td className="px-4 py-4"><div className="flex flex-wrap gap-1">{(item.visibility || []).map((visibility) => <Badge key={visibility} tone="indigo">{visibility}</Badge>)}</div></td><td className="px-4 py-4 text-right"><div className="flex justify-end gap-1"><ActionButton variant="subtle" aria-label={`Edit ${item.title}`} onClick={() => { setError(''); setForm(toForm(item)); }}><Pencil className="h-4 w-4" /></ActionButton><ActionButton variant="subtle" aria-label={`Delete ${item.title}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton></div></td></tr>)}{!loading && filteredItems.length === 0 && <TableEmpty colSpan={5} icon={CalendarRange} title={search ? 'No matching plans' : 'No plans yet'} description={search ? 'Try a different search term.' : 'Create your first plan to get started.'} />}</tbody></table></div>
+      </AdminPanel>
     </div>
   );
 }

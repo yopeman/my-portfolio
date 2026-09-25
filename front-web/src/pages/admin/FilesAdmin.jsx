@@ -1,153 +1,63 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Trash2, Upload } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FileImage, FolderOpen, Info, Trash2 } from 'lucide-react';
 import { filesApi } from '../../api/files.js';
 import { resolveFileUrl } from '../../services/adapters.js';
-import { useAuth } from '../../contexts/AuthContext.jsx';
-import { Badge, Field, Select, TextInput, ActionButton } from '../../components/admin/form.jsx';
+import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, EmptyState, SearchInput } from '../../components/admin/form.jsx';
 
-const PARENTS = ['project', 'blog', 'about', 'plan'];
+const PARENT_LABELS = { project: 'Project', blog: 'Post', plan: 'Plan', about: 'Profile', user: 'User' };
 
-function parentHref(parentEntity, parentId) {
-  if (!parentId || parentEntity === 'about') return null;
-  const bySlug = { project: '/projects/', blog: '/blogs/' };
-  const prefix = bySlug[parentEntity];
-  if (!prefix) return null;
-  try {
-    return `/admin/${parentEntity}s?q=${parentId}`;
-  } catch {
-    return null;
-  }
+function parentLabel(parentEntity) {
+  if (parentEntity === 'about') return 'Profile asset';
+  return PARENT_LABELS[parentEntity] || 'Attachment';
 }
 
 export default function FilesAdmin() {
-  const { can } = useAuth();
   const [items, setItems] = useState([]);
-  const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({ parentEntity: 'project', parentId: '', title: '', alt: '', file: null });
+  const [search, setSearch] = useState('');
 
-  const load = useCallback(() => {
-    filesApi.list({ limit: 100 }).then((r) => setItems(r.items)).catch(() => {});
+  const load = useCallback(async () => {
+    try {
+      const result = await filesApi.list({ limit: 100 });
+      setItems(result.items || []);
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Unable to load files.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    load();
+    const timer = window.setTimeout(load, 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
 
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
-
-  async function upload(e) {
-    e.preventDefault();
-    if (!form.parentId || !form.file) {
-      setError('Parent ID and file are required.');
-      return;
-    }
-    setUploading(true);
-    setError('');
-    try {
-      await filesApi.upload(form.parentEntity, form.parentId, form.file, undefined, form.title || undefined, form.alt || undefined);
-      setForm({ parentEntity: 'project', parentId: '', title: '', alt: '', file: null });
-      load();
-    } catch (err) {
-      setError(err.response?.data?.error || 'Upload failed');
-    } finally {
-      setUploading(false);
-    }
-  }
+  const filteredItems = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return query ? items.filter((item) => `${item.name} ${item.alt || ''} ${item.parentEntity || ''}`.toLowerCase().includes(query)) : items;
+  }, [items, search]);
 
   async function remove(item) {
-    await filesApi.remove(item._id);
-    load();
+    if (!window.confirm(`Delete “${item.name}”? This cannot be undone.`)) return;
+    setError('');
+    try {
+      await filesApi.remove(item._id);
+      await load();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to delete file.');
+    }
   }
 
   const isImage = (mime) => (mime || '').startsWith('image/');
 
   return (
-    <div className="space-y-5">
-      <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Files</h1>
-
-      {can('about', 'UPDATE') && (
-        <form onSubmit={upload} className="admin-surface rounded-2xl p-5 space-y-4">
-          <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Upload file</h2>
-          {error && <p className="text-sm text-rose-600">{error}</p>}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Field label="Parent entity">
-              <Select value={form.parentEntity} onChange={set('parentEntity')} options={PARENTS} />
-            </Field>
-            <Field label="Parent ID">
-              <TextInput value={form.parentId} onChange={set('parentId')} required placeholder="object id" />
-            </Field>
-            <Field label="Title"><TextInput value={form.title} onChange={set('title')} /></Field>
-            <Field label="File">
-              <input
-                type="file"
-                onChange={(e) => setForm((f) => ({ ...f, file: e.target.files?.[0] || null }))}
-                className="w-full text-sm text-slate-500 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-600 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white"
-              />
-            </Field>
-          </div>
-          <Field label="Alt text (images)">
-            <TextInput value={form.alt} onChange={set('alt')} placeholder="Descriptive alt text" />
-          </Field>
-          <ActionButton variant="primary" type="submit" disabled={uploading}>
-            <Upload className="w-4 h-4" /> {uploading ? 'Uploading…' : 'Upload'}
-          </ActionButton>
-        </form>
-      )}
-
-      <div className="admin-surface rounded-2xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 dark:bg-slate-800/60 text-left text-xs text-slate-400 uppercase tracking-wider">
-            <tr>
-              <th className="px-4 py-3">Preview</th>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3 hidden sm:table-cell">Parent</th>
-              <th className="px-4 py-3 hidden md:table-cell">Size</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {items.map((item) => (
-              <tr key={item._id}>
-                <td className="px-4 py-2">
-                  {isImage(item.mimeType) ? (
-                    <img
-                      src={resolveFileUrl(item.fileUrl || item.path)}
-                      alt={item.alt || item.name}
-                      className="w-14 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-700"
-                    />
-                  ) : (
-                    <span className="inline-flex w-14 h-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-400 uppercase">
-                      {item.name?.split('.').pop()}
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <p className="font-semibold text-slate-800 dark:text-slate-200">{item.alt || item.title || item.name}</p>
-                  <p className="text-xs text-slate-400">{item.name}</p>
-                </td>
-                <td className="px-4 py-3 hidden sm:table-cell">
-                  <Badge tone="indigo">{item.parentEntity}</Badge>
-                  <span className="ml-1 text-xs text-slate-400">{parentHref(item.parentEntity, item.parentId) ?? item.parentId?.slice(0, 8)}</span>
-                </td>
-                <td className="px-4 py-3 hidden md:table-cell text-slate-500">
-                  {item.size != null ? `${(item.size / 1024).toFixed(0)} KB` : '—'}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {can('about', 'DELETE') && (
-                    <ActionButton variant="subtle" onClick={() => remove(item)}>
-                      <Trash2 className="w-4 h-4" />
-                    </ActionButton>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {items.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-10 text-center text-slate-400">No files yet.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-7">
+      <AdminHeader eyebrow="Content / Media" title="Files" description="Review the assets attached to your projects, posts, plans, and profile." actions={<div className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 dark:border-indigo-900/40 dark:bg-indigo-950/40 dark:text-indigo-300">{items.length} assets</div>} />
+      {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
+      <AdminPanel className="flex items-start gap-3 border-indigo-100/80 bg-indigo-50/50 p-4 dark:border-indigo-900/30 dark:bg-indigo-950/20"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300"><Info className="h-4 w-4" /></div><div><p className="text-sm font-bold text-indigo-950 dark:text-indigo-100">Files are managed from their parent content</p><p className="mt-1 text-xs leading-relaxed text-indigo-700/70 dark:text-indigo-200/70">Open a project, post, plan, or About form to upload and remove attachments. The parent record is linked automatically, so no IDs are needed.</p></div></AdminPanel>
+      <AdminPanel className="overflow-hidden"><AdminToolbar><div><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Asset library <span className="ml-1 text-xs font-medium text-slate-400">({filteredItems.length})</span></h2><p className="mt-1 text-xs text-slate-400">Preview, find, and remove uploaded files.</p></div><SearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search files…" className="w-full sm:w-64" /></AdminToolbar>{loading ? <div className="space-y-3 p-5"><div className="h-12 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" /><div className="h-12 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" /></div> : filteredItems.length === 0 ? <EmptyState icon={FolderOpen} title={search ? 'No matching files' : 'No files yet'} description={search ? 'Try another search term.' : 'Upload your first asset from a parent content form.'} /> : <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm"><thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">Preview</th><th className="px-4 py-3">File</th><th className="hidden px-4 py-3 sm:table-cell">Parent</th><th className="hidden px-4 py-3 md:table-cell">Size</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-3">{isImage(item.mimeType) ? <img src={resolveFileUrl(item.fileUrl || item.path)} alt={item.alt || item.name} className="h-11 w-16 rounded-xl border border-slate-200 object-cover dark:border-slate-700" /> : <div className="flex h-11 w-16 items-center justify-center rounded-xl bg-slate-100 text-[10px] font-bold uppercase text-slate-400 dark:bg-slate-800"><FileImage className="h-4 w-4" /></div>}</td><td className="px-4 py-3"><p className="font-bold text-slate-800 dark:text-slate-200">{item.name || 'Untitled file'}</p><p className="mt-0.5 text-xs text-slate-400">{item.alt || item.title || 'No description'}</p></td><td className="hidden px-4 py-3 text-slate-500 sm:table-cell">{parentLabel(item.parentEntity)}</td><td className="hidden px-4 py-3 text-slate-500 md:table-cell">{item.size ? `${Math.round(item.size / 1024)} KB` : '—'}</td><td className="px-4 py-3 text-right"><ActionButton variant="subtle" aria-label={`Delete ${item.name}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton></td></tr>)}</tbody></table></div>}</AdminPanel>
     </div>
   );
 }

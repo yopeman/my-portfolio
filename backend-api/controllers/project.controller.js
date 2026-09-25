@@ -67,6 +67,7 @@ export const createProject = asyncHandler(async (req, res) => {
   if (!data.slug) data.slug = slugify(data.name) || data.name.toLowerCase().replace(/\s+/g, '-');
 
   const project = await Project.create(data);
+  await attachFiles([project]);
   return res.status(201).json({ project });
 });
 
@@ -79,6 +80,7 @@ export const updateProject = asyncHandler(async (req, res) => {
   if (!existing) throw ApiError.notFound('Project not found');
 
   const project = await Project.findByIdAndUpdate(existing._id, data, { new: true, runValidators: true });
+  await attachFiles([project]);
   return res.json({ project });
 });
 

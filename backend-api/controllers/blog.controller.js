@@ -1,9 +1,28 @@
-import { Blog } from '../models/index.js';
+import { Blog, File } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { pick, slugify } from '../utils/helpers.js';
 import { parsePagination, pageMeta } from '../utils/pagination.js';
 import { hasPermission } from '../utils/permissions.js';
+
+async function attachFiles(blogs) {
+  if (!blogs.length) return;
+  const ids = blogs.map((blog) => blog._id);
+  const files = await File.find({
+    parentEntity: 'blog',
+    parentId: { $in: ids },
+    deletedAt: null,
+  }).sort({ order: 1, createdAt: 1 });
+  const byParent = new Map();
+  for (const file of files) {
+    const key = file.parentId.toString();
+    if (!byParent.has(key)) byParent.set(key, []);
+    byParent.get(key).push(file);
+  }
+  for (const blog of blogs) {
+    blog._doc.files = byParent.get(blog._id.toString()) || [];
+  }
+}
 
 const BLOG_FIELDS = ['slug', 'type', 'title', 'content', 'excerpt', 'tags', 'status', 'links'];
 
@@ -29,12 +48,14 @@ export const listBlogs = asyncHandler(async (req, res) => {
     Blog.find(filter).sort({ publishedAt: -1, createdAt: -1 }).skip(skip).limit(limit),
     Blog.countDocuments(filter),
   ]);
+  await attachFiles(items);
   return res.json({ items, meta: pageMeta(page, limit, total) });
 });
 
 export const getBlogBySlug = asyncHandler(async (req, res) => {
   const blog = await Blog.findOne({ slug: req.params.slug, deletedAt: null });
   if (!blog) throw ApiError.notFound('Blog not found');
+  await attachFiles([blog]);
   return res.json({ blog });
 });
 
@@ -50,6 +71,7 @@ export const createBlog = asyncHandler(async (req, res) => {
   if (status === 'published' && !data.publishedAt) data.publishedAt = new Date();
 
   const blog = await Blog.create(data);
+  await attachFiles([blog]);
   return res.status(201).json({ blog });
 });
 
@@ -65,6 +87,7 @@ export const updateBlog = asyncHandler(async (req, res) => {
   if (data.status === 'published' && !existing.publishedAt) data.publishedAt = new Date();
 
   const blog = await Blog.findByIdAndUpdate(existing._id, data, { new: true, runValidators: true });
+  await attachFiles([blog]);
   return res.json({ blog });
 });
 
