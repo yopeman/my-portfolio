@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import { Calendar, ChevronRight, Clock } from 'lucide-react';
+import { Calendar, ChevronRight, Clock, ExternalLink } from 'lucide-react';
 import PublicLayout from '../components/PublicLayout.jsx';
 import AnimatedSection from '../components/AnimatedSection.jsx';
 import ReactionBar from '../components/ReactionBar.jsx';
@@ -115,9 +115,22 @@ export default function BlogDetailPage() {
             <div className="markdown-content max-w-none rounded-3xl glass-subtle p-6 text-base leading-relaxed text-slate-600 shadow-sm sm:p-9 dark:text-slate-300">
               <ReactMarkdown components={markdownComponents}>{blog.content || ''}</ReactMarkdown>
             </div>
-          </AnimatedSection>
+           </AnimatedSection>
 
-          {blog._id && (
+           {(blog.links || []).length > 0 && (
+             <AnimatedSection direction="up" delay={200} className="mt-8">
+               <div className="flex flex-wrap gap-2">
+                 {blog.links.map((link, index) => (
+                   <a key={`${link.type}-${link.link}-${index}`} href={link.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/70 px-3.5 py-2 text-xs font-bold capitalize text-slate-600 transition hover:-translate-y-0.5 hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300 dark:hover:border-violet-700 dark:hover:text-violet-300">
+                     {link.type || 'link'} <ExternalLink className="h-3.5 w-3.5" />
+                   </a>
+                 ))}
+               </div>
+             </AnimatedSection>
+           )}
+
+           {blog._id && (
+
             <AnimatedSection className="mt-12 border-t border-slate-100 pt-8 dark:border-slate-800">
               <ReactionBar parentEntity="blog" parentId={blog._id} />
               <FeedbackSection parentEntity="blog" parentId={blog._id} />

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FolderKanban, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 import { filesApi } from '../../api/files.js';
 import { projectsApi } from '../../api/projects.js';
 import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, Badge, Field, LoadingRows, Modal, SearchInput, Select, TableEmpty, TextArea, TextInput } from '../../components/admin/form.jsx';
@@ -40,10 +41,16 @@ function cleanProjectItems(items, type) {
   return (items || []).filter((item) => (type === 'links' ? item.link?.trim() : item.name?.trim())).map((item, index) => {
     const order = Number(item.order);
     return {
-      ...(type === 'links' ? { type: item.type?.trim() || 'website', link: item.link.trim() } : { name: item.name.trim(), description: item.description?.trim() || '' }),
+      ...(type === 'links' ? { type: item.type?.trim().toLowerCase() || 'website', link: item.link.trim() } : { name: item.name.trim(), description: item.description?.trim() || '' }),
       order: item.order === '' || item.order === undefined || item.order === null || !Number.isFinite(order) ? index : order,
     };
   });
+}
+
+function formatDate(value) {
+  if (!value) return 'Not set';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Not set' : date.toLocaleString();
 }
 
 function RepeaterField({ title, description, items, onAdd, onRemove, children }) {
@@ -58,6 +65,7 @@ function RepeaterField({ title, description, items, onAdd, onRemove, children })
 }
 
 export default function ProjectsAdmin() {
+  const { can } = useAuth();
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -155,8 +163,14 @@ export default function ProjectsAdmin() {
         if (attachments.length > 0) {
           await filesApi.uploadMany('project', project._id, attachments, undefined, attachmentMetadata);
         }
-      } catch {
-        setForm((value) => ({ ...value, _id: project._id }));
+      } catch (uploadError) {
+        const completedFiles = new Set(uploadError.completedFiles || []);
+        setForm((value) => ({
+          ...value,
+          _id: project._id,
+          attachments: value.attachments.filter((file) => !completedFiles.has(file)),
+          attachmentMetadata: value.attachmentMetadata.filter((_, index) => !completedFiles.has(value.attachments[index])),
+        }));
         setError('Project saved, but one or more attachment changes could not be saved. Try again.');
         return;
       }
@@ -182,7 +196,7 @@ export default function ProjectsAdmin() {
 
   return (
     <div className="space-y-7">
-      <AdminHeader eyebrow="Content / Projects" title="Projects" description="Create, refine, and organize the work visitors see first." actions={<ActionButton onClick={openCreate}><Plus className="h-4 w-4" /> New project</ActionButton>} />
+      <AdminHeader eyebrow="Content / Projects" title="Projects" description="Create, refine, and organize the work visitors see first." actions={can('projects', 'CREATE') ? <ActionButton onClick={openCreate}><Plus className="h-4 w-4" /> New project</ActionButton> : null} />
 
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
 
@@ -213,7 +227,13 @@ export default function ProjectsAdmin() {
             <RepeaterField title="Links" description="Add GitHub, website, YouTube, or other project links." items={form.links} onAdd={() => addRepeater('links')} onRemove={(index) => removeRepeater('links', index)}>
               {(item, index) => <div className="grid gap-3 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)_5rem]"><Field label="Type"><TextInput value={item.type} onChange={(event) => updateRepeater('links', index, 'type', event.target.value)} placeholder="github" /></Field><Field label="Link"><TextInput type="url" value={item.link} onChange={(event) => updateRepeater('links', index, 'link', event.target.value)} placeholder="https://…" /></Field><Field label="Order"><TextInput type="number" min="0" value={item.order} onChange={(event) => updateRepeater('links', index, 'order', event.target.value === '' ? '' : Number(event.target.value))} /></Field></div>}
             </RepeaterField>
-            <AttachmentField label="Project files" hint="Upload project images or supporting files. Set title, alt text, and order for each file." files={form.attachments} existingFiles={form.existingFiles} metadata={form.attachmentMetadata} onChange={(attachments) => setForm((value) => ({ ...value, attachments }))} onMetadataChange={(attachmentMetadata) => setForm((value) => ({ ...value, attachmentMetadata }))} onExistingChange={(existingFiles) => setForm((value) => ({ ...value, existingFiles }))} onRemoveExisting={removeAttachment} showMetadata disabled={saving || !!removingFileId} />
+             <div className="grid gap-5 md:grid-cols-3">
+               <Field label="Created at"><TextInput disabled value={formatDate(form.createdAt)} /></Field>
+               <Field label="Updated at"><TextInput disabled value={formatDate(form.updatedAt)} /></Field>
+               <Field label="Deleted at"><TextInput disabled value={formatDate(form.deletedAt)} /></Field>
+             </div>
+             <AttachmentField label="Project files" hint="Upload project images or supporting files. Set title, alt text, and order for each file." files={form.attachments} existingFiles={form.existingFiles} metadata={form.attachmentMetadata} onChange={(attachments) => setForm((value) => ({ ...value, attachments }))} onMetadataChange={(attachmentMetadata) => setForm((value) => ({ ...value, attachmentMetadata }))} onExistingChange={(existingFiles) => setForm((value) => ({ ...value, existingFiles }))} onRemoveExisting={can('projects', 'DELETE') ? removeAttachment : undefined} showMetadata disabled={saving || !!removingFileId || !can('projects', 'UPDATE')} />
+
             <p className="text-[10px] leading-relaxed text-slate-400">Project timestamps and file parent information are generated automatically when the record is saved.</p>
             <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200/70 pt-5 dark:border-slate-800/70"><ActionButton type="button" variant="neutral" onClick={() => setForm(null)}>Cancel</ActionButton><ActionButton type="submit" loading={saving}>{saving ? 'Saving…' : form._id ? 'Save changes' : 'Create project'}</ActionButton></div>
           </fieldset>
@@ -226,7 +246,7 @@ export default function ProjectsAdmin() {
           <table className="w-full min-w-[680px] text-sm">
             <thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">Project</th><th className="hidden px-4 py-3 md:table-cell">Slug</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Order</th><th className="px-4 py-3 text-right">Actions</th></tr></thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {loading ? <LoadingRows rows={5} /> : filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-300"><FolderKanban className="h-4 w-4" /></div><div className="min-w-0"><p className="truncate font-bold text-slate-800 dark:text-slate-200">{item.name || 'Untitled project'}</p><p className="truncate text-xs text-slate-400 md:hidden">{item.slug || 'No slug'}</p></div></div></td><td className="hidden max-w-48 truncate px-4 py-4 text-slate-500 md:table-cell">{item.slug || '—'}</td><td className="px-4 py-4"><Badge tone="indigo" dot>{item.type}</Badge></td><td className="px-4 py-4 font-semibold text-slate-500">{item.order ?? 0}</td><td className="px-4 py-4 text-right"><div className="flex justify-end gap-1"><ActionButton variant="subtle" aria-label={`Edit ${item.name}`} onClick={() => { setError(''); setForm(toForm(item)); }}><Pencil className="h-4 w-4" /></ActionButton><ActionButton variant="subtle" aria-label={`Delete ${item.name}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton></div></td></tr>)}
+              {loading ? <LoadingRows rows={5} /> : filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-300"><FolderKanban className="h-4 w-4" /></div><div className="min-w-0"><p className="truncate font-bold text-slate-800 dark:text-slate-200">{item.name || 'Untitled project'}</p><p className="truncate text-xs text-slate-400 md:hidden">{item.slug || 'No slug'}</p></div></div></td><td className="hidden max-w-48 truncate px-4 py-4 text-slate-500 md:table-cell">{item.slug || '—'}</td><td className="px-4 py-4"><Badge tone="indigo" dot>{item.type}</Badge></td><td className="px-4 py-4 font-semibold text-slate-500">{item.order ?? 0}</td><td className="px-4 py-4 text-right"><div className="flex justify-end gap-1">{can('projects', 'UPDATE') && <ActionButton variant="subtle" aria-label={`Edit ${item.name}`} onClick={() => { setError(''); setForm(toForm(item)); }}><Pencil className="h-4 w-4" /></ActionButton>}{can('projects', 'DELETE') && <ActionButton variant="subtle" aria-label={`Delete ${item.name}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton>}</div></td></tr>)}
               {!loading && filteredItems.length === 0 && <TableEmpty colSpan={5} icon={FolderKanban} title={search ? 'No matching projects' : 'No projects yet'} description={search ? 'Try a different search term.' : 'Create your first project to start building your portfolio.'} />}
             </tbody>
           </table>

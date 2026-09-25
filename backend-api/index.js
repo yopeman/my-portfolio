@@ -12,7 +12,14 @@ app.use(cors());
 app.use(express.json());
 
 if (env.uploadDriver !== 'cloudinary') {
-  app.use('/uploads', express.static(env.localUploadDir, { fallthrough: true, redirect: false }));
+  app.use('/uploads', express.static(env.localUploadDir, {
+    fallthrough: true,
+    redirect: false,
+    setHeaders: (res) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Content-Security-Policy', "sandbox; default-src 'none'");
+    },
+  }));
 }
 
 app.use(routes);

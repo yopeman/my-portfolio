@@ -5,7 +5,11 @@ const { Schema } = mongoose;
 const userSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
-    phone: { type: String, trim: true },
+    phone: {
+      type: String,
+      trim: true,
+      set: (value) => (typeof value === 'string' && value.trim() ? value.trim() : undefined),
+    },
     email: { type: String, required: true, trim: true, lowercase: true },
     additionalContact: { type: String, trim: true },
     bio: { type: String },

@@ -35,7 +35,7 @@ function publicFilter(query, isStaff) {
   const filter = { deletedAt: null };
   if (query.type) filter.type = query.type;
   if (query.tag) filter.tags = query.tag;
-  if (query.status) filter.status = query.status;
+  if (isStaff && query.status) filter.status = query.status;
   else if (!isStaff) filter.status = 'published';
   return filter;
 }
@@ -53,7 +53,10 @@ export const listBlogs = asyncHandler(async (req, res) => {
 });
 
 export const getBlogBySlug = asyncHandler(async (req, res) => {
-  const blog = await Blog.findOne({ slug: req.params.slug, deletedAt: null });
+  const isStaff = !!req.user && hasPermission(req.user, 'blogs', 'READ');
+  const filter = { slug: req.params.slug, deletedAt: null };
+  if (!isStaff) filter.status = 'published';
+  const blog = await Blog.findOne(filter);
   if (!blog) throw ApiError.notFound('Blog not found');
   await attachFiles([blog]);
   return res.json({ blog });
@@ -62,9 +65,9 @@ export const getBlogBySlug = asyncHandler(async (req, res) => {
 export const createBlog = asyncHandler(async (req, res) => {
   const data = pick(req.body, BLOG_FIELDS);
   if (!data.title) throw ApiError.badRequest('title is required');
-  if (!data.slug) data.slug = slugify(data.title) || data.title.toLowerCase().replace(/\s+/g, '-');
+  data.slug = slugify(data.slug || data.title) || String(data.title).toLowerCase().replace(/\s+/g, '-');
 
-  const status = data.status || 'published';
+  const status = data.status || 'draft';
   data.status = status;
   data.author = req.user._id;
   data.readingTime = computeReadingTime(data.content);
@@ -78,11 +81,21 @@ export const createBlog = asyncHandler(async (req, res) => {
 export const updateBlog = asyncHandler(async (req, res) => {
   const data = pick(req.body, BLOG_FIELDS);
   if (Object.keys(data).length === 0) throw ApiError.badRequest('No updatable fields provided');
-  if (data.slug) data.slug = slugify(data.slug) || data.slug;
 
   const existing = await Blog.findOne({ _id: req.params.id, deletedAt: null });
   if (!existing) throw ApiError.notFound('Blog not found');
 
+  if (data.slug !== undefined) {
+    const sourceSlug = String(data.slug || '').trim();
+    if (sourceSlug) data.slug = slugify(sourceSlug) || existing.slug || slugify(data.title || existing.title) || String(data.title || existing.title).toLowerCase().replace(/\s+/g, '-');
+    else if (!existing.slug || (data.title !== undefined && data.title !== existing.title)) {
+      data.slug = slugify(data.title || existing.title) || String(data.title || existing.title).toLowerCase().replace(/\s+/g, '-');
+    } else {
+      delete data.slug;
+    }
+  }
+
+  if (Object.keys(data).length === 0) throw ApiError.badRequest('No updatable fields provided');
   if (data.content !== undefined) data.readingTime = computeReadingTime(data.content);
   if (data.status === 'published' && !existing.publishedAt) data.publishedAt = new Date();
 
@@ -94,6 +107,10 @@ export const updateBlog = asyncHandler(async (req, res) => {
 export const deleteBlog = asyncHandler(async (req, res) => {
   const blog = await Blog.findOne({ _id: req.params.id, deletedAt: null });
   if (!blog) throw ApiError.notFound('Blog not found');
-  await Blog.findByIdAndUpdate(blog._id, { deletedAt: new Date() });
+  const deletedAt = new Date();
+  await Promise.all([
+    Blog.findByIdAndUpdate(blog._id, { deletedAt }),
+    File.updateMany({ parentEntity: 'blog', parentId: blog._id, deletedAt: null }, { $set: { deletedAt } }),
+  ]);
   return res.json({ success: true });
 });

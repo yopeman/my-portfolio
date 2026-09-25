@@ -64,7 +64,7 @@ export const getProjectBySlug = asyncHandler(async (req, res) => {
 export const createProject = asyncHandler(async (req, res) => {
   const data = pick(req.body, PROJECT_FIELDS);
   if (!data.name) throw ApiError.badRequest('name is required');
-  if (!data.slug) data.slug = slugify(data.name) || data.name.toLowerCase().replace(/\s+/g, '-');
+  data.slug = slugify(data.slug || data.name) || String(data.name).toLowerCase().replace(/\s+/g, '-');
 
   const project = await Project.create(data);
   await attachFiles([project]);
@@ -74,11 +74,21 @@ export const createProject = asyncHandler(async (req, res) => {
 export const updateProject = asyncHandler(async (req, res) => {
   const data = pick(req.body, PROJECT_FIELDS);
   if (Object.keys(data).length === 0) throw ApiError.badRequest('No updatable fields provided');
-  if (data.slug) data.slug = slugify(data.slug) || data.slug;
 
   const existing = await Project.findOne({ _id: req.params.id, deletedAt: null });
   if (!existing) throw ApiError.notFound('Project not found');
 
+  if (data.slug !== undefined) {
+    const sourceSlug = String(data.slug || '').trim();
+    if (sourceSlug) data.slug = slugify(sourceSlug) || existing.slug || slugify(data.name || existing.name) || String(data.name || existing.name).toLowerCase().replace(/\s+/g, '-');
+    else if (!existing.slug || (data.name !== undefined && data.name !== existing.name)) {
+      data.slug = slugify(data.name || existing.name) || String(data.name || existing.name).toLowerCase().replace(/\s+/g, '-');
+    } else {
+      delete data.slug;
+    }
+  }
+
+  if (Object.keys(data).length === 0) throw ApiError.badRequest('No updatable fields provided');
   const project = await Project.findByIdAndUpdate(existing._id, data, { new: true, runValidators: true });
   await attachFiles([project]);
   return res.json({ project });
@@ -87,6 +97,10 @@ export const updateProject = asyncHandler(async (req, res) => {
 export const deleteProject = asyncHandler(async (req, res) => {
   const project = await Project.findOne({ _id: req.params.id, deletedAt: null });
   if (!project) throw ApiError.notFound('Project not found');
-  await Project.findByIdAndUpdate(project._id, { deletedAt: new Date() });
+  const deletedAt = new Date();
+  await Promise.all([
+    Project.findByIdAndUpdate(project._id, { deletedAt }),
+    File.updateMany({ parentEntity: 'project', parentId: project._id, deletedAt: null }, { $set: { deletedAt } }),
+  ]);
   return res.json({ success: true });
 });

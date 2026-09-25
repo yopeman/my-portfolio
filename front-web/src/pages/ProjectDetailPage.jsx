@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import { ChevronLeft, ChevronRight, ExternalLink, Github, X, ZoomIn } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Github, X, Youtube, ZoomIn } from 'lucide-react';
 import PublicLayout from '../components/PublicLayout.jsx';
 import AnimatedSection from '../components/AnimatedSection.jsx';
 import ReactionBar from '../components/ReactionBar.jsx';
@@ -110,9 +110,13 @@ export default function ProjectDetailPage() {
               {project.repository && (
                 <a href={project.repository} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700"><Github className="h-4 w-4" /> Repository</a>
               )}
-              {project.website && (
-                <a href={project.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition-all hover:-translate-y-0.5 hover:shadow-xl"><ExternalLink className="h-4 w-4" /> Live demo</a>
-              )}
+               {project.website && (
+                 <a href={project.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition-all hover:-translate-y-0.5 hover:shadow-xl"><ExternalLink className="h-4 w-4" /> Live demo</a>
+               )}
+               {project.youtube && (
+                 <a href={project.youtube} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition-all hover:-translate-y-0.5 dark:border-rose-900/50 dark:bg-slate-900 dark:text-rose-300"><Youtube className="h-4 w-4" /> Video</a>
+               )}
+
             </AnimatedSection>
           </div>
 

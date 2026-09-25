@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FileImage, FolderOpen, Info, Trash2 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 import { filesApi } from '../../api/files.js';
 import { resolveFileUrl } from '../../services/adapters.js';
 import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, EmptyState, SearchInput } from '../../components/admin/form.jsx';
 
 const PARENT_LABELS = { project: 'Project', blog: 'Post', plan: 'Plan', about: 'Profile', user: 'User' };
+const PARENT_RESOURCES = { project: 'projects', blog: 'blogs', plan: 'plans', about: 'about', user: 'users' };
 
 function parentLabel(parentEntity) {
   if (parentEntity === 'about') return 'Profile asset';
@@ -12,6 +14,7 @@ function parentLabel(parentEntity) {
 }
 
 export default function FilesAdmin() {
+  const { can } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -46,18 +49,19 @@ export default function FilesAdmin() {
       await filesApi.remove(item._id);
       await load();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to delete file.');
+      setError(err.response?.data?.error || 'Unable to delete file.');
     }
   }
 
   const isImage = (mime) => (mime || '').startsWith('image/');
+  const canDelete = (item) => can(PARENT_RESOURCES[item.parentEntity] || '', 'DELETE');
 
   return (
     <div className="space-y-7">
       <AdminHeader eyebrow="Content / Media" title="Files" description="Review the assets attached to your projects, posts, plans, and profile." actions={<div className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 dark:border-indigo-900/40 dark:bg-indigo-950/40 dark:text-indigo-300">{items.length} assets</div>} />
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
       <AdminPanel className="flex items-start gap-3 border-indigo-100/80 bg-indigo-50/50 p-4 dark:border-indigo-900/30 dark:bg-indigo-950/20"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300"><Info className="h-4 w-4" /></div><div><p className="text-sm font-bold text-indigo-950 dark:text-indigo-100">Files are managed from their parent content</p><p className="mt-1 text-xs leading-relaxed text-indigo-700/70 dark:text-indigo-200/70">Open a project, post, plan, or About form to upload and remove attachments. The parent record is linked automatically, so no IDs are needed.</p></div></AdminPanel>
-      <AdminPanel className="overflow-hidden"><AdminToolbar><div><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Asset library <span className="ml-1 text-xs font-medium text-slate-400">({filteredItems.length})</span></h2><p className="mt-1 text-xs text-slate-400">Preview, find, and remove uploaded files.</p></div><SearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search files…" className="w-full sm:w-64" /></AdminToolbar>{loading ? <div className="space-y-3 p-5"><div className="h-12 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" /><div className="h-12 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" /></div> : filteredItems.length === 0 ? <EmptyState icon={FolderOpen} title={search ? 'No matching files' : 'No files yet'} description={search ? 'Try another search term.' : 'Upload your first asset from a parent content form.'} /> : <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm"><thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">Preview</th><th className="px-4 py-3">File</th><th className="hidden px-4 py-3 sm:table-cell">Parent</th><th className="hidden px-4 py-3 md:table-cell">Size</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-3">{isImage(item.mimeType) ? <img src={resolveFileUrl(item.fileUrl || item.path)} alt={item.alt || item.name} className="h-11 w-16 rounded-xl border border-slate-200 object-cover dark:border-slate-700" /> : <div className="flex h-11 w-16 items-center justify-center rounded-xl bg-slate-100 text-[10px] font-bold uppercase text-slate-400 dark:bg-slate-800"><FileImage className="h-4 w-4" /></div>}</td><td className="px-4 py-3"><p className="font-bold text-slate-800 dark:text-slate-200">{item.name || 'Untitled file'}</p><p className="mt-0.5 text-xs text-slate-400">{item.alt || item.title || 'No description'}</p></td><td className="hidden px-4 py-3 text-slate-500 sm:table-cell">{parentLabel(item.parentEntity)}</td><td className="hidden px-4 py-3 text-slate-500 md:table-cell">{item.size ? `${Math.round(item.size / 1024)} KB` : '—'}</td><td className="px-4 py-3 text-right"><ActionButton variant="subtle" aria-label={`Delete ${item.name}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton></td></tr>)}</tbody></table></div>}</AdminPanel>
+      <AdminPanel className="overflow-hidden"><AdminToolbar><div><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Asset library <span className="ml-1 text-xs font-medium text-slate-400">({filteredItems.length})</span></h2><p className="mt-1 text-xs text-slate-400">Preview, find, and remove uploaded files.</p></div><SearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search files…" className="w-full sm:w-64" /></AdminToolbar>{loading ? <div className="space-y-3 p-5"><div className="h-12 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" /><div className="h-12 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" /></div> : filteredItems.length === 0 ? <EmptyState icon={FolderOpen} title={search ? 'No matching files' : 'No files yet'} description={search ? 'Try another search term.' : 'Upload your first asset from a parent content form.'} /> : <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm"><thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">Preview</th><th className="px-4 py-3">File</th><th className="hidden px-4 py-3 sm:table-cell">Parent</th><th className="hidden px-4 py-3 md:table-cell">Size</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-3">{isImage(item.mimeType) ? <img src={resolveFileUrl(item.fileUrl || item.path)} alt={item.alt || item.name} className="h-11 w-16 rounded-xl border border-slate-200 object-cover dark:border-slate-700" /> : <div className="flex h-11 w-16 items-center justify-center rounded-xl bg-slate-100 text-[10px] font-bold uppercase text-slate-400 dark:bg-slate-800"><FileImage className="h-4 w-4" /></div>}</td><td className="px-4 py-3"><p className="max-w-56 truncate font-bold text-slate-700 dark:text-slate-200">{item.name || item.title || 'Attachment'}</p><p className="mt-0.5 text-xs text-slate-400">{item.mimeType || 'Unknown type'}</p></td><td className="hidden px-4 py-3 sm:table-cell"><span className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-300">{parentLabel(item.parentEntity)}</span></td><td className="hidden px-4 py-3 text-xs text-slate-500 md:table-cell">{item.size ? `${(item.size / 1024).toFixed(1)} KB` : '—'}</td><td className="px-4 py-3 text-right">{canDelete(item) && <ActionButton variant="subtle" aria-label={`Delete ${item.name || 'file'}`} onClick={() => remove(item)}><Trash2 className="h-3.5 w-3.5" /></ActionButton>}</td></tr>)}</tbody></table></div>}</AdminPanel>
     </div>
   );
 }

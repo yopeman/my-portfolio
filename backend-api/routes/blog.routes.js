@@ -5,7 +5,7 @@ import { authenticate, optionalAuth, authorize } from '../middlewares/auth.middl
 const router = Router();
 
 router.get('/', optionalAuth, blogController.listBlogs);
-router.get('/:slug', blogController.getBlogBySlug);
+router.get('/:slug', optionalAuth, blogController.getBlogBySlug);
 router.post('/', authenticate, authorize('blogs', 'CREATE'), blogController.createBlog);
 router.patch('/:id', authenticate, authorize('blogs', 'UPDATE'), blogController.updateBlog);
 router.delete('/:id', authenticate, authorize('blogs', 'DELETE'), blogController.deleteBlog);

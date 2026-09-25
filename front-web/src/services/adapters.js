@@ -19,6 +19,10 @@ function orderedFiles(files) {
   return [...(files || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
+function orderedItems(items) {
+  return [...(items || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
 export function contactsToMarkdown(contacts) {
   if (!contacts?.length) return '';
   return contacts.map((c) => `- ${c.title || c.name}: ${c.link}`).join('\n');
@@ -38,12 +42,26 @@ export function skillsToMarkdown(skills) {
   return md;
 }
 
+function safeLinks(links) {
+  return (links || []).map((link) => {
+    try {
+      const url = new URL(String(link.link || '').trim());
+      if (!['http:', 'https:', 'mailto:'].includes(url.protocol)) return null;
+      return { ...link, link: url.toString() };
+    } catch {
+      return null;
+    }
+  }).filter(Boolean);
+}
+
 function linksToCard(links) {
-  const card = {};
-  for (const link of links || []) {
-    if (link.type === 'github') card.repository = link.link;
-    if (link.type === 'website') card.website = link.link;
-    if (link.type === 'youtube') card.youtube = link.link;
+  const normalizedLinks = safeLinks(links);
+  const card = { links: normalizedLinks };
+  for (const link of normalizedLinks) {
+    const type = String(link.type || '').toLowerCase();
+    if (type === 'github') card.repository = link.link;
+    if (type === 'website') card.website = link.link;
+    if (type === 'youtube') card.youtube = link.link;
   }
   return card;
 }
@@ -70,8 +88,8 @@ export function projectToCard(project) {
     readme: project.description || project.summary || '',
     problem: project.problem,
     tags,
-    stacks: project.stacks?.length ? project.stacks : tags.map((tag, i) => ({ name: tag, order: i })),
-    features: project.features || [],
+    stacks: project.stacks?.length ? orderedItems(project.stacks) : tags.map((tag, i) => ({ name: tag, order: i })),
+    features: orderedItems(project.features),
     type: project.type || 'product',
     order: project.order,
     ...linksToCard(project.links),
@@ -92,5 +110,6 @@ export function blogToCard(blog) {
     type: blog.type || 'article',
     publishedAt: blog.publishedAt,
     readingTime: blog.readingTime,
+    links: safeLinks(blog.links),
   };
 }

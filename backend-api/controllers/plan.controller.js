@@ -79,7 +79,7 @@ export const getPlanChecklists = asyncHandler(async (req, res) => {
 export const createPlan = asyncHandler(async (req, res) => {
   const data = pick(req.body, PLAN_FIELDS);
   if (!data.title) throw ApiError.badRequest('title is required');
-  if (!data.slug) data.slug = slugify(data.title) || data.title.toLowerCase().replace(/\s+/g, '-');
+  data.slug = slugify(data.slug || data.title) || String(data.title).toLowerCase().replace(/\s+/g, '-');
   if (data.visibility && !Array.isArray(data.visibility)) {
     data.visibility = Array.isArray(req.body.visibility) ? req.body.visibility : [req.body.visibility];
   }
@@ -92,7 +92,6 @@ export const createPlan = asyncHandler(async (req, res) => {
 export const updatePlan = asyncHandler(async (req, res) => {
   const data = pick(req.body, PLAN_FIELDS);
   if (Object.keys(data).length === 0) throw ApiError.badRequest('No updatable fields provided');
-  if (data.slug) data.slug = slugify(data.slug) || data.slug;
   if (data.visibility && !Array.isArray(data.visibility)) {
     data.visibility = [data.visibility];
   }
@@ -100,6 +99,17 @@ export const updatePlan = asyncHandler(async (req, res) => {
   const existing = await Plan.findOne({ _id: req.params.id, deletedAt: null });
   if (!existing) throw ApiError.notFound('Plan not found');
 
+  if (data.slug !== undefined) {
+    const sourceSlug = String(data.slug || '').trim();
+    if (sourceSlug) data.slug = slugify(sourceSlug) || existing.slug || slugify(data.title || existing.title) || String(data.title || existing.title).toLowerCase().replace(/\s+/g, '-');
+    else if (!existing.slug || (data.title !== undefined && data.title !== existing.title)) {
+      data.slug = slugify(data.title || existing.title) || String(data.title || existing.title).toLowerCase().replace(/\s+/g, '-');
+    } else {
+      delete data.slug;
+    }
+  }
+
+  if (Object.keys(data).length === 0) throw ApiError.badRequest('No updatable fields provided');
   const plan = await Plan.findByIdAndUpdate(existing._id, data, { new: true, runValidators: true });
   await attachFiles([plan]);
   return res.json({ plan });
@@ -108,6 +118,10 @@ export const updatePlan = asyncHandler(async (req, res) => {
 export const deletePlan = asyncHandler(async (req, res) => {
   const plan = await Plan.findOne({ _id: req.params.id, deletedAt: null });
   if (!plan) throw ApiError.notFound('Plan not found');
-  await Plan.findByIdAndUpdate(plan._id, { deletedAt: new Date() });
+  const deletedAt = new Date();
+  await Promise.all([
+    Plan.findByIdAndUpdate(plan._id, { deletedAt }),
+    File.updateMany({ parentEntity: 'plan', parentId: plan._id, deletedAt: null }, { $set: { deletedAt } }),
+  ]);
   return res.json({ success: true });
 });

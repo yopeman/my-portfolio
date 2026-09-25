@@ -21,14 +21,22 @@ export const filesApi = {
   uploadMany: async (parentEntity, parentId, files, onProgress, metadata = []) => {
     const uploadFiles = files || [];
     const uploaded = [];
-    for (const [index, file] of uploadFiles.entries()) {
-      const fileMetadata = Array.isArray(metadata) ? metadata[index] || {} : metadata;
-      const result = await filesApi.upload(parentEntity, parentId, file, (event) => {
-        const percent = event.total ? Math.round((event.loaded / event.total) * 100) : 0;
-        onProgress?.({ file, index, total: uploadFiles.length, percent });
-      }, fileMetadata);
-      uploaded.push(result.file);
+    const completedFiles = [];
+    try {
+      for (const [index, file] of uploadFiles.entries()) {
+        const fileMetadata = Array.isArray(metadata) ? metadata[index] || {} : metadata;
+        const result = await filesApi.upload(parentEntity, parentId, file, (event) => {
+          const percent = event.total ? Math.round((event.loaded / event.total) * 100) : 0;
+          onProgress?.({ file, index, total: uploadFiles.length, percent });
+        }, fileMetadata);
+        uploaded.push(result.file);
+        completedFiles.push(file);
+      }
+      return uploaded;
+    } catch (error) {
+      error.uploaded = uploaded;
+      error.completedFiles = completedFiles;
+      throw error;
     }
-    return uploaded;
   },
 };

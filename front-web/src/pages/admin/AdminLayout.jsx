@@ -14,7 +14,7 @@ const NAV_GROUPS = [
     items: [
       { to: '/admin/projects', label: 'Projects', icon: FolderKanban, resource: 'projects' },
       { to: '/admin/blogs', label: 'Blogs', icon: FileText, resource: 'blogs' },
-      { to: '/admin/files', label: 'Files', icon: ImageIcon },
+      { to: '/admin/files', label: 'Files', icon: ImageIcon, roles: ['owner', 'admin'] },
     ],
   },
   {
@@ -45,8 +45,8 @@ export default function AdminLayout() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const visibleGroups = useMemo(
-    () => NAV_GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => !item.resource || can(item.resource, 'READ')) })).filter((group) => group.items.length > 0),
-    [can],
+    () => NAV_GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => (!item.resource || can(item.resource, 'READ')) && (!item.roles || item.roles.includes(user?.role))) })).filter((group) => group.items.length > 0),
+    [can, user?.role],
   );
   const currentItem = ALL_NAV.find((item) => item.to === '/admin' ? location.pathname === '/admin' : location.pathname.startsWith(item.to));
 

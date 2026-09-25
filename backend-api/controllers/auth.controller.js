@@ -1,12 +1,14 @@
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { User } from '../models/index.js';
+import { RESOURCES, hasPermission } from '../utils/permissions.js';
 import {
   hashPassword,
   comparePassword,
   signToken,
   sanitizeUser,
   defaultPermissionsForRole,
+  isValidPassword,
 } from '../services/auth.service.js';
 
 export const register = asyncHandler(async (req, res) => {
@@ -15,8 +17,8 @@ export const register = asyncHandler(async (req, res) => {
   if (!name || !email || !password) {
     throw ApiError.badRequest('name, email, and password are required');
   }
-  if (String(password).length < 8) {
-    throw ApiError.badRequest('password must be at least 8 characters');
+  if (!isValidPassword(password)) {
+    throw ApiError.badRequest('password must be between 8 characters and 72 bytes');
   }
 
   let finalRole = 'user';
@@ -32,13 +34,18 @@ export const register = asyncHandler(async (req, res) => {
     }
   }
 
+  const permissions = defaultPermissionsForRole(finalRole);
+  if (finalRole !== 'user' && !RESOURCES.every((resource) => permissions[resource].every((action) => hasPermission(req.user, resource, action)))) {
+    throw ApiError.forbidden('You cannot grant permissions you do not have');
+  }
+
   const user = await User.create({
     name,
     email,
     phone,
     passwordHash: await hashPassword(password),
     role: finalRole,
-    permissions: req.body.permissions ?? defaultPermissionsForRole(finalRole),
+    permissions,
     source: req.body.source || 'credentials',
   });
 
@@ -76,7 +83,7 @@ export const updateMe = asyncHandler(async (req, res) => {
     if (!(await comparePassword(currentPassword, req.user.passwordHash))) {
       throw ApiError.badRequest('currentPassword is incorrect');
     }
-    if (String(newPassword).length < 8) throw ApiError.badRequest('new password must be at least 8 characters');
+    if (!isValidPassword(newPassword)) throw ApiError.badRequest('new password must be between 8 characters and 72 bytes');
     updates.passwordHash = await hashPassword(newPassword);
   }
 

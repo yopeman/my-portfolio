@@ -6,7 +6,7 @@ import { createUploadMiddleware } from '../config/storage.js';
 
 const router = Router();
 
-router.get('/', fileController.listFiles);
+router.get('/', authenticate, fileController.authorizeLibrary, fileController.listFiles);
 
 router.post(
   '/',

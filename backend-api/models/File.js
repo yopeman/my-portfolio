@@ -20,6 +20,22 @@ const fileSchema = new Schema(
   { timestamps: true }
 );
 
+fileSchema.set('toJSON', {
+  transform: (_doc, ret) => {
+    delete ret.storageKey;
+    delete ret.__v;
+    return ret;
+  },
+});
+
+fileSchema.set('toObject', {
+  transform: (_doc, ret) => {
+    delete ret.storageKey;
+    delete ret.__v;
+    return ret;
+  },
+});
+
 fileSchema.index({ parentEntity: 1, parentId: 1, order: 1 });
 fileSchema.index({ deletedAt: 1 });
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FileText, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 import { filesApi } from '../../api/files.js';
 import { blogsApi } from '../../api/blogs.js';
 import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, Badge, Field, LoadingRows, Modal, SearchInput, Select, TableEmpty, TextArea, TextInput } from '../../components/admin/form.jsx';
@@ -32,7 +33,7 @@ function toForm(item) {
 }
 
 function cleanLinks(links) {
-  return (links || []).filter((link) => link.link?.trim()).map((link) => ({ type: link.type?.trim() || 'website', link: link.link.trim() }));
+  return (links || []).filter((link) => link.link?.trim()).map((link) => ({ type: link.type?.trim().toLowerCase() || 'website', link: link.link.trim() }));
 }
 
 function readingTimeLabel(item) {
@@ -52,6 +53,12 @@ function publishedAtLabel(value) {
   return Number.isNaN(date.getTime()) ? 'Set when published' : date.toLocaleString();
 }
 
+function formatDate(value) {
+  if (!value) return 'Not set';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Not set' : date.toLocaleString();
+}
+
 function RepeaterField({ title, description, items, onAdd, onRemove, children }) {
   return (
     <div className="rounded-2xl border border-slate-200/70 bg-slate-50/50 p-4 dark:border-slate-800/70 dark:bg-slate-900/30">
@@ -64,6 +71,7 @@ function RepeaterField({ title, description, items, onAdd, onRemove, children })
 }
 
 export default function BlogsAdmin() {
+  const { can } = useAuth();
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -75,7 +83,7 @@ export default function BlogsAdmin() {
 
   const load = useCallback(async () => {
     try {
-      const result = await blogsApi.list({ limit: 100 });
+      const result = await blogsApi.list({ limit: 100, ...(status ? { status } : {}) });
       setItems(result.items || []);
       setError('');
     } catch (err) {
@@ -83,7 +91,7 @@ export default function BlogsAdmin() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [status]);
 
   useEffect(() => {
     const timer = window.setTimeout(load, 0);
@@ -142,8 +150,14 @@ export default function BlogsAdmin() {
         if (attachments.length > 0) {
           await filesApi.uploadMany('blog', blog._id, attachments, undefined, attachmentMetadata);
         }
-      } catch {
-        setForm((value) => ({ ...value, _id: blog._id }));
+      } catch (uploadError) {
+        const completedFiles = new Set(uploadError.completedFiles || []);
+        setForm((value) => ({
+          ...value,
+          _id: blog._id,
+          attachments: value.attachments.filter((file) => !completedFiles.has(file)),
+          attachmentMetadata: value.attachmentMetadata.filter((_, index) => !completedFiles.has(value.attachments[index])),
+        }));
         setError('Post saved, but one or more attachment changes could not be saved. Try again.');
         return;
       }
@@ -169,7 +183,7 @@ export default function BlogsAdmin() {
 
   return (
     <div className="space-y-7">
-      <AdminHeader eyebrow="Content / Writing" title="Blogs" description="Shape your ideas into clear, useful stories for your audience." actions={<ActionButton onClick={() => { setError(''); setForm(emptyBlog()); }}><Plus className="h-4 w-4" /> New post</ActionButton>} />
+      <AdminHeader eyebrow="Content / Writing" title="Blogs" description="Shape your ideas into clear, useful stories for your audience." actions={can('blogs', 'CREATE') ? <ActionButton onClick={() => { setError(''); setForm(emptyBlog()); }}><Plus className="h-4 w-4" /> New post</ActionButton> : null} />
 
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
 
@@ -195,7 +209,13 @@ export default function BlogsAdmin() {
               <Field label="Reading time" hint="Calculated from content automatically."><TextInput disabled value={readingTimeLabel(form)} /></Field>
               <Field label="Published at" hint="Set automatically when first published."><TextInput disabled value={publishedAtLabel(form.publishedAt)} /></Field>
             </div>
-            <AttachmentField label="Post files" hint="Upload images or supporting files. Set title, alt text, and order for each file." files={form.attachments} existingFiles={form.existingFiles} metadata={form.attachmentMetadata} onChange={(attachments) => setForm((value) => ({ ...value, attachments }))} onMetadataChange={(attachmentMetadata) => setForm((value) => ({ ...value, attachmentMetadata }))} onExistingChange={(existingFiles) => setForm((value) => ({ ...value, existingFiles }))} onRemoveExisting={removeAttachment} showMetadata disabled={saving || !!removingFileId} />
+             <div className="grid gap-5 md:grid-cols-3">
+               <Field label="Created at"><TextInput disabled value={formatDate(form.createdAt)} /></Field>
+               <Field label="Updated at"><TextInput disabled value={formatDate(form.updatedAt)} /></Field>
+               <Field label="Deleted at"><TextInput disabled value={formatDate(form.deletedAt)} /></Field>
+             </div>
+             <AttachmentField label="Post files" hint="Upload images or supporting files. Set title, alt text, and order for each file." files={form.attachments} existingFiles={form.existingFiles} metadata={form.attachmentMetadata} onChange={(attachments) => setForm((value) => ({ ...value, attachments }))} onMetadataChange={(attachmentMetadata) => setForm((value) => ({ ...value, attachmentMetadata }))} onExistingChange={(existingFiles) => setForm((value) => ({ ...value, existingFiles }))} onRemoveExisting={can('blogs', 'DELETE') ? removeAttachment : undefined} showMetadata disabled={saving || !!removingFileId || !can('blogs', 'UPDATE')} />
+
             <p className="text-[10px] leading-relaxed text-slate-400">Created, updated, deleted, and file timestamp fields are generated automatically by the backend.</p>
             <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200/70 pt-5 dark:border-slate-800/70"><ActionButton type="button" variant="neutral" onClick={() => setForm(null)}>Cancel</ActionButton><ActionButton type="submit" loading={saving}>{saving ? 'Saving…' : form._id ? 'Save changes' : 'Create post'}</ActionButton></div>
           </fieldset>
@@ -203,8 +223,8 @@ export default function BlogsAdmin() {
       </Modal>
 
       <AdminPanel className="overflow-hidden">
-        <AdminToolbar><div><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">All posts <span className="ml-1 text-xs font-medium text-slate-400">({filteredItems.length})</span></h2><p className="mt-1 text-xs text-slate-400">Search, filter, and manage your writing.</p></div><div className="flex flex-col gap-2 sm:flex-row"><SearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search posts…" className="w-full sm:w-56" /><Select value={status} onChange={(e) => setStatus(e.target.value)} options={[{ value: '', label: 'All statuses' }, { value: 'published', label: 'Published' }, { value: 'draft', label: 'Drafts' }]} className="w-full sm:w-36" /></div></AdminToolbar>
-        <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-sm"><thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">Post</th><th className="hidden px-4 py-3 md:table-cell">Slug</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{loading ? <LoadingRows rows={5} /> : filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300"><FileText className="h-4 w-4" /></div><div className="min-w-0"><p className="truncate font-bold text-slate-800 dark:text-slate-200">{item.title || 'Untitled post'}</p><p className="truncate text-xs text-slate-400 md:hidden">{item.slug || 'No slug'}</p></div></div></td><td className="hidden max-w-48 truncate px-4 py-4 text-slate-500 md:table-cell">{item.slug || '—'}</td><td className="px-4 py-4"><Badge tone={TYPE_TONE[item.type] || 'slate'} dot>{item.type}</Badge></td><td className="px-4 py-4"><Badge tone={STATUS_TONE[item.status] || 'slate'} dot>{item.status}</Badge></td><td className="px-4 py-4 text-right"><div className="flex justify-end gap-1"><ActionButton variant="subtle" aria-label={`Edit ${item.title}`} onClick={() => { setError(''); setForm(toForm(item)); }}><Pencil className="h-4 w-4" /></ActionButton><ActionButton variant="subtle" aria-label={`Delete ${item.title}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton></div></td></tr>)}{!loading && filteredItems.length === 0 && <TableEmpty colSpan={5} icon={FileText} title={search || status ? 'No matching posts' : 'No posts yet'} description={search || status ? 'Try another search or filter.' : 'Create your first post to get started.'} />}</tbody></table></div>
+        <AdminToolbar><div><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">All posts <span className="ml-1 text-xs font-medium text-slate-400">({filteredItems.length})</span></h2><p className="mt-1 text-xs text-slate-400">Search, filter, and manage your writing.</p></div><div className="flex flex-col gap-2 sm:flex-row"><SearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search posts…" className="w-full sm:w-56" /><Select value={status} onChange={(e) => setStatus(e.target.value)} options={[{ value: '', label: 'All statuses' }, { value: 'published', label: 'Published' }, { value: 'draft', label: 'Drafts' }, { value: 'archived', label: 'Archived' }]} className="w-full sm:w-36" /></div></AdminToolbar>
+        <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-sm"><thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">Post</th><th className="hidden px-4 py-3 md:table-cell">Slug</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{loading ? <LoadingRows rows={5} /> : filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300"><FileText className="h-4 w-4" /></div><div className="min-w-0"><p className="truncate font-bold text-slate-800 dark:text-slate-200">{item.title || 'Untitled post'}</p><p className="truncate text-xs text-slate-400 md:hidden">{item.slug || 'No slug'}</p></div></div></td><td className="hidden max-w-48 truncate px-4 py-4 text-slate-500 md:table-cell">{item.slug || '—'}</td><td className="px-4 py-4"><Badge tone={TYPE_TONE[item.type] || 'slate'} dot>{item.type}</Badge></td><td className="px-4 py-4"><Badge tone={STATUS_TONE[item.status] || 'slate'} dot>{item.status}</Badge></td><td className="px-4 py-4 text-right"><div className="flex justify-end gap-1">{can('blogs', 'UPDATE') && <ActionButton variant="subtle" aria-label={`Edit ${item.title}`} onClick={() => { setError(''); setForm(toForm(item)); }}><Pencil className="h-4 w-4" /></ActionButton>}{can('blogs', 'DELETE') && <ActionButton variant="subtle" aria-label={`Delete ${item.title}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton>}</div></td></tr>)}{!loading && filteredItems.length === 0 && <TableEmpty colSpan={5} icon={FileText} title={search || status ? 'No matching posts' : 'No posts yet'} description={search || status ? 'Try another search or filter.' : 'Create your first post to get started.'} />}</tbody></table></div>
       </AdminPanel>
     </div>
   );
