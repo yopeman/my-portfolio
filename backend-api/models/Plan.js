@@ -46,7 +46,22 @@ const planSchema = new Schema(
   { timestamps: true }
 );
 
+planSchema.set('toJSON', {
+  transform: (_doc, ret) => {
+    delete ret.__v;
+    return ret;
+  },
+});
+
+planSchema.set('toObject', {
+  transform: (_doc, ret) => {
+    delete ret.__v;
+    return ret;
+  },
+});
+
 planSchema.index({ slug: 1 }, { unique: true, partialFilterExpression: { deletedAt: null } });
+planSchema.index({ parentPlan: 1, deletedAt: 1 });
 planSchema.index({ period: 1, year: 1, periodNumber: 1 });
 
 export default mongoose.model('Plan', planSchema);

@@ -5,6 +5,8 @@ import { authenticate, optionalAuth, authorize } from '../middlewares/auth.middl
 const router = Router();
 
 router.get('/', optionalAuth, planController.listPlans);
+router.get('/options', authenticate, authorize('plans', 'READ'), planController.getPlanOptions);
+router.get('/assignees', authenticate, authorize('plans', 'READ'), planController.getPlanAssignees);
 router.get('/:slug/checklists', optionalAuth, planController.getPlanChecklists);
 router.get('/:slug', optionalAuth, planController.getPlanBySlug);
 router.post('/', authenticate, authorize('plans', 'CREATE'), planController.createPlan);
