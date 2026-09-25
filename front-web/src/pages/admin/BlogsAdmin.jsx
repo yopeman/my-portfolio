@@ -4,12 +4,63 @@ import { filesApi } from '../../api/files.js';
 import { blogsApi } from '../../api/blogs.js';
 import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, Badge, Field, LoadingRows, Modal, SearchInput, Select, TableEmpty, TextArea, TextInput } from '../../components/admin/form.jsx';
 
-const EMPTY = { title: '', slug: '', type: 'article', status: 'draft', excerpt: '', content: '', tags: '', attachments: [], existingFiles: [] };
+const linkDefaults = { type: '', link: '' };
 const TYPE_TONE = { article: 'indigo', blog: 'green', event: 'amber' };
-const STATUS_TONE = { published: 'green', draft: 'amber' };
+const STATUS_TONE = { published: 'green', draft: 'amber', archived: 'slate' };
+
+function emptyBlog() {
+  return { title: '', slug: '', type: 'article', status: 'draft', excerpt: '', content: '', tags: '', author: '', readingTime: 0, publishedAt: null, links: [{ ...linkDefaults }], attachments: [], attachmentMetadata: [], existingFiles: [], originalFiles: [] };
+}
+
+function repeaterItems(items) {
+  if (!Array.isArray(items) || items.length === 0) return [{ ...linkDefaults }];
+  return items.map((item) => ({ ...linkDefaults, ...(item || {}) }));
+}
 
 function toForm(item) {
-  return { ...EMPTY, ...item, tags: (item.tags || []).join(', '), attachments: [], existingFiles: item.files || [] };
+  const existingFiles = (item.files || []).map((file) => ({ ...file }));
+  return {
+    ...emptyBlog(),
+    ...item,
+    tags: (item.tags || []).join(', '),
+    links: repeaterItems(item.links),
+    attachments: [],
+    attachmentMetadata: [],
+    existingFiles,
+    originalFiles: existingFiles.map((file) => ({ ...file })),
+  };
+}
+
+function cleanLinks(links) {
+  return (links || []).filter((link) => link.link?.trim()).map((link) => ({ type: link.type?.trim() || 'website', link: link.link.trim() }));
+}
+
+function readingTimeLabel(item) {
+  const words = String(item.content || '').trim().split(/\s+/).filter(Boolean).length;
+  return `${item.readingTime || Math.max(1, Math.round(words / 200))} min`;
+}
+
+function authorLabel(author) {
+  if (!author) return 'Assigned automatically';
+  if (typeof author === 'object') return author.name || author.email || author._id || 'Assigned author';
+  return author;
+}
+
+function publishedAtLabel(value) {
+  if (!value) return 'Set when published';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Set when published' : date.toLocaleString();
+}
+
+function RepeaterField({ title, description, items, onAdd, onRemove, children }) {
+  return (
+    <div className="rounded-2xl border border-slate-200/70 bg-slate-50/50 p-4 dark:border-slate-800/70 dark:bg-slate-900/30">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">{title}</h3><p className="mt-1 text-xs text-slate-400">{description}</p></div><ActionButton type="button" variant="neutral" onClick={onAdd}><Plus className="h-3.5 w-3.5" /> Add {title}</ActionButton></div>
+      <div className="mt-4 space-y-3">
+        {items.map((item, index) => <div key={`${title}-${index}`} className="rounded-xl border border-slate-200/70 bg-white/80 p-4 dark:border-slate-800/70 dark:bg-slate-900/60"><div className="mb-3 flex justify-end"><ActionButton type="button" variant="subtle" onClick={() => onRemove(index)} aria-label={`Remove ${title} ${index + 1}`}><Trash2 className="h-3.5 w-3.5" /></ActionButton></div>{children(item, index)}</div>)}
+      </div>
+    </div>
+  );
 }
 
 export default function BlogsAdmin() {
@@ -49,6 +100,10 @@ export default function BlogsAdmin() {
 
   const set = (key) => (e) => setForm((current) => ({ ...current, [key]: e.target.value }));
 
+  const updateLink = (index, key, value) => setForm((current) => ({ ...current, links: current.links.map((link, linkIndex) => linkIndex === index ? { ...link, [key]: value } : link) }));
+  const addLink = () => setForm((current) => ({ ...current, links: [...current.links, { ...linkDefaults }] }));
+  const removeLink = (index) => setForm((current) => ({ ...current, links: current.links.filter((_, linkIndex) => linkIndex !== index) }));
+
   async function removeAttachment(file) {
     if (!window.confirm(`Remove “${file.name || 'this attachment'}” from the post?`)) return;
     setRemovingFileId(file._id);
@@ -67,21 +122,30 @@ export default function BlogsAdmin() {
     e.preventDefault();
     setSaving(true);
     setError('');
-    const { attachments, ...payload } = form;
-    delete payload.existingFiles;
+    const { attachments, attachmentMetadata, existingFiles, originalFiles, ...payload } = form;
+    delete payload._id;
     delete payload.files;
     payload.tags = form.tags.split(',').map((tag) => tag.trim()).filter(Boolean);
+    payload.links = cleanLinks(form.links);
     try {
       const result = form._id ? await blogsApi.update(form._id, payload) : await blogsApi.create(payload);
       const blog = result.blog;
-      if (attachments.length > 0) {
-        try {
-          await filesApi.uploadMany('blog', blog._id, attachments);
-        } catch {
-          setForm((value) => ({ ...value, _id: blog._id, existingFiles: blog.files || value.existingFiles }));
-          setError('Post saved, but one or more attachments could not be uploaded. Try again.');
-          return;
+      const originalById = new Map((originalFiles || []).map((file) => [file._id, file]));
+      const changedFiles = (existingFiles || []).filter((file) => {
+        const original = originalById.get(file._id);
+        return original && ['order', 'title', 'alt'].some((key) => String(file[key] ?? '') !== String(original[key] ?? ''));
+      });
+      try {
+        if (changedFiles.length > 0) {
+          await Promise.all(changedFiles.map((file) => filesApi.update(file._id, { order: Number(file.order) || 0, title: file.title || '', alt: file.alt || '' })));
         }
+        if (attachments.length > 0) {
+          await filesApi.uploadMany('blog', blog._id, attachments, undefined, attachmentMetadata);
+        }
+      } catch {
+        setForm((value) => ({ ...value, _id: blog._id }));
+        setError('Post saved, but one or more attachment changes could not be saved. Try again.');
+        return;
       }
       setForm(null);
       await load();
@@ -105,7 +169,7 @@ export default function BlogsAdmin() {
 
   return (
     <div className="space-y-7">
-      <AdminHeader eyebrow="Content / Writing" title="Blogs" description="Shape your ideas into clear, useful stories for your audience." actions={<ActionButton onClick={() => { setError(''); setForm({ ...EMPTY, attachments: [], existingFiles: [] }); }}><Plus className="h-4 w-4" /> New post</ActionButton>} />
+      <AdminHeader eyebrow="Content / Writing" title="Blogs" description="Shape your ideas into clear, useful stories for your audience." actions={<ActionButton onClick={() => { setError(''); setForm(emptyBlog()); }}><Plus className="h-4 w-4" /> New post</ActionButton>} />
 
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
 
@@ -116,14 +180,23 @@ export default function BlogsAdmin() {
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <Field label="Post title" required><TextInput value={form.title} onChange={set('title')} required autoFocus /></Field>
               <Field label="Slug" hint="Leave blank to generate it from the title."><TextInput value={form.slug} onChange={set('slug')} placeholder="auto from title" /></Field>
-              <Field label="Content type"><Select value={form.type} onChange={set('type')} options={[{ value: 'article', label: 'Article' }, { value: 'blog', label: 'Blog' }, { value: 'event', label: 'Event' }]} /></Field>
-              <Field label="Publication status"><Select value={form.status} onChange={set('status')} options={[{ value: 'draft', label: 'Draft' }, { value: 'published', label: 'Published' }]} /></Field>
+              <Field label="Content type"><Select value={form.type} onChange={set('type')} options={[{ value: 'event', label: 'Event' }, { value: 'article', label: 'Article' }, { value: 'blog', label: 'Blog' }]} /></Field>
+              <Field label="Publication status"><Select value={form.status} onChange={set('status')} options={[{ value: 'draft', label: 'Draft' }, { value: 'published', label: 'Published' }, { value: 'archived', label: 'Archived' }]} /></Field>
               <Field label="Tags" className="md:col-span-2" hint="Separate tags with commas."><TextInput value={form.tags} onChange={set('tags')} placeholder="AI, backend, tutorial" /></Field>
             </div>
             <div className="h-px bg-slate-200/70 dark:bg-slate-800/70" />
             <Field label="Excerpt" hint="A short introduction for cards and search results."><TextArea rows={3} value={form.excerpt} onChange={set('excerpt')} /></Field>
             <Field label="Content" hint="Markdown is supported."><TextArea rows={14} value={form.content} onChange={set('content')} required className="font-mono text-sm leading-7" /></Field>
-            <AttachmentField label="Post attachments" hint="Upload images or supporting files here. They will be linked automatically after the post is created." files={form.attachments} existingFiles={form.existingFiles} onChange={(attachments) => setForm((value) => ({ ...value, attachments }))} onRemoveExisting={(file) => removeAttachment(file)} disabled={saving || !!removingFileId} />
+            <RepeaterField title="Links" description="Add related website, documentation, or social links." items={form.links} onAdd={addLink} onRemove={removeLink}>
+              {(item, index) => <div className="grid gap-3 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]"><Field label="Type"><TextInput value={item.type} onChange={(event) => updateLink(index, 'type', event.target.value)} placeholder="website" /></Field><Field label="Link"><TextInput type="url" value={item.link} onChange={(event) => updateLink(index, 'link', event.target.value)} placeholder="https://…" /></Field></div>}
+            </RepeaterField>
+            <div className="grid gap-5 md:grid-cols-3">
+              <Field label="Author" hint="Assigned to the authenticated account when created."><TextInput disabled value={authorLabel(form.author)} /></Field>
+              <Field label="Reading time" hint="Calculated from content automatically."><TextInput disabled value={readingTimeLabel(form)} /></Field>
+              <Field label="Published at" hint="Set automatically when first published."><TextInput disabled value={publishedAtLabel(form.publishedAt)} /></Field>
+            </div>
+            <AttachmentField label="Post files" hint="Upload images or supporting files. Set title, alt text, and order for each file." files={form.attachments} existingFiles={form.existingFiles} metadata={form.attachmentMetadata} onChange={(attachments) => setForm((value) => ({ ...value, attachments }))} onMetadataChange={(attachmentMetadata) => setForm((value) => ({ ...value, attachmentMetadata }))} onExistingChange={(existingFiles) => setForm((value) => ({ ...value, existingFiles }))} onRemoveExisting={removeAttachment} showMetadata disabled={saving || !!removingFileId} />
+            <p className="text-[10px] leading-relaxed text-slate-400">Created, updated, deleted, and file timestamp fields are generated automatically by the backend.</p>
             <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200/70 pt-5 dark:border-slate-800/70"><ActionButton type="button" variant="neutral" onClick={() => setForm(null)}>Cancel</ActionButton><ActionButton type="submit" loading={saving}>{saving ? 'Saving…' : form._id ? 'Save changes' : 'Create post'}</ActionButton></div>
           </fieldset>
         </form>}
