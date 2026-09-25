@@ -1,8 +1,17 @@
-import { useState, useEffect } from 'react';
 import SlideImage from './SlideImage';
 import Projects from './Projects';
+import { useAsyncResource } from '../hooks/useAsyncResource.js';
+import { projectsApi } from '../api/projects.js';
+import { projectToCard, staticProjectsAsCards } from '../services/adapters.js';
 
 export default function ProjectsSection() {
+  const { data } = useAsyncResource(
+    () => projectsApi.list({ limit: 100 }).then((r) => r.items),
+    []
+  );
+
+  const cards = data?.length ? data.map(projectToCard) : staticProjectsAsCards();
+
   return (
     <section id="projects" className="border-b border-slate-100 dark:border-slate-800 night:border-purple-900/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -28,7 +37,7 @@ export default function ProjectsSection() {
               <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">My Projects</h2>
               <p className="mt-2 text-slate-500 dark:text-slate-400">A selection of things I've built.</p>
             </div>
-            <Projects />
+            <Projects projects={cards} />
           </div>
         </div>
       </div>

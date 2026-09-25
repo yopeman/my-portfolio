@@ -1,8 +1,27 @@
-import { Project } from '../models/index.js';
+import { File, Project } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { pick, slugify } from '../utils/helpers.js';
 import { parsePagination, pageMeta } from '../utils/pagination.js';
+
+async function attachFiles(projects) {
+  if (!projects.length) return;
+  const ids = projects.map((p) => p._id);
+  const files = await File.find({
+    parentEntity: 'project',
+    parentId: { $in: ids },
+    deletedAt: null,
+  }).sort({ order: 1, createdAt: 1 });
+  const byParent = new Map();
+  for (const file of files) {
+    const key = file.parentId.toString();
+    if (!byParent.has(key)) byParent.set(key, []);
+    byParent.get(key).push(file);
+  }
+  for (const project of projects) {
+    project._doc.files = byParent.get(project._id.toString()) || [];
+  }
+}
 
 const PROJECT_FIELDS = [
   'name',
@@ -30,12 +49,15 @@ export const listProjects = asyncHandler(async (req, res) => {
     Project.countDocuments(filter),
   ]);
 
+  await attachFiles(items);
+
   return res.json({ items, meta: pageMeta(page, limit, total) });
 });
 
 export const getProjectBySlug = asyncHandler(async (req, res) => {
   const project = await Project.findOne({ slug: req.params.slug, deletedAt: null });
   if (!project) throw ApiError.notFound('Project not found');
+  await attachFiles([project]);
   return res.json({ project });
 });
 

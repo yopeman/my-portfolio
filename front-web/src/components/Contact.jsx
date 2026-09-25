@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import SlideImage from './SlideImage';
 import { BASE_URL } from '../data/constants';
+import { requestsApi } from '../api/requests.js';
 
 export default function Contact({ aboutMe }) {
   // Contact Form State
@@ -61,18 +62,24 @@ export default function Contact({ aboutMe }) {
     setIsContactLoading(true);
     setContactStatus({ type: '', text: '' });
     try {
-      const response = await fetch(`${BASE_URL}/api/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: contactName, email: contactEmail, phone: contactPhone, message: contactMessage }),
-      });
-      const data = await response.json();
-      if (response.ok) {
+      const [emailResult, requestResult] = await Promise.allSettled([
+        fetch(`${BASE_URL}/api/contact`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: contactName, email: contactEmail, phone: contactPhone, message: contactMessage }),
+        }),
+        requestsApi.create({ message: contactMessage }),
+      ]);
+
+      const emailOk = emailResult.status === 'fulfilled' && (await emailResult.value.json()).ok !== false;
+      const requestOk = requestResult.status === 'fulfilled';
+
+      if (requestOk || emailOk) {
         setContactStatus({ type: 'success', text: 'Thank you! Your message has been sent successfully.' });
         setContactName(''); setContactEmail(''); setContactMessage('');
         confetti({ particleCount: 80, spread: 60, origin: { y: 0.8 } });
       } else {
-        setContactStatus({ type: 'error', text: data.error || 'Something went wrong. Please try again.' });
+        setContactStatus({ type: 'error', text: 'Something went wrong. Please try again.' });
       }
     } catch {
       setContactStatus({ type: 'error', text: 'Could not connect to the mail server. Please try again later.' });

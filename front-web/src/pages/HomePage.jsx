@@ -1,24 +1,26 @@
-import Navbar from '../components/Navbar.jsx';
 import Hero from '../components/Hero.jsx';
 import About from '../components/About.jsx';
 import Skills from '../components/Skills.jsx';
 import ProjectsSection from '../components/ProjectsSection.jsx';
 import Contact from '../components/Contact.jsx';
-import Footer from '../components/Footer.jsx';
-import Chatbot from '../components/Chatbot.jsx';
-import { aboutMe } from '../data/portfolioData.js';
+import PublicLayout from '../components/PublicLayout.jsx';
+import { useAsyncResource } from '../hooks/useAsyncResource.js';
+import { aboutApi } from '../api/about.js';
+import { mapAboutLike } from '../services/adapters.js';
+import { aboutMe as staticAbout } from '../data/portfolioData.js';
 
 export default function HomePage() {
+  const { data } = useAsyncResource(() => aboutApi.get().then((r) => r.about), []);
+
+  const aboutMe = data ? mapAboutLike(data) : staticAbout;
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+    <PublicLayout>
       <Hero />
       <About aboutMe={aboutMe} />
       <Skills aboutMe={aboutMe} />
       <ProjectsSection />
       <Contact aboutMe={aboutMe} />
-      <Footer />
-      <Chatbot />
-    </div>
+    </PublicLayout>
   );
 }
