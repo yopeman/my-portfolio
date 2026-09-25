@@ -2,14 +2,14 @@ import PublicLayout from '../components/PublicLayout.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import { useAsyncResource } from '../hooks/useAsyncResource.js';
 import { projectsApi } from '../api/projects.js';
-import { projectToCard, staticProjectsAsCards } from '../services/adapters.js';
+import { projectToCard } from '../services/adapters.js';
 
 export default function ProjectsPage() {
-  const { data, loading } = useAsyncResource(
+  const { data, loading, error } = useAsyncResource(
     () => projectsApi.list({ limit: 100 }).then((r) => r.items),
     []
   );
-  const cards = data?.length ? data.map(projectToCard) : staticProjectsAsCards();
+  const projects = (data || []).map(projectToCard);
 
   return (
     <PublicLayout>
@@ -20,14 +20,25 @@ export default function ProjectsPage() {
               Projects
             </h1>
             <p className="mt-3 text-slate-500 dark:text-slate-400">
-              {loading && !data ? 'Loading…' : 'A selection of things I’ve built — from AI platforms to distributed systems.'}
+              A selection of things I’ve built — from AI platforms to distributed systems.
             </p>
           </div>
-          <div className="mt-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {cards.map((project) => (
-              <ProjectCard key={project.id || project.slug} project={project} />
-            ))}
-          </div>
+          {error && (
+            <p role="alert" className="mt-8 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
+              Unable to load projects from the database.
+            </p>
+          )}
+          {loading ? (
+            <p className="mt-10 text-sm text-slate-500 dark:text-slate-400">Loading projects…</p>
+          ) : projects.length > 0 ? (
+            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {projects.map((project) => (
+                <ProjectCard key={project.id || project.slug} project={project} />
+              ))}
+            </div>
+          ) : !error ? (
+            <p className="mt-10 text-sm text-slate-500 dark:text-slate-400">No projects available.</p>
+          ) : null}
         </div>
       </section>
     </PublicLayout>

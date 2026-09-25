@@ -1,41 +1,50 @@
 import { ChatGroq } from '@langchain/groq';
 import { SystemMessage, HumanMessage, AIMessage } from '@langchain/core/messages';
 import { env } from '../config/env.js';
-import { aboutMe, projects } from '../data/portfolioData.js';
+import { About, Project } from '../models/index.js';
 
 const chatModel = new ChatGroq({ model: 'compound-beta', apiKey: env.groq.apiKey });
 
-function getTargetedContext(query) {
+async function getTargetedContext(query) {
   const lowercaseQuery = (query || '').toLowerCase();
+  const [about, projects] = await Promise.all([
+    About.findOne({ deletedAt: null }).lean(),
+    Project.find({ deletedAt: null }).sort({ order: 1, createdAt: -1 }).lean(),
+  ]);
 
   let context = 'YOHANES DEBEBE PROFILE:\n';
-  if (aboutMe.about) context += `Bio:\n${aboutMe.about}\n\n`;
-  if (aboutMe.skills) context += `Skills:\n${aboutMe.skills}\n\n`;
-  if (aboutMe.contact) context += `Contact Details:\n${aboutMe.contact}\n\n`;
-
-  let matchedProject = null;
-  for (const proj of projects) {
-    const titleLower = proj.title.toLowerCase();
-
-    const isDirectMatch = lowercaseQuery.includes(titleLower);
-    const words = titleLower.split(' ').filter((w) => w.length > 3);
-    const isWordMatch = words.some((word) => lowercaseQuery.includes(word));
-
-    if (isDirectMatch || isWordMatch) {
-      matchedProject = proj;
-      break;
+  if (about?.headline) context += `Headline: ${about.headline}\n`;
+  if (about?.bio) context += `Bio:\n${about.bio}\n\n`;
+  if (about?.skills?.length) {
+    context += 'Skills:\n';
+    for (const skill of about.skills) {
+      context += `- ${skill.category ? `${skill.category}: ` : ''}${skill.name}\n`;
     }
+    context += '\n';
+  }
+  if (about?.contacts?.length) {
+    context += 'Contact Details:\n';
+    for (const contact of about.contacts) {
+      context += `- ${contact.title || contact.name}: ${contact.link}\n`;
+    }
+    context += '\n';
   }
 
+  const matchedProject = projects.find((project) => {
+    const title = project.name.toLowerCase();
+    const words = title.split(' ').filter((word) => word.length > 3);
+    return lowercaseQuery.includes(title) || words.some((word) => lowercaseQuery.includes(word));
+  });
+
   if (matchedProject) {
-    context += `### DETAILED PROJECT CONTEXT:\n`;
-    context += `Project Name: ${matchedProject.title}\n`;
-    context += `Full Details / Write-up:\n${matchedProject.readme || matchedProject.summary}\n`;
+    context += '### DETAILED PROJECT CONTEXT:\n';
+    context += `Project Name: ${matchedProject.name}\n`;
+    context += `Full Details / Write-up:\n${matchedProject.description || matchedProject.summary || ''}\n`;
   } else {
-    context += `### COMPLETED PROJECTS LIST:\n`;
-    projects.forEach((p) => {
-      context += `- ${p.title} (Tech Stack: ${p.tags.join(', ')})\n`;
-    });
+    context += '### COMPLETED PROJECTS LIST:\n';
+    for (const project of projects) {
+      context += `- ${project.name} (Tech Stack: ${(project.tags || []).join(', ')})\n`;
+    }
   }
 
   return context;
@@ -65,7 +74,7 @@ Guidelines:
 export async function handleChat(messages) {
   const lastUserMsg = [...messages].reverse().find((msg) => msg.role === 'user');
   const userQuery = lastUserMsg ? lastUserMsg.content : '';
-  const dynamicContext = getTargetedContext(userQuery);
+  const dynamicContext = await getTargetedContext(userQuery);
 
   const langchainMessages = [
     new SystemMessage(buildSystemPrompt(dynamicContext)),

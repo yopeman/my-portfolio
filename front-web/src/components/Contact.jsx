@@ -9,6 +9,8 @@ import { BASE_URL } from '../data/constants';
 import { requestsApi } from '../api/requests.js';
 
 export default function Contact({ aboutMe }) {
+  const images = aboutMe?.images || [];
+
   // Contact Form State
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -116,7 +118,7 @@ export default function Contact({ aboutMe }) {
 
   return (
     <section id="contact" className="border-b border-slate-100 dark:border-slate-800 night:border-purple-900/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid grid-cols-1 lg:grid-cols-2 gap-0 items-center">
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid grid-cols-1 gap-0 items-center ${images.length ? 'lg:grid-cols-2' : 'max-w-3xl'}`}>
 
         {/* Left – contact content */}
         <div className="py-20 lg:pr-16 space-y-8">
@@ -221,12 +223,14 @@ export default function Contact({ aboutMe }) {
           </div>
         </div>
 
-        {/* Right – crossfading image */}
-        <div className="hidden lg:flex items-center justify-center py-16 pl-8">
-          <SlideImage
-            className="w-full aspect-[4/5] max-h-[80vh] shadow-2xl shadow-slate-900/10"
-          />
-        </div>
+        {images.length > 0 && (
+          <div className="hidden lg:flex items-center justify-center py-16 pl-8">
+            <SlideImage
+              images={images}
+              className="w-full aspect-[4/5] max-h-[80vh] shadow-2xl shadow-slate-900/10"
+            />
+          </div>
+        )}
       </div>
     </section>
   );

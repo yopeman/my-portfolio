@@ -4,6 +4,8 @@ import { markdownComponents } from './markdownComponents';
 import SlideImage from './SlideImage';
 
 export default function About({ aboutMe }) {
+  const images = aboutMe?.images || [];
+
   // Extract YouTube embed URL
   const getYoutubeEmbedUrl = (markdown) => {
     if (!markdown) return '';
@@ -15,14 +17,16 @@ export default function About({ aboutMe }) {
 
   return (
     <section id="about" className="border-b border-slate-100 dark:border-slate-800 night:border-purple-900/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid grid-cols-1 lg:grid-cols-2 gap-0 items-center">
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid grid-cols-1 gap-0 items-center ${images.length ? 'lg:grid-cols-2' : 'max-w-3xl'}`}>
 
-        {/* Left – crossfading image */}
-        <div className="hidden lg:flex items-center justify-center py-16 pr-8">
-          <SlideImage
-            className="w-full aspect-[4/5] max-h-[80vh] shadow-2xl shadow-slate-900/10"
-          />
-        </div>
+        {images.length > 0 && (
+          <div className="hidden lg:flex items-center justify-center py-16 pr-8">
+            <SlideImage
+              images={images}
+              className="w-full aspect-[4/5] max-h-[80vh] shadow-2xl shadow-slate-900/10"
+            />
+          </div>
+        )}
 
         {/* Right – bio + video */}
         <div className="py-20 lg:pl-16 space-y-8">

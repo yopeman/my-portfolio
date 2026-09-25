@@ -1,7 +1,23 @@
-import {
-  aboutMe as staticAbout,
-  projects as staticProjects,
-} from '../data/portfolioData.js';
+import { BASE_URL } from '../data/constants.js';
+
+export function resolveFileUrl(path) {
+  if (!path) return '';
+  if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(path)) return path;
+  return `${BASE_URL.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+function fileUrl(file) {
+  return resolveFileUrl(file.fileUrl || file.path);
+}
+
+function isImageFile(file) {
+  if (file.mimeType) return file.mimeType.startsWith('image/');
+  return /\.(?:avif|gif|jpe?g|png|svg|webp)$/i.test(file.path || file.fileUrl || '');
+}
+
+function orderedFiles(files) {
+  return [...(files || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
 
 export function contactsToMarkdown(contacts) {
   if (!contacts?.length) return '';
@@ -33,31 +49,33 @@ function linksToCard(links) {
 }
 
 export function mapAboutLike(about) {
-  const files = about?.files || [];
+  const files = orderedFiles(about?.files);
   return {
-    about: about?.bio || staticAbout.about,
+    headline: about?.headline || '',
+    about: about?.bio || '',
     contact: contactsToMarkdown(about?.contacts),
     skills: skillsToMarkdown(about?.skills),
-    images: files.length ? files.map((f) => f.path) : staticAbout.images,
+    images: files.filter(isImageFile).map(fileUrl).filter(Boolean),
   };
 }
 
 export function projectToCard(project) {
+  const tags = project.tags || [];
   return {
     _id: project._id,
     id: project.slug,
     slug: project.slug,
     title: project.name,
-    summary: project.summary || project.description,
-    readme: project.description || project.summary,
+    summary: project.summary || project.description || '',
+    readme: project.description || project.summary || '',
     problem: project.problem,
-    tags: project.tags || [],
-    stacks: project.stacks || project.tags.map((tag, i) => ({ name: tag, order: i })),
+    tags,
+    stacks: project.stacks?.length ? project.stacks : tags.map((tag, i) => ({ name: tag, order: i })),
     features: project.features || [],
     type: project.type || 'product',
     order: project.order,
     ...linksToCard(project.links),
-    images: (project.files || []).map((f) => f.path),
+    images: orderedFiles(project.files).filter(isImageFile).map(fileUrl).filter(Boolean),
     folderName: project.name,
   };
 }
@@ -75,14 +93,4 @@ export function blogToCard(blog) {
     publishedAt: blog.publishedAt,
     readingTime: blog.readingTime,
   };
-}
-
-export function staticProjectsAsCards() {
-  return staticProjects.map((p) => ({
-    ...p,
-    id: p.id,
-    slug: p.id,
-    readme: p.readme,
-    folderName: p.folderName,
-  }));
 }

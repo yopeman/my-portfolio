@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { staticProjectsAsCards } from '../services/adapters.js';
 import { X, ExternalLink, Github, ChevronLeft, ChevronRight, Code } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { markdownComponents } from './markdownComponents';
 
-export default function Projects({ projects = staticProjectsAsCards() }) {
+export default function Projects({ projects = [] }) {
   const [selectedProject, setSelectedProject] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 

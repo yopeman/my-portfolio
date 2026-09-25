@@ -8,19 +8,32 @@ import FeedbackSection from '../components/FeedbackSection.jsx';
 import { markdownComponents } from '../components/markdownComponents.jsx';
 import { useAsyncResource } from '../hooks/useAsyncResource.js';
 import { projectsApi } from '../api/projects.js';
-import { projectToCard, staticProjectsAsCards } from '../services/adapters.js';
+import { projectToCard } from '../services/adapters.js';
 
 export default function ProjectDetailPage() {
   const { slug } = useParams();
-  const { data } = useAsyncResource(
+  const { data, loading, error } = useAsyncResource(
     () => projectsApi.bySlug(slug).then((r) => r.project),
     [slug]
   );
-
-  const staticMatch = staticProjectsAsCards().find((p) => p.slug === slug);
-  const project = data ? projectToCard(data) : staticMatch;
-
+  const project = data ? projectToCard(data) : null;
   const [imageIndex, setImageIndex] = useState(0);
+
+  if (loading) {
+    return (
+      <PublicLayout>
+        <p className="mx-auto max-w-3xl px-4 py-24 text-center text-slate-500 dark:text-slate-400">Loading project…</p>
+      </PublicLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <PublicLayout>
+        <p role="alert" className="mx-auto max-w-3xl px-4 py-24 text-center text-rose-600 dark:text-rose-400">Unable to load this project from the database.</p>
+      </PublicLayout>
+    );
+  }
 
   if (!project) {
     return (
@@ -36,6 +49,7 @@ export default function ProjectDetailPage() {
   }
 
   const images = project.images || [];
+  const currentImageIndex = images.length ? Math.min(imageIndex, images.length - 1) : 0;
   const stackList = project.stacks || project.tags.map((t, i) => ({ name: t, order: i }));
 
   return (
@@ -64,8 +78,8 @@ export default function ProjectDetailPage() {
           {images.length > 0 && (
             <div className="mt-8 relative rounded-2xl overflow-hidden bg-slate-950 flex items-center justify-center aspect-video max-h-[420px] group border border-slate-200/50 dark:border-slate-800">
               <img
-                src={images[imageIndex]}
-                alt={`${project.title} screenshot ${imageIndex + 1}`}
+                src={images[currentImageIndex]}
+                alt={`${project.title} screenshot ${currentImageIndex + 1}`}
                 className="max-h-full max-w-full object-contain"
               />
               {images.length > 1 && (
@@ -91,7 +105,7 @@ export default function ProjectDetailPage() {
                         onClick={() => setImageIndex(idx)}
                         aria-label={`Screenshot ${idx + 1}`}
                         className={`w-2 h-2 rounded-full transition-all ${
-                          idx === imageIndex ? 'bg-indigo-500 scale-110' : 'bg-slate-500 hover:bg-slate-400'
+                          idx === currentImageIndex ? 'bg-indigo-500 scale-110' : 'bg-slate-500 hover:bg-slate-400'
                         }`}
                       />
                     ))}

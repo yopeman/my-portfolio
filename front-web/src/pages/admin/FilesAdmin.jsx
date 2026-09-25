@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Trash2, Upload } from 'lucide-react';
 import { filesApi } from '../../api/files.js';
+import { resolveFileUrl } from '../../services/adapters.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { Badge, Field, Select, TextInput, ActionButton } from '../../components/admin/form.jsx';
 
@@ -111,7 +112,7 @@ export default function FilesAdmin() {
                 <td className="px-4 py-2">
                   {isImage(item.mimeType) ? (
                     <img
-                      src={item.fileUrl || item.path || ''}
+                      src={resolveFileUrl(item.fileUrl || item.path)}
                       alt={item.alt || item.name}
                       className="w-14 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-700"
                     />

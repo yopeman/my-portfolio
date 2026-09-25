@@ -3,16 +3,20 @@ import {
 } from 'lucide-react';
 import SlideImage from './SlideImage';
 
-export default function Hero() {
+export default function Hero({ aboutMe }) {
+  const images = aboutMe?.images || [];
+
   return (
     <section className="relative overflow-hidden border-b border-slate-100 dark:border-slate-800 night:border-purple-900/10 ticks-bg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid grid-cols-1 lg:grid-cols-2 gap-0 items-center">
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid grid-cols-1 gap-0 items-center ${images.length ? 'lg:grid-cols-2' : 'max-w-3xl'}`}>
 
         {/* Left – text */}
         <div className="py-24 sm:py-32 lg:pr-16 space-y-8 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-violet-400 border border-indigo-100/50 dark:border-indigo-900/30 text-xs font-bold uppercase tracking-wider">
-            <Terminal className="w-3.5 h-3.5" /> Full-Stack Developer
-          </div>
+          {aboutMe?.headline && (
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-violet-400 border border-indigo-100/50 dark:border-indigo-900/30 text-xs font-bold uppercase tracking-wider">
+              <Terminal className="w-3.5 h-3.5" /> {aboutMe.headline}
+            </div>
+          )}
 
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-none">
             Hi, I'm <span className="text-gradient-purple">Yohanes<br />Debebe</span>
@@ -53,22 +57,16 @@ export default function Hero() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-3">
-            <a href="/about/resume.pdf" target="_blank" rel="noreferrer" className="px-8 py-3.5 text-sm font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 dark:bg-violet-600 dark:hover:bg-violet-500 night:bg-purple-600 night:hover:bg-purple-500 text-white shadow-lg shadow-indigo-600/15 transition-colors text-center">
-              View Resume
-            </a>
-            <a href="/about/transcript.pdf" target="_blank" rel="noreferrer" className="px-8 py-3.5 text-sm font-bold rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 transition-colors text-center">
-              View Transcript
-            </a>
-          </div>
         </div>
 
-        {/* Right – crossfading image */}
-        <div className="hidden lg:flex items-center justify-center py-16 pl-8">
-          <SlideImage
-            className="w-full aspect-[4/5] max-h-[80vh] shadow-2xl shadow-indigo-900/10"
-          />
-        </div>
+        {images.length > 0 && (
+          <div className="hidden lg:flex items-center justify-center py-16 pl-8">
+            <SlideImage
+              images={images}
+              className="w-full aspect-[4/5] max-h-[80vh] shadow-2xl shadow-indigo-900/10"
+            />
+          </div>
+        )}
       </div>
     </section>
   );

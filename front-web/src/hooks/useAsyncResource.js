@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-export function useAsyncResource(loader, deps, fallback) {
-  const [state, setState] = useState(() => ({ data: fallback, loading: true, error: null }));
+export function useAsyncResource(loader, deps) {
+  const [state, setState] = useState({ data: null, loading: true, error: null });
 
   useEffect(() => {
     let active = true;
@@ -9,9 +9,8 @@ export function useAsyncResource(loader, deps, fallback) {
       .then((data) => {
         if (active) setState({ data, loading: false, error: null });
       })
-      .catch((err) => {
-        if (!active) return;
-        setState((s) => ({ data: s.data ?? fallback, loading: false, error: err }));
+      .catch((error) => {
+        if (active) setState({ data: null, loading: false, error });
       });
     return () => {
       active = false;

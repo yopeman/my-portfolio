@@ -7,7 +7,7 @@ Monorepo: `backend-api` (Express + MongoDB) and `front-web` (Vite + React + Tail
 - Convert the current single-file Express API (`backend-api/index.js`) and the static-data Vite/React/Tailwind site (`front-web`) into a full-stack portfolio backed by the schema in `db.md`.
 - Backend: **Express** + **Mongoose (MongoDB)** with a pluggable file driver (**Cloudinary** or **Local disk**), plus in-memory upload handling (`multer.memoryStorage()` for Cloudinary).
 - Frontend: **Vite + React + Tailwind CSS v4** (already set up via `@tailwindcss/vite`).
-- Preserve existing features: `/api/chat` (Groq RAG), `/api/contact`, `/api/subscribe`, and existing `portfolioData.js` as seed/fallback data.
+- Preserve `/api/chat` (Groq with database-backed context), `/api/contact`, and `/api/subscribe`, with MongoDB as the sole public content source.
 
 ## 2. Architecture Overview
 
@@ -106,7 +106,7 @@ Public GETs are allowed for guests where visibility allows; mutations are gated 
 
 ### 4.7 Seed script
 
-- `scripts/seed.js`: migrate `data/portfolioData.js`, `about-me/*.md`, and `front-web/public/projects/*/README.md` + images into Mongo `About`/`Project`/`File` + `User` (owner). Mirrors the current `scripts/compile-portfolio.js` output.
+- `backend-api/scripts/seed.js`: bootstrap the configured owner only. About, Project, and File records are managed through the API.
 
 ## 5. Frontend Implementation
 
@@ -137,7 +137,7 @@ Public GETs are allowed for guests where visibility allows; mutations are gated 
 
 ### 5.5 Resilience
 
-- If `/api` is unreachable, public pages fall back to existing `src/data/portfolioData.js` (offline/static mode) so the current site never breaks.
+- Public pages show loading, empty, and API error states without substituting static portfolio content.
 
 ## 6. Implementation Phases
 
@@ -149,7 +149,7 @@ Public GETs are allowed for guests where visibility allows; mutations are gated 
 | 3 | Core CRUD APIs | about, projects, requests, subscribers, blogs, plans |
 | 4 | File uploads | local + Cloudinary drivers, `File` model |
 | 5 | Feedback & Reactions | polymorphic APIs |
-| 6 | Seed script | migrate existing portfolio data & assets |
+| 6 | Seed script | bootstrap the database owner |
 | 7 | Frontend data layer | axios client, AuthContext, routing |
 | 8 | Public pages | home/about/projects/blogs/contact/subscribe/feedback |
 | 9 | Admin dashboard | guarded CRUD UIs |
