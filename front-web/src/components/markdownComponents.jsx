@@ -21,7 +21,7 @@ export const markdownComponents = {
     const isInline = !className;
     const codeClass = isInline
       ? 'inline-block px-1.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm font-mono'
-      : `block rounded-3xl px-4 py-3 text-sm font-mono bg-slate-950 text-slate-100 shadow-sm overflow-x-auto ${className}`;
+      : `markdown-code block rounded-3xl px-4 py-3 text-sm font-mono bg-slate-950 text-slate-100 shadow-sm overflow-x-auto ${className}`;
 
     return <code className={codeClass} {...props} />;
   },

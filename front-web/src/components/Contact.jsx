@@ -5,11 +5,14 @@ import {
   SendHorizonal, Globe, Check, AlertCircle, Loader2
 } from 'lucide-react';
 import SlideImage from './SlideImage';
+import AnimatedSection from './AnimatedSection';
+import { useStaggerReveal } from '../hooks/useScrollReveal';
 import { BASE_URL } from '../data/constants';
 import { requestsApi } from '../api/requests.js';
 
 export default function Contact({ aboutMe }) {
   const images = aboutMe?.images || [];
+  const { ref: staggerRef, isRevealed } = useStaggerReveal({ threshold: 0.1 });
 
   // Contact Form State
   const [contactName, setContactName] = useState('');
@@ -118,7 +121,7 @@ export default function Contact({ aboutMe }) {
 
   return (
     <section id="contact" className="border-b border-slate-100 dark:border-slate-800 night:border-purple-900/10">
-      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid grid-cols-1 gap-0 items-center ${images.length ? 'lg:grid-cols-2' : 'max-w-3xl'}`}>
+      <AnimatedSection className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid grid-cols-1 gap-0 items-center ${images.length ? 'lg:grid-cols-2' : 'max-w-3xl'}`}>
 
         {/* Left – contact content */}
         <div className="py-20 lg:pr-16 space-y-8">
@@ -132,18 +135,20 @@ export default function Contact({ aboutMe }) {
           </div>
 
           {/* Contact cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div ref={staggerRef} className={`grid grid-cols-1 sm:grid-cols-2 gap-3 stagger-children ${isRevealed ? 'revealed' : ''}`}>
             {contactList.map((item, idx) => (
               <div key={idx} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/30 night:bg-black/60 border border-slate-200/40 dark:border-slate-800/60 night:border-purple-900/15 flex items-center gap-3.5 hover:shadow-sm transition-shadow">
                 <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 night:bg-purple-950/20 border border-slate-100 dark:border-slate-700/50 shrink-0">
-                  {getContactIcon(item.label)}
+                  <span className="block transition-transform duration-300 hover:scale-110">
+                    {getContactIcon(item.label)}
+                  </span>
                 </div>
                 <div className="overflow-hidden">
                   <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{item.label}</div>
                   <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
                     {item.value.startsWith('http') ? (
-                      <a href={item.value} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-violet-400 flex items-center gap-0.5">
-                        Link <ExternalLink className="w-3 h-3" />
+                      <a href={item.value} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-violet-400 flex items-center gap-0.5 animated-underline">
+                        Link <ExternalLink className="w-3 h-3 ml-1" />
                       </a>
                     ) : item.value}
                   </div>
@@ -153,7 +158,7 @@ export default function Contact({ aboutMe }) {
           </div>
 
           {/* Subscribe */}
-          <div className="p-6 rounded-3xl bg-indigo-500/[0.03] dark:bg-violet-500/[0.03] border border-indigo-500/10 dark:border-violet-500/10 night:border-purple-900/10 space-y-4">
+          <div className="p-6 rounded-3xl bg-indigo-500/[0.03] dark:bg-violet-500/[0.03] border border-indigo-500/10 dark:border-violet-500/10 night:border-purple-900/10 space-y-4 glass-subtle">
             <h4 className="text-md font-bold text-slate-800 dark:text-slate-100">Subscribe to updates</h4>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Get notified when I release new articles, tutorials, or open-source libraries.
@@ -162,10 +167,10 @@ export default function Contact({ aboutMe }) {
               <input
                 type="email" value={subEmail} onChange={(e) => setSubEmail(e.target.value)}
                 placeholder="Enter your email" required
-                className="flex-grow px-3.5 py-2 text-sm rounded-xl border border-slate-200 bg-white dark:bg-slate-800 night:bg-black dark:text-white night:border-purple-900/15 focus:outline-none focus:border-indigo-500"
+                className="flex-grow px-3.5 py-2 text-sm rounded-xl border border-slate-200 bg-white/80 dark:bg-slate-800/80 night:bg-black/80 dark:text-white night:border-purple-900/15 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all duration-300"
               />
               <button type="submit" disabled={isSubLoading}
-                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-violet-700 dark:hover:bg-violet-600 night:bg-purple-700 text-white font-semibold text-xs uppercase tracking-wider transition-colors shrink-0 flex items-center justify-center cursor-pointer">
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs uppercase tracking-wider transition-all duration-300 shrink-0 flex items-center justify-center cursor-pointer magnetic-hover">
                 {isSubLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Subscribe'}
               </button>
             </form>
@@ -178,48 +183,50 @@ export default function Contact({ aboutMe }) {
           </div>
 
           {/* Contact form */}
-          <div className="p-6 sm:p-8 bg-white/80 dark:bg-slate-900/50 night:bg-black/60 backdrop-blur-sm rounded-3xl border border-slate-200/50 dark:border-slate-800/80 night:border-purple-900/10 shadow-sm space-y-5">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Send a Message</h3>
-            <form onSubmit={handleContactSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Name</label>
-                  <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Your Name" required
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white dark:bg-slate-800 night:bg-black dark:text-white night:border-purple-900/15 focus:outline-none focus:border-indigo-500" />
+          <div className="gradient-border rounded-3xl">
+            <div className="p-6 sm:p-8 glass-strong backdrop-blur-md rounded-3xl shadow-sm space-y-5">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Send a Message</h3>
+              <form onSubmit={handleContactSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Name</label>
+                    <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Your Name" required
+                      className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white/80 dark:bg-slate-800/80 night:bg-black/80 dark:text-white night:border-purple-900/15 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all duration-300" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Phone</label>
+                    <input type="tel" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+251 9XX XXX XXXX"
+                      className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white/80 dark:bg-slate-800/80 night:bg-black/80 dark:text-white night:border-purple-900/15 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all duration-300" />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Phone</label>
-                  <input type="tel" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+251 9XX XXX XXXX"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white dark:bg-slate-800 night:bg-black dark:text-white night:border-purple-900/15 focus:outline-none focus:border-indigo-500" />
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email</label>
+                  <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="name@example.com" required
+                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white/80 dark:bg-slate-800/80 night:bg-black/80 dark:text-white night:border-purple-900/15 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all duration-300" />
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email</label>
-                <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="name@example.com" required
-                  className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white dark:bg-slate-800 night:bg-black dark:text-white night:border-purple-900/15 focus:outline-none focus:border-indigo-500" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Message</label>
-                <textarea rows="4" value={contactMessage} onChange={(e) => setContactMessage(e.target.value)} placeholder="Tell me about your project..." required
-                  className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white dark:bg-slate-800 night:bg-black dark:text-white night:border-purple-900/15 focus:outline-none focus:border-indigo-500 resize-none" />
-              </div>
-              <button type="submit" disabled={isContactLoading}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 dark:bg-violet-600 dark:hover:bg-violet-500 night:bg-purple-600 text-white font-bold text-sm transition-colors shadow-md shadow-indigo-600/10 cursor-pointer disabled:opacity-50">
-                {isContactLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</> : <>Send Message <SendHorizonal className="w-4 h-4" /></>}
-              </button>
-            </form>
-            {contactStatus.text && (
-              <div className={`p-4 rounded-xl border flex items-start gap-2.5 text-sm font-semibold ${
-                contactStatus.type === 'success'
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-900/35 dark:text-emerald-400'
-                  : 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/20 dark:border-rose-900/35 dark:text-rose-400'
-              }`}>
-                {contactStatus.type === 'success'
-                  ? <Check className="w-5 h-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
-                  : <AlertCircle className="w-5 h-5 shrink-0 text-rose-500 mt-0.5" />}
-                <span className="leading-relaxed">{contactStatus.text}</span>
-              </div>
-            )}
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Message</label>
+                  <textarea rows="4" value={contactMessage} onChange={(e) => setContactMessage(e.target.value)} placeholder="Tell me about your project..." required
+                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white/80 dark:bg-slate-800/80 night:bg-black/80 dark:text-white night:border-purple-900/15 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all duration-300 resize-none" />
+                </div>
+                <button type="submit" disabled={isContactLoading}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm transition-all duration-300 shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-50 magnetic-hover">
+                  {isContactLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</> : <>Send Message <SendHorizonal className="w-4 h-4" /></>}
+                </button>
+              </form>
+              {contactStatus.text && (
+                <div className={`p-4 rounded-xl border flex items-start gap-2.5 text-sm font-semibold ${
+                  contactStatus.type === 'success'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-900/35 dark:text-emerald-400'
+                    : 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/20 dark:border-rose-900/35 dark:text-rose-400'
+                }`}>
+                  {contactStatus.type === 'success'
+                    ? <Check className="w-5 h-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                    : <AlertCircle className="w-5 h-5 shrink-0 text-rose-500 mt-0.5" />}
+                  <span className="leading-relaxed">{contactStatus.text}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -227,11 +234,11 @@ export default function Contact({ aboutMe }) {
           <div className="hidden lg:flex items-center justify-center py-16 pl-8">
             <SlideImage
               images={images}
-              className="w-full aspect-[4/5] max-h-[80vh] shadow-2xl shadow-slate-900/10"
+              className="w-full aspect-[4/5] max-h-[80vh] shadow-2xl shadow-slate-900/10 animate-float"
             />
           </div>
         )}
-      </div>
+      </AnimatedSection>
     </section>
   );
 }

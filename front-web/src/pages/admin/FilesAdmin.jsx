@@ -67,7 +67,7 @@ export default function FilesAdmin() {
       <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Files</h1>
 
       {can('about', 'UPDATE') && (
-        <form onSubmit={upload} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 space-y-4">
+        <form onSubmit={upload} className="admin-surface rounded-2xl p-5 space-y-4">
           <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Upload file</h2>
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -95,7 +95,7 @@ export default function FilesAdmin() {
         </form>
       )}
 
-      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <div className="admin-surface rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 dark:bg-slate-800/60 text-left text-xs text-slate-400 uppercase tracking-wider">
             <tr>

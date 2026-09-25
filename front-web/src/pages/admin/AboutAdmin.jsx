@@ -70,7 +70,7 @@ export default function AboutAdmin() {
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">About</h1>
-      <form onSubmit={save} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 space-y-4 max-w-3xl">
+      <form onSubmit={save} className="admin-surface rounded-2xl p-5 space-y-4 max-w-3xl">
         {error && <p className="text-sm text-rose-600">{error}</p>}
         {saved && <p className="text-sm text-emerald-600">Saved successfully.</p>}
         <Field label="Headline">

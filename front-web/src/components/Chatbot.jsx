@@ -93,7 +93,7 @@ export default function Chatbot() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center justify-center w-14 h-14 rounded-full bg-indigo-600 dark:bg-violet-600 night:bg-purple-600 text-white shadow-xl hover:bg-indigo-500 dark:hover:bg-violet-500 night:hover:bg-purple-500 hover:scale-105 transition-all duration-300 cursor-pointer glow-purple"
+          className="flex items-center justify-center w-14 h-14 rounded-full bg-indigo-600 dark:bg-violet-600 night:bg-purple-600 text-white shadow-xl hover:bg-indigo-500 dark:hover:bg-violet-500 night:hover:bg-purple-500 hover:scale-105 transition-all duration-300 cursor-pointer animate-glow-pulse"
           aria-label="Open Chat Assistant"
         >
           <MessageSquare className="w-6 h-6 animate-pulse" />
@@ -103,12 +103,12 @@ export default function Chatbot() {
       {/* Chat Window Panel */}
       {isOpen && (
         <div 
-          className="w-[360px] sm:w-[400px] h-[500px] rounded-3xpl bg-white dark:bg-slate-900 night:bg-black border border-slate-200/80 dark:border-slate-800 night:border-purple-900/30 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-200 origin-bottom-right"
+          className="w-[360px] sm:w-[400px] h-[500px] rounded-3xl glass-strong border border-slate-200/80 dark:border-slate-800 night:border-purple-900/30 shadow-2xl flex flex-col overflow-hidden chat-window-enter origin-bottom-right"
           style={{ transform: `scale(${zoom})`, transformOrigin: 'bottom right' }}
         >
           
           {/* Header */}
-          <div className="px-5 py-4 bg-slate-50 dark:bg-slate-800/50 night:bg-purple-950/10 border-b border-slate-100 dark:border-slate-800/80 night:border-purple-900/20 flex items-center justify-between">
+          <div className="px-5 py-4 bg-slate-50/80 dark:bg-slate-800/50 night:bg-purple-950/10 border-b border-slate-100 dark:border-slate-800/80 night:border-purple-900/20 flex items-center justify-between backdrop-blur-sm">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-violet-950/50 flex items-center justify-center text-indigo-600 dark:text-violet-400">
                 <Bot className="w-5 h-5" />
@@ -154,6 +154,7 @@ export default function Chatbot() {
                 className={`flex gap-2.5 max-w-[85%] ${
                   msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''
                 }`}
+                style={{ animation: `staggerSlideIn 0.3s ease-out forwards`, opacity: 0 }}
               >
                 {msg.role !== 'user' && (
                   <div className="w-7 h-7 shrink-0 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400">
@@ -163,8 +164,8 @@ export default function Chatbot() {
                 
                 <div className={`p-3 rounded-2xl text-xs sm:text-sm leading-relaxed border ${
                   msg.role === 'user'
-                    ? 'bg-indigo-600 border-indigo-600 text-white rounded-tr-none'
-                    : 'bg-white border-slate-100 dark:bg-slate-800 dark:border-slate-700/50 night:bg-black/60 night:border-purple-900/10 text-slate-700 dark:text-slate-300'
+                    ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 border-indigo-600 text-white rounded-tr-none shadow-sm'
+                    : 'bg-white/90 border-slate-100 dark:bg-slate-800/90 dark:border-slate-700/50 night:bg-black/80 night:border-purple-900/10 text-slate-700 dark:text-slate-300 shadow-sm backdrop-blur-md'
                 }`}>
                   {msg.role === 'user' ? (
                     <p className="whitespace-pre-line">{msg.content}</p>
@@ -179,11 +180,11 @@ export default function Chatbot() {
 
             {/* AI Typing Indicator */}
             {isLoading && (
-              <div className="flex gap-2.5 max-w-[80%]">
+              <div className="flex gap-2.5 max-w-[80%]" style={{ animation: `staggerSlideIn 0.3s ease-out forwards`, opacity: 0 }}>
                 <div className="w-7 h-7 rounded-md bg-slate-100 dark:bg-violet-900/40 night:bg-purple-950/60 flex items-center justify-center text-slate-500 dark:text-violet-300 night:text-purple-300">
                   <Bot className="w-4 h-4" />
                 </div>
-                <div className="p-3 bg-white border border-slate-100 dark:bg-slate-800 dark:border-slate-700/50 night:bg-black/60 night:border-purple-900/10 rounded-2xl rounded-tl-none text-slate-400 dark:text-violet-400 night:text-purple-400 flex items-center gap-1">
+                <div className="p-3 bg-white/90 border border-slate-100 dark:bg-slate-800/90 dark:border-slate-700/50 night:bg-black/80 night:border-purple-900/10 rounded-2xl rounded-tl-none text-slate-400 dark:text-violet-400 night:text-purple-400 flex items-center gap-1 backdrop-blur-md">
                   <span className="typing-dot"></span>
                   <span className="typing-dot"></span>
                   <span className="typing-dot"></span>
@@ -196,19 +197,19 @@ export default function Chatbot() {
 
           {/* Quick Questions Chips */}
           {messages.length === 1 && !isLoading && (
-            <div className="px-4 py-2 border-t border-slate-100/50 dark:border-slate-800/50 night:border-purple-900/10 bg-slate-50/50 dark:bg-slate-800/20 night:bg-black/40">
-              <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+            <div className="px-4 py-3 border-t border-slate-100/50 dark:border-slate-800/50 night:border-purple-900/10 bg-slate-50/50 dark:bg-slate-800/20 night:bg-black/40 backdrop-blur-sm">
+              <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
                 <HelpCircle className="w-3 h-3" /> Quick Questions
               </div>
-              <div className="flex flex-wrap gap-1.5 max-h-[76px] overflow-y-auto">
+              <div className="flex flex-wrap gap-2 max-h-[76px] overflow-y-auto pb-1">
                 {quickQuestions.map((q, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSend(q)}
-                    className="px-2.5 py-1 text-xs rounded-lg border text-left cursor-pointer transition-all duration-200
-                      bg-white hover:bg-slate-50 text-slate-600 border-slate-200
-                      dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-300 dark:border-slate-700
-                      night:bg-black night:hover:bg-purple-950/10 night:text-purple-400 night:border-purple-900/25"
+                    className="px-3 py-1.5 text-xs rounded-lg border text-left cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]
+                      bg-white hover:bg-indigo-50 text-slate-600 border-slate-200 hover:border-indigo-200 hover:text-indigo-700 shadow-sm
+                      dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:border-slate-700 dark:hover:border-slate-500
+                      night:bg-black night:hover:bg-purple-950/30 night:text-purple-400 night:border-purple-900/25 night:hover:border-purple-700/50"
                   >
                     {q}
                   </button>
@@ -218,7 +219,7 @@ export default function Chatbot() {
           )}
 
           {/* Input Box Footer */}
-          <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 night:border-purple-900/20 bg-slate-50 dark:bg-slate-800/40 night:bg-black/80 flex items-center gap-2">
+          <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 night:border-purple-900/20 bg-slate-50/80 dark:bg-slate-800/60 night:bg-black/80 flex items-center gap-2 backdrop-blur-md">
             <input
               type="text"
               value={input}
@@ -226,14 +227,14 @@ export default function Chatbot() {
               onKeyDown={handleKeyPress}
               disabled={isLoading}
               placeholder="Ask me something about Yohanes..."
-              className="flex-grow px-3 py-2 text-sm rounded-xl border bg-white dark:bg-slate-800 dark:text-white night:bg-black night:border-purple-900/20 border-slate-200 focus:outline-none focus:border-indigo-500 dark:focus:border-violet-500 night:focus:border-purple-500 transition-colors disabled:opacity-75"
+              className="flex-grow px-4 py-2.5 text-sm rounded-xl border bg-white dark:bg-slate-900 dark:text-white night:bg-black night:border-purple-900/40 border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:ring-violet-500/20 dark:focus:border-violet-500 night:focus:ring-purple-500/20 night:focus:border-purple-500 transition-all disabled:opacity-75"
             />
             <button
               onClick={() => handleSend()}
               disabled={isLoading || !input.trim()}
-              className="p-2 rounded-xl bg-indigo-600 dark:bg-violet-600 night:bg-purple-600 hover:bg-indigo-500 dark:hover:bg-violet-500 night:hover:bg-purple-500 text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              className="p-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 dark:from-violet-600 dark:to-violet-500 night:from-purple-600 night:to-purple-500 hover:opacity-90 text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all active:scale-95"
             >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
             </button>
           </div>
 

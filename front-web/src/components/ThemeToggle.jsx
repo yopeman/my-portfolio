@@ -25,7 +25,7 @@ export default function ThemeToggle() {
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('portfolio-theme');
     if (saved && THEMES.includes(saved)) return saved;
-    return 'light';
+    return 'system';
   });
 
   const mediaQueryRef = useRef(null);
@@ -65,40 +65,45 @@ export default function ThemeToggle() {
   };
 
   return (
-    <button
-      onClick={cycleTheme}
-      className="relative p-2.5 rounded-xl border transition-all duration-300 shadow-sm outline-none cursor-pointer
-        bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900
-        dark:bg-slate-800/80 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white
-        night:bg-black night:border-purple-900/40 night:text-purple-400 night:hover:bg-purple-950/20 night:glow-purple"
-      aria-label={`Switch theme (currently ${theme})`}
-    >
-      <div className="flex items-center gap-2 text-sm font-medium">
-        {theme === 'light' && (
-          <>
-            <Sun className="w-4 h-4 text-amber-500" />
-            <span className="hidden sm:inline">Light</span>
-          </>
-        )}
-        {theme === 'dark' && (
-          <>
-            <Moon className="w-4 h-4 text-violet-400" />
-            <span className="hidden sm:inline">Dark</span>
-          </>
-        )}
-        {theme === 'night' && (
-          <>
-            <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
-            <span className="hidden sm:inline text-purple-400">Night</span>
-          </>
-        )}
-        {theme === 'system' && (
-          <>
-            <Monitor className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-            <span className="hidden sm:inline">System</span>
-          </>
-        )}
+    <div className="relative group">
+      <button
+        onClick={cycleTheme}
+        className="relative p-2.5 rounded-xl border transition-all duration-300 shadow-sm outline-none cursor-pointer
+          bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:gradient-border
+          dark:bg-slate-800/80 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white
+          night:bg-black night:border-purple-900/40 night:text-purple-400 night:hover:bg-purple-950/20 night:glow-purple"
+        aria-label={`Switch theme (currently ${theme})`}
+      >
+        <div className="flex items-center gap-2 text-sm font-medium">
+          {theme === 'light' && (
+            <div style={{ animation: 'spinIn 0.5s ease-out' }}>
+              <Sun className="w-4 h-4 text-amber-500" />
+            </div>
+          )}
+          {theme === 'dark' && (
+            <div style={{ animation: 'spinIn 0.5s ease-out' }}>
+              <Moon className="w-4 h-4 text-violet-400" />
+            </div>
+          )}
+          {theme === 'night' && (
+            <div style={{ animation: 'spinIn 0.5s ease-out' }}>
+              <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
+            </div>
+          )}
+          {theme === 'system' && (
+            <div style={{ animation: 'spinIn 0.5s ease-out' }}>
+              <Monitor className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+            </div>
+          )}
+          <span className="hidden sm:inline capitalize">{theme}</span>
+        </div>
+      </button>
+
+      {/* Tooltip */}
+      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 dark:bg-slate-700 night:bg-purple-950 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
+        Theme: {theme.charAt(0).toUpperCase() + theme.slice(1)}
+        <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-900 dark:border-b-slate-700 night:border-b-purple-950" />
       </div>
-    </button>
+    </div>
   );
 }
