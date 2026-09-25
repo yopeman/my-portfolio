@@ -127,14 +127,36 @@ export function Modal({ open, onClose, title, description, eyebrow, children }) 
   );
 }
 
-export function AttachmentField({ label = 'Attachments', hint, files = [], existingFiles = [], onChange, onRemoveExisting, accept = 'image/*,.pdf,.doc,.docx', multiple = true, disabled = false }) {
+export function AttachmentField({ label = 'Attachments', hint, files = [], existingFiles = [], metadata = [], onChange, onMetadataChange, onExistingChange, onRemoveExisting, showMetadata = false, accept = 'image/*,.pdf,.doc,.docx', multiple = true, disabled = false }) {
   const inputRef = useRef(null);
   const addFiles = (incoming) => {
     const nextFiles = Array.from(incoming || []);
-    if (nextFiles.length > 0) onChange?.([...files, ...nextFiles]);
+    if (nextFiles.length > 0) {
+      onChange?.([...files, ...nextFiles]);
+      if (showMetadata) {
+        onMetadataChange?.([
+          ...metadata,
+          ...nextFiles.map((_, index) => ({ order: metadata.length + index, title: '', alt: '' })),
+        ]);
+      }
+    }
     if (inputRef.current) inputRef.current.value = '';
   };
-  const removeFile = (index) => onChange?.(files.filter((_, fileIndex) => fileIndex !== index));
+  const removeFile = (index) => {
+    onChange?.(files.filter((_, fileIndex) => fileIndex !== index));
+    if (showMetadata) onMetadataChange?.(metadata.filter((_, metadataIndex) => metadataIndex !== index));
+  };
+  const updateMetadata = (index, key, value) => onMetadataChange?.(metadata.map((item, metadataIndex) => (metadataIndex === index ? { ...item, [key]: value } : item)));
+  const updateExisting = (file, key, value) => onExistingChange?.(existingFiles.map((item) => (item._id === file._id ? { ...item, [key]: value } : item)));
+  const metadataFields = (item, index, isExisting = false) => showMetadata ? (
+    <div className="mt-3 grid gap-3 border-t border-slate-200/60 pt-3 dark:border-slate-700/70">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5rem]">
+        <Field label="Title"><TextInput disabled={disabled} value={item.title || ''} onChange={(event) => (isExisting ? updateExisting(item, 'title', event.target.value) : updateMetadata(index, 'title', event.target.value))} placeholder="Optional file title" /></Field>
+        <Field label="Alt text"><TextInput disabled={disabled} value={item.alt || ''} onChange={(event) => (isExisting ? updateExisting(item, 'alt', event.target.value) : updateMetadata(index, 'alt', event.target.value))} placeholder="Describe the file" /></Field>
+        <Field label="Order"><TextInput disabled={disabled} type="number" min="0" value={item.order ?? 0} onChange={(event) => (isExisting ? updateExisting(item, 'order', event.target.value === '' ? '' : Number(event.target.value)) : updateMetadata(index, 'order', event.target.value === '' ? '' : Number(event.target.value)))} /></Field>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div>
@@ -144,10 +166,11 @@ export function AttachmentField({ label = 'Attachments', hint, files = [], exist
         <UploadCloud className="mx-auto h-7 w-7 text-indigo-500 dark:text-violet-300" />
         <p className="mt-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Drop files here or <button type="button" disabled={disabled} onClick={() => inputRef.current?.click()} className="font-extrabold text-indigo-600 hover:text-indigo-700 disabled:cursor-not-allowed dark:text-violet-300 dark:hover:text-violet-200">browse</button></p>
         <p className="mt-1 text-xs text-slate-400">{hint || 'Upload images, documents, or other supporting files.'}</p>
+        {showMetadata && <p className="mt-2 text-[10px] leading-relaxed text-slate-400">Parent, name, path, size, MIME type, uploader, and timestamps are assigned automatically.</p>}
       </div>
       {(existingFiles.length > 0 || files.length > 0) && <div className="mt-3 space-y-2">
-        {existingFiles.map((file) => <div key={file._id} className="flex items-center gap-3 rounded-xl border border-slate-200/70 bg-white/70 px-3 py-2.5 dark:border-slate-800/70 dark:bg-slate-900/60"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><Paperclip className="h-3.5 w-3.5" /></div><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold text-slate-700 dark:text-slate-200">{file.name || file.title || 'Attachment'}</p><p className="text-[10px] text-slate-400">Already uploaded</p></div>{onRemoveExisting && <button type="button" disabled={disabled} onClick={() => onRemoveExisting(file)} aria-label={`Remove ${file.name || 'attachment'}`} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:hover:bg-rose-950/30 dark:hover:text-rose-300"><X className="h-3.5 w-3.5" /></button>}</div>)}
-        {files.map((file, index) => <div key={`${file.name}-${file.lastModified}-${index}`} className="flex items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50/50 px-3 py-2.5 dark:border-violet-900/40 dark:bg-violet-950/20"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-violet-950/70 dark:text-violet-300"><Paperclip className="h-3.5 w-3.5" /></div><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold text-slate-700 dark:text-slate-200">{file.name}</p><p className="text-[10px] text-indigo-500 dark:text-violet-300">Ready to upload</p></div><button type="button" disabled={disabled} onClick={() => removeFile(index)} aria-label={`Remove ${file.name}`} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:hover:bg-rose-950/30 dark:hover:text-rose-300"><X className="h-3.5 w-3.5" /></button></div>)}
+        {existingFiles.map((file) => <div key={file._id} className="rounded-xl border border-slate-200/70 bg-white/70 px-3 py-2.5 dark:border-slate-800/70 dark:bg-slate-900/60"><div className="flex items-center gap-3"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><Paperclip className="h-3.5 w-3.5" /></div><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold text-slate-700 dark:text-slate-200">{file.name || file.title || 'Attachment'}</p><p className="text-[10px] text-slate-400">Already uploaded</p></div>{onRemoveExisting && <button type="button" disabled={disabled} onClick={() => onRemoveExisting(file)} aria-label={`Remove ${file.name || 'attachment'}`} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:hover:bg-rose-950/30 dark:hover:text-rose-300"><X className="h-3.5 w-3.5" /></button>}</div>{metadataFields(file, 0, true)}</div>)}
+        {files.map((file, index) => <div key={`${file.name}-${file.lastModified}-${index}`} className="rounded-xl border border-indigo-100 bg-indigo-50/50 px-3 py-2.5 dark:border-violet-900/40 dark:bg-violet-950/20"><div className="flex items-center gap-3"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-violet-950/70 dark:text-violet-300"><Paperclip className="h-3.5 w-3.5" /></div><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold text-slate-700 dark:text-slate-200">{file.name}</p><p className="text-[10px] text-indigo-500 dark:text-violet-300">Ready to upload</p></div><button type="button" disabled={disabled} onClick={() => removeFile(index)} aria-label={`Remove ${file.name}`} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:hover:bg-rose-950/30 dark:hover:text-rose-300"><X className="h-3.5 w-3.5" /></button></div>{metadataFields(metadata[index] || {}, index)}</div>)}
       </div>}
     </div>
   );

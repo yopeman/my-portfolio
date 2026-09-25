@@ -4,12 +4,57 @@ import { filesApi } from '../../api/files.js';
 import { projectsApi } from '../../api/projects.js';
 import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, Badge, Field, LoadingRows, Modal, SearchInput, Select, TableEmpty, TextArea, TextInput } from '../../components/admin/form.jsx';
 
-const EMPTY = {
-  name: '', slug: '', summary: '', description: '', problem: '', type: 'product', order: 0, tags: '', attachments: [], existingFiles: [],
-};
+const featureDefaults = { name: '', description: '', order: 0 };
+const linkDefaults = { type: '', link: '', order: 0 };
+
+function emptyProject() {
+  return {
+    name: '', slug: '', summary: '', description: '', problem: '', solution: '', type: 'product', order: 0, tags: '',
+    features: [{ ...featureDefaults }], stacks: [{ ...featureDefaults }], links: [{ ...linkDefaults }],
+    attachments: [], attachmentMetadata: [], existingFiles: [], originalFiles: [],
+  };
+}
+
+function repeaterItems(items, defaults) {
+  if (!Array.isArray(items) || items.length === 0) return [{ ...defaults }];
+  return items.map((item, index) => ({ ...defaults, ...(item || {}), order: item?.order ?? index }));
+}
 
 function toForm(item) {
-  return { ...EMPTY, ...item, tags: (item.tags || []).join(', '), attachments: [], existingFiles: item.files || [] };
+  const existingFiles = (item.files || []).map((file) => ({ ...file }));
+  return {
+    ...emptyProject(),
+    ...item,
+    tags: (item.tags || []).join(', '),
+    features: repeaterItems(item.features, featureDefaults),
+    stacks: repeaterItems(item.stacks, featureDefaults),
+    links: repeaterItems(item.links, linkDefaults),
+    attachments: [],
+    attachmentMetadata: [],
+    existingFiles,
+    originalFiles: existingFiles.map((file) => ({ ...file })),
+  };
+}
+
+function cleanProjectItems(items, type) {
+  return (items || []).filter((item) => (type === 'links' ? item.link?.trim() : item.name?.trim())).map((item, index) => {
+    const order = Number(item.order);
+    return {
+      ...(type === 'links' ? { type: item.type?.trim() || 'website', link: item.link.trim() } : { name: item.name.trim(), description: item.description?.trim() || '' }),
+      order: item.order === '' || item.order === undefined || item.order === null || !Number.isFinite(order) ? index : order,
+    };
+  });
+}
+
+function RepeaterField({ title, description, items, onAdd, onRemove, children }) {
+  return (
+    <div className="rounded-2xl border border-slate-200/70 bg-slate-50/50 p-4 dark:border-slate-800/70 dark:bg-slate-900/30">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">{title}</h3><p className="mt-1 text-xs text-slate-400">{description}</p></div><ActionButton type="button" variant="neutral" onClick={onAdd}><Plus className="h-3.5 w-3.5" /> Add {title}</ActionButton></div>
+      <div className="mt-4 space-y-3">
+        {items.map((item, index) => <div key={`${title}-${index}`} className="rounded-xl border border-slate-200/70 bg-white/80 p-4 dark:border-slate-800/70 dark:bg-slate-900/60"><div className="mb-3 flex justify-end"><ActionButton type="button" variant="subtle" onClick={() => onRemove(index)} aria-label={`Remove ${title} ${index + 1}`}><Trash2 className="h-3.5 w-3.5" /></ActionButton></div>{children(item, index)}</div>)}
+      </div>
+    </div>
+  );
 }
 
 export default function ProjectsAdmin() {
@@ -49,9 +94,24 @@ export default function ProjectsAdmin() {
     setForm((current) => ({ ...current, [key]: value }));
   };
 
+  const updateRepeater = (collection, index, key, value) => setForm((current) => ({
+    ...current,
+    [collection]: current[collection].map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value } : item),
+  }));
+
+  const addRepeater = (collection) => setForm((current) => ({
+    ...current,
+    [collection]: [...current[collection], collection === 'links' ? { ...linkDefaults, order: current[collection].length } : { ...featureDefaults, order: current[collection].length }],
+  }));
+
+  const removeRepeater = (collection, index) => setForm((current) => ({
+    ...current,
+    [collection]: current[collection].filter((_, itemIndex) => itemIndex !== index),
+  }));
+
   const openCreate = () => {
     setError('');
-    setForm({ ...EMPTY, attachments: [], existingFiles: [] });
+    setForm(emptyProject());
   };
 
   async function removeAttachment(file) {
@@ -72,22 +132,33 @@ export default function ProjectsAdmin() {
     e.preventDefault();
     setSaving(true);
     setError('');
-    const { attachments, ...payload } = form;
-    delete payload.existingFiles;
+    const { attachments, attachmentMetadata, existingFiles, originalFiles, ...payload } = form;
+    delete payload._id;
     delete payload.files;
     payload.tags = form.tags.split(',').map((tag) => tag.trim()).filter(Boolean);
     payload.order = Number(form.order) || 0;
+    payload.features = cleanProjectItems(form.features, 'features');
+    payload.stacks = cleanProjectItems(form.stacks, 'stacks');
+    payload.links = cleanProjectItems(form.links, 'links');
     try {
       const result = form._id ? await projectsApi.update(form._id, payload) : await projectsApi.create(payload);
       const project = result.project;
-      if (attachments.length > 0) {
-        try {
-          await filesApi.uploadMany('project', project._id, attachments);
-        } catch {
-          setForm((value) => ({ ...value, _id: project._id, existingFiles: project.files || value.existingFiles }));
-          setError('Project saved, but one or more attachments could not be uploaded. Try again.');
-          return;
+      const originalById = new Map((originalFiles || []).map((file) => [file._id, file]));
+      const changedFiles = (existingFiles || []).filter((file) => {
+        const original = originalById.get(file._id);
+        return original && ['order', 'title', 'alt'].some((key) => String(file[key] ?? '') !== String(original[key] ?? ''));
+      });
+      try {
+        if (changedFiles.length > 0) {
+          await Promise.all(changedFiles.map((file) => filesApi.update(file._id, { order: Number(file.order) || 0, title: file.title || '', alt: file.alt || '' })));
         }
+        if (attachments.length > 0) {
+          await filesApi.uploadMany('project', project._id, attachments, undefined, attachmentMetadata);
+        }
+      } catch {
+        setForm((value) => ({ ...value, _id: project._id }));
+        setError('Project saved, but one or more attachment changes could not be saved. Try again.');
+        return;
       }
       setForm(null);
       await load();
@@ -128,11 +199,22 @@ export default function ProjectsAdmin() {
             </div>
             <div className="h-px bg-slate-200/70 dark:bg-slate-800/70" />
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <Field label="Short summary" hint="One sentence for cards and previews."><TextArea rows={3} value={form.summary} onChange={set('summary')} /></Field>
               <Field label="Problem solved" hint="What challenge did this project address?"><TextArea rows={3} value={form.problem} onChange={set('problem')} /></Field>
+              <Field label="Solution" hint="Explain the approach and outcome."><TextArea rows={3} value={form.solution} onChange={set('solution')} /></Field>
             </div>
             <Field label="Description" hint="Markdown is supported."><TextArea rows={8} value={form.description} onChange={set('description')} /></Field>
-            <AttachmentField label="Project attachments" hint="Upload images or supporting files here. They will be linked automatically after the project is created." files={form.attachments} existingFiles={form.existingFiles} onChange={(attachments) => setForm((value) => ({ ...value, attachments }))} onRemoveExisting={(file) => removeAttachment(file)} disabled={saving || !!removingFileId} />
+            <Field label="Short summary" hint="One sentence for cards and previews."><TextArea rows={3} value={form.summary} onChange={set('summary')} /></Field>
+            <RepeaterField title="Features" description="Add the key capabilities in this project." items={form.features} onAdd={() => addRepeater('features')} onRemove={(index) => removeRepeater('features', index)}>
+              {(item, index) => <div className="grid gap-3 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)_5rem]"><Field label="Name"><TextInput value={item.name} onChange={(event) => updateRepeater('features', index, 'name', event.target.value)} placeholder="Feature name" /></Field><Field label="Description"><TextInput value={item.description} onChange={(event) => updateRepeater('features', index, 'description', event.target.value)} placeholder="What it does" /></Field><Field label="Order"><TextInput type="number" min="0" value={item.order} onChange={(event) => updateRepeater('features', index, 'order', event.target.value === '' ? '' : Number(event.target.value))} /></Field></div>}
+            </RepeaterField>
+            <RepeaterField title="Stacks" description="Add the technologies and tools used." items={form.stacks} onAdd={() => addRepeater('stacks')} onRemove={(index) => removeRepeater('stacks', index)}>
+              {(item, index) => <div className="grid gap-3 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)_5rem]"><Field label="Name"><TextInput value={item.name} onChange={(event) => updateRepeater('stacks', index, 'name', event.target.value)} placeholder="Technology" /></Field><Field label="Description"><TextInput value={item.description} onChange={(event) => updateRepeater('stacks', index, 'description', event.target.value)} placeholder="How it is used" /></Field><Field label="Order"><TextInput type="number" min="0" value={item.order} onChange={(event) => updateRepeater('stacks', index, 'order', event.target.value === '' ? '' : Number(event.target.value))} /></Field></div>}
+            </RepeaterField>
+            <RepeaterField title="Links" description="Add GitHub, website, YouTube, or other project links." items={form.links} onAdd={() => addRepeater('links')} onRemove={(index) => removeRepeater('links', index)}>
+              {(item, index) => <div className="grid gap-3 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)_5rem]"><Field label="Type"><TextInput value={item.type} onChange={(event) => updateRepeater('links', index, 'type', event.target.value)} placeholder="github" /></Field><Field label="Link"><TextInput type="url" value={item.link} onChange={(event) => updateRepeater('links', index, 'link', event.target.value)} placeholder="https://…" /></Field><Field label="Order"><TextInput type="number" min="0" value={item.order} onChange={(event) => updateRepeater('links', index, 'order', event.target.value === '' ? '' : Number(event.target.value))} /></Field></div>}
+            </RepeaterField>
+            <AttachmentField label="Project files" hint="Upload project images or supporting files. Set title, alt text, and order for each file." files={form.attachments} existingFiles={form.existingFiles} metadata={form.attachmentMetadata} onChange={(attachments) => setForm((value) => ({ ...value, attachments }))} onMetadataChange={(attachmentMetadata) => setForm((value) => ({ ...value, attachmentMetadata }))} onExistingChange={(existingFiles) => setForm((value) => ({ ...value, existingFiles }))} onRemoveExisting={removeAttachment} showMetadata disabled={saving || !!removingFileId} />
+            <p className="text-[10px] leading-relaxed text-slate-400">Project timestamps and file parent information are generated automatically when the record is saved.</p>
             <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200/70 pt-5 dark:border-slate-800/70"><ActionButton type="button" variant="neutral" onClick={() => setForm(null)}>Cancel</ActionButton><ActionButton type="submit" loading={saving}>{saving ? 'Saving…' : form._id ? 'Save changes' : 'Create project'}</ActionButton></div>
           </fieldset>
         </form>}
