@@ -112,6 +112,7 @@ export function mapAboutLike(about) {
     about: about?.bio || '',
     contact: contactsToMarkdown(about?.contacts),
     skills: skillsToMarkdown(about?.skills),
+    skillCount: Array.isArray(about?.skills) ? about.skills.length : 0,
     images: files.filter(isImageFile).map(fileUrl).filter(Boolean),
   };
 }

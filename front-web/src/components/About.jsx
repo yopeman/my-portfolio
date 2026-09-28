@@ -5,29 +5,39 @@ import { markdownComponents } from './markdownComponents';
 import SlideImage from './SlideImage';
 import AnimatedSection from './AnimatedSection';
 import { useScrollReveal } from '../hooks/useScrollReveal';
+import { useAsyncResource } from '../hooks/useAsyncResource.js';
+import { projectsApi } from '../api/projects.js';
 
 function AnimatedCounter({ end, suffix, label, delay = 0 }) {
   const { ref, isRevealed } = useScrollReveal({ threshold: 0.1 });
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    if (isRevealed) {
-      let startTimestamp = null;
-      const duration = 2000;
-      const timer = setTimeout(() => {
-        const step = (timestamp) => {
-          if (!startTimestamp) startTimestamp = timestamp;
-          const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-          const easeOut = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-          setCount(Math.floor(easeOut * end));
-          if (progress < 1) {
-            window.requestAnimationFrame(step);
-          }
-        };
-        window.requestAnimationFrame(step);
-      }, delay);
-      return () => clearTimeout(timer);
-    }
+    if (!isRevealed) return undefined;
+    // Guard against a non-finite target so a bad API response can't poison the counter.
+    const target = Number.isFinite(end) && end > 0 ? Math.floor(end) : 0;
+
+    let startTimestamp = null;
+    let frame = null;
+    const duration = 2000;
+    const timer = setTimeout(() => {
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const easeOut = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+        setCount(Math.floor(easeOut * target));
+        if (progress < 1) {
+          frame = window.requestAnimationFrame(step);
+        }
+      };
+      frame = window.requestAnimationFrame(step);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+      // The target can change mid-flight, so stop the old loop before a new one starts.
+      if (frame !== null) window.cancelAnimationFrame(frame);
+    };
   }, [isRevealed, end, delay]);
 
   return (
@@ -40,8 +50,23 @@ function AnimatedCounter({ end, suffix, label, delay = 0 }) {
   );
 }
 
+// Year the portfolio/engineering career began, used for the "Years" stat.
+const START_YEAR = 2026;
+
 export default function About({ aboutMe }) {
   const images = aboutMe?.images || [];
+
+  // Total project count comes from the API meta so the full set is counted
+  // without transferring every record to the browser.
+  const { data: projectMeta } = useAsyncResource(
+    () => projectsApi.list({ limit: 1 }).then((r) => r.meta),
+    []
+  );
+
+  const currentYear = new Date().getFullYear();
+  const yearsOfExperience = Math.max(0, currentYear - START_YEAR);
+  const projectCount = projectMeta?.total ?? 0;
+  const techCount = aboutMe?.skillCount ?? 0;
 
   // Extract YouTube embed URL
   const getYoutubeEmbedUrl = (markdown) => {
@@ -85,9 +110,9 @@ export default function About({ aboutMe }) {
 
           {/* Stats Counter Area */}
           <div className="grid grid-cols-3 gap-4">
-            <AnimatedCounter end={3} suffix="+" label="Years" delay={100} />
-            <AnimatedCounter end={15} suffix="+" label="Projects" delay={300} />
-            <AnimatedCounter end={10} suffix="+" label="Tech" delay={500} />
+            <AnimatedCounter end={yearsOfExperience} suffix="+" label="Years" delay={100} />
+            <AnimatedCounter end={projectCount} suffix="+" label="Projects" delay={300} />
+            <AnimatedCounter end={techCount} suffix="+" label="Tech" delay={500} />
           </div>
 
           {/* YouTube embed */}
