@@ -1,5 +1,5 @@
 export const PARENT_ENTITIES = ['user', 'about', 'project', 'blog', 'plan'];
-export const FEEDBACK_ENTITIES = ['about', 'project', 'blog', 'plan'];
+export const FEEDBACK_ENTITIES = ['about', 'project', 'blog', 'plan', 'system', 'feedback'];
 export const REACTION_ENTITIES = ['about', 'project', 'blog', 'plan', 'feedback'];
 
 const RESOURCE_MAP = {

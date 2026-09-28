@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Check, ExternalLink, Eye, Pencil, Plus, RotateCcw, Sparkles, Trash2, UserRound } from 'lucide-react';
+import { Check, ExternalLink, Eye, MessageSquare, Pencil, Plus, RotateCcw, Sparkles, Trash2, UserRound } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { filesApi } from '../../api/files.js';
 import { aboutApi } from '../../api/about.js';
 import { ActionButton, AdminHeader, AdminPanel, AttachmentField, Badge, Field, Modal, TextArea, TextInput, ViewField, ViewFiles, ViewList, ViewSection, ViewTimestamps } from '../../components/admin/form.jsx';
 import ViewEngagement from '../../components/admin/ViewEngagement.jsx';
+import EngagementCell from '../../components/admin/EngagementCell.jsx';
+import { engagementFor, useEngagement } from '../../components/admin/useEngagement.js';
 
 const CONTACT_DEFAULT = { name: '', title: '', link: '', order: 0 };
 const SKILL_DEFAULT = { category: '', name: '', progress: 50, order: 0 };
@@ -170,6 +172,7 @@ export default function AboutAdmin() {
   const [saved, setSaved] = useState(false);
   const [about, setAbout] = useState(null);
   const [viewing, setViewing] = useState(null);
+  const engagement = useEngagement('about', about?._id ? [about._id] : []);
 
   const load = useCallback(async () => {
     try {
@@ -352,6 +355,20 @@ export default function AboutAdmin() {
             <AdminPanel className="overflow-hidden p-0">
               <div className="bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 p-6 text-white"><div className="flex items-center justify-between"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur"><Sparkles className="h-5 w-5" /></div><span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em]">Live preview</span></div><p className="mt-6 text-[10px] font-extrabold uppercase tracking-[0.18em] text-indigo-100">Public introduction</p><h2 className="mt-2 text-2xl font-extrabold leading-tight">{form.headline || 'Your professional headline'}</h2></div>
               <div className="space-y-5 p-5"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Bio preview</p><p className="mt-2 line-clamp-8 whitespace-pre-line text-sm leading-6 text-slate-600 dark:text-slate-300">{form.bio || 'Your bio will appear here once you add it.'}</p></div><div className="h-px bg-slate-200/70 dark:bg-slate-800/70" /><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Contact preview</p><div className="mt-3 space-y-2">{visibleContacts.length > 0 ? visibleContacts.map((contact, index) => { const href = safeHref(contact.link); return <div key={`${contact.name}-${index}`} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">{href ? <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 items-center gap-1.5 font-bold text-indigo-600 hover:underline dark:text-violet-300"><ExternalLink className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{contact.name || contact.title || 'Contact'}</span></a> : <span className="inline-flex min-w-0 items-center gap-1.5 font-semibold"><UserRound className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">{contact.name || contact.title || 'Contact'}</span></span>}{contact.title && <span className="truncate text-slate-400">· {contact.title}</span>}</div>; }) : <p className="text-xs text-slate-400">No contacts added yet.</p>}</div></div><div className="h-px bg-slate-200/70 dark:bg-slate-800/70" /><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Skill preview</p><div className="mt-3 space-y-3">{visibleSkills.length > 0 ? visibleSkills.map((skill, index) => <div key={`${skill.name}-${index}`}><div className="flex items-center justify-between gap-3 text-xs"><span className="truncate font-semibold text-slate-600 dark:text-slate-300">{skill.name || skill.category}</span><span className="font-bold text-slate-400">{skill.progress}%</span></div><div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" style={{ width: `${Math.min(100, Math.max(1, Number(skill.progress) || 1))}%` }} /></div></div>) : <p className="text-xs text-slate-400">No skills added yet.</p>}</div></div></div>
+            </AdminPanel>
+
+            <AdminPanel className="p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Engagement</p>
+                </div>
+              </div>
+              <div className="mt-3">
+                {about?._id
+                  ? <EngagementCell stats={engagementFor(engagement, about._id)} onClick={() => setViewing(about)} />
+                  : <p className="text-xs text-slate-400">Save the profile to start collecting feedback.</p>}
+              </div>
             </AdminPanel>
 
             <AdminPanel className="p-5">

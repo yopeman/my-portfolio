@@ -4,9 +4,10 @@ const { Schema } = mongoose;
 
 const feedbackSchema = new Schema(
   {
-    parentEntity: { type: String, enum: ['about', 'project', 'blog', 'plan', 'system'], required: true },
+    // 'feedback' lets a reply hang off a comment via parentId.
+    parentEntity: { type: String, enum: ['about', 'project', 'blog', 'plan', 'system', 'feedback'], required: true },
     parentId: { type: Schema.Types.ObjectId, required: true },
-    type: { type: String, enum: ['feedback', 'comment', 'reply'], default: 'feedback' },
+    type: { type: String, enum: ['comment', 'reply'], default: 'comment' },
     user: { type: Schema.Types.ObjectId, ref: 'User' },
     content: { type: String, required: true },
     deletedAt: { type: Date, default: null },

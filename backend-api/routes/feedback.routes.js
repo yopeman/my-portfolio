@@ -5,6 +5,8 @@ import { authenticate, optionalAuth } from '../middlewares/auth.middleware.js';
 const router = Router();
 
 router.get('/', optionalAuth, feedbackController.listFeedback);
+router.get('/counts', optionalAuth, feedbackController.countFeedback);
+router.get('/replies', optionalAuth, feedbackController.listReplies);
 router.get('/:id', feedbackController.getFeedback);
 router.post('/', optionalAuth, feedbackController.createFeedback);
 router.patch('/:id', authenticate, feedbackController.updateFeedback);

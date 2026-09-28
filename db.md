@@ -112,9 +112,10 @@
 - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Feedback:
-  - parent entity: about, project, blog, plan, system
+  - parent entity: about, project, blog, plan, system, feedback
   - parent id
-  - type: feedback, comment, reply
+    - a reply sets parent entity to feedback and parent id to the comment _id
+  - type: comment, reply
   - user id
   - content
   - timestamps (createdAt, updatedAt, deletedAt)
