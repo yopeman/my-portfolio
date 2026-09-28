@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 
 const feedbackSchema = new Schema(
   {
-    parentEntity: { type: String, enum: ['about', 'project', 'blog', 'plan'], required: true },
+    parentEntity: { type: String, enum: ['about', 'project', 'blog', 'plan', 'system'], required: true },
     parentId: { type: Schema.Types.ObjectId, required: true },
     type: { type: String, enum: ['feedback', 'comment', 'reply'], default: 'feedback' },
     user: { type: Schema.Types.ObjectId, ref: 'User' },

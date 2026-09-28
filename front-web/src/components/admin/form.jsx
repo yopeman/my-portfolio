@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Inbox, LoaderCircle, Paperclip, Search, UploadCloud, X } from 'lucide-react';
+import { formatBytesValue, formatDateValue } from './view-utils.js';
+import { resolveFileUrl } from '../../services/adapters.js';
 
 export function Field({ label, hint, error, required = false, children, className = '' }) {
   return (
@@ -174,6 +176,75 @@ export function AttachmentField({ label = 'Attachments', hint, files = [], exist
       </div>}
     </div>
   );
+}
+
+export function ViewSection({ title, description, count, children, className = '' }) {
+  return (
+    <section className={`rounded-2xl border border-slate-200/70 bg-white/60 p-4 dark:border-slate-800/70 dark:bg-slate-900/40 ${className}`}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">{title}</h3>
+          {description && <p className="mt-1 text-xs leading-relaxed text-slate-400">{description}</p>}
+        </div>
+        {count !== undefined && count !== null && <Badge tone="slate">{count}</Badge>}
+      </div>
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+export function ViewField({ label, value, mono = false, className = '' }) {
+  const empty = value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
+  return (
+    <div className={`min-w-0 ${className}`}>
+      <dt className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-400">{label}</dt>
+      <dd className={`mt-1 whitespace-pre-wrap break-words text-sm font-semibold text-slate-700 dark:text-slate-200 ${mono ? 'font-mono text-xs leading-6' : 'leading-6'}`}>
+        {empty ? <span className="font-normal text-slate-300 dark:text-slate-600">Not set</span> : String(value)}
+      </dd>
+    </div>
+  );
+}
+
+export function ViewList({ items = [], empty = 'Nothing recorded yet.', children }) {
+  if (!items.length) return <p className="text-xs text-slate-400">{empty}</p>;
+  return <div className="space-y-2">{items.map((item, index) => <div key={item?._id || `${index}`} className="rounded-xl border border-slate-200/70 bg-slate-50/50 p-3 dark:border-slate-800/70 dark:bg-slate-900/50">{children(item, index)}</div>)}</div>;
+}
+
+export function ViewFiles({ files = [], parentEntity = 'project', empty = 'No files attached.' }) {
+  if (!files.length) return <p className="text-xs text-slate-400">{empty}</p>;
+  return (
+    <div className="space-y-2">
+      {files.map((file) => (
+        <div key={file._id} className="rounded-xl border border-slate-200/70 bg-slate-50/50 p-3 dark:border-slate-800/70 dark:bg-slate-900/50">
+          <div className="flex flex-wrap items-center gap-3">
+            {file.mimeType?.startsWith('image/') && (
+              <img src={resolveFileUrl(file.fileUrl || file.path)} alt={file.alt || file.name} className="h-12 w-16 rounded-lg border border-slate-200 object-cover dark:border-slate-700" />
+            )}
+            <div className="min-w-0 flex-1">
+              <ViewField label="Title" value={file.title} />
+              <ViewField label="Name" value={file.name} />
+            </div>
+            <span className="text-xs text-slate-400">Order {file.order ?? 0}</span>
+          </div>
+          <dl className="mt-3 grid gap-3 border-t border-slate-200/60 pt-3 sm:grid-cols-2 lg:grid-cols-4 dark:border-slate-800/60">
+            <ViewField label="Alt text" value={file.alt} />
+            <ViewField label="MIME type" value={file.mimeType} />
+            <ViewField label="Size" value={formatBytesValue(file.size)} />
+            <ViewField label="Parent" value={`${file.parentEntity || parentEntity} · ${file.parentId || '—'}`} />
+          </dl>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function ViewTags({ items = [], empty = 'None' }) {
+  if (!items.length) return <span className="text-xs text-slate-400">{empty}</span>;
+  return <div className="flex flex-wrap gap-1.5">{items.map((tag) => <span key={tag} className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">{tag}</span>)}</div>;
+}
+
+export function ViewTimestamps({ createdAt, updatedAt, deletedAt, extra = [] }) {
+  return <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{extra.map(([label, value]) => <ViewField key={label} label={label} value={value} />)}<ViewField label="Created at" value={formatDateValue(createdAt)} /><ViewField label="Updated at" value={formatDateValue(updatedAt)} />{deletedAt !== undefined && <ViewField label="Deleted at" value={formatDateValue(deletedAt)} />}</dl>;
 }
 
 export function SearchInput({ value, onChange, placeholder = 'Search…', className = '' }) {

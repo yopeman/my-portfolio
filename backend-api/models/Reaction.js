@@ -6,7 +6,7 @@ const reactionSchema = new Schema(
   {
     parentEntity: {
       type: String,
-      enum: ['about', 'project', 'blog', 'plan', 'feedback'],
+      enum: ['about', 'project', 'blog', 'plan', 'system', 'feedback'],
       required: true,
     },
     parentId: { type: Schema.Types.ObjectId, required: true },

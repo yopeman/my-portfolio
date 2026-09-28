@@ -6,6 +6,14 @@ import { REACTION_ENTITIES } from '../utils/entities.js';
 
 const TYPES = ['like', 'dislike', 'love'];
 
+function emptySummary() {
+  return { like: 0, dislike: 0, love: 0 };
+}
+
+function toObjectId(value) {
+  return mongoose.Types.ObjectId.isValid(value) ? new mongoose.Types.ObjectId(value) : value;
+}
+
 function assertParent(query) {
   const { parentEntity, parentId } = query;
   if (!parentEntity || !parentId) throw ApiError.badRequest('parentEntity and parentId are required');
@@ -13,18 +21,51 @@ function assertParent(query) {
   return { parentEntity, parentId };
 }
 
+// Batched variant used by the admin views so a feedback thread can show reaction
+// counts per item without firing one request per row.
+export const reactionCounts = asyncHandler(async (req, res) => {
+  const { parentEntity } = req.query;
+  if (!parentEntity || !REACTION_ENTITIES.includes(parentEntity)) throw ApiError.badRequest('Invalid parentEntity');
+
+  const ids = String(req.query.parentIds || '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean)
+    .slice(0, 200);
+  if (ids.length === 0) return res.json({ summaries: {} });
+
+  const objectIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id)).map((id) => new mongoose.Types.ObjectId(id));
+  const match = { parentEntity, deletedAt: null };
+  if (objectIds.length > 0) match.parentId = { $in: objectIds };
+
+  const rows = await Reaction.aggregate([
+    { $match: match },
+    { $group: { _id: { parentId: '$parentId', type: '$type' }, count: { $sum: 1 } } },
+  ]);
+
+  const byId = new Map();
+  for (const id of ids) byId.set(id, { ...emptySummary(), total: 0 });
+  for (const row of rows) {
+    const key = String(row._id.parentId);
+    const entry = byId.get(key);
+    if (!entry) continue;
+    entry[row._id.type] = row.count;
+    entry.total += row.count;
+  }
+
+  return res.json({ summaries: Object.fromEntries(byId) });
+});
+
 export const reactionSummary = asyncHandler(async (req, res) => {
   const { parentEntity, parentId } = assertParent(req.query);
-  const parentObjectId = mongoose.Types.ObjectId.isValid(parentId)
-    ? new mongoose.Types.ObjectId(parentId)
-    : parentId;
+  const parentObjectId = toObjectId(parentId);
 
   const counts = await Reaction.aggregate([
     { $match: { parentEntity, parentId: parentObjectId, deletedAt: null } },
     { $group: { _id: '$type', count: { $sum: 1 } } },
   ]);
 
-  const summary = { like: 0, dislike: 0, love: 0 };
+  const summary = emptySummary();
   for (const row of counts) summary[row._id] = row.count;
 
   let mine = null;

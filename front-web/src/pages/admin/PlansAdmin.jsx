@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarRange, ChevronRight, Pencil, Plus, Target, Trash2, UserRound, Users } from 'lucide-react';
+import { CalendarRange, ChevronRight, Eye, Pencil, Plus, Target, Trash2, UserRound, Users } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { filesApi } from '../../api/files.js';
 import { plansApi } from '../../api/plans.js';
-import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, Badge, Field, LoadingRows, Modal, SearchInput, Select, TableEmpty, TextArea, TextInput } from '../../components/admin/form.jsx';
+import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, Badge, Field, LoadingRows, Modal, SearchInput, Select, TableEmpty, TextArea, TextInput, ViewField, ViewFiles, ViewList, ViewSection, ViewTimestamps } from '../../components/admin/form.jsx';
+import { refLabel } from '../../components/admin/view-utils.js';
+import ViewEngagement from '../../components/admin/ViewEngagement.jsx';
 
 const PERIODS = ['year', 'half', 'quarter', 'month', 'week', 'day'];
 const VISIBILITIES = ['guest', 'user', 'member', 'admin', 'owner'];
@@ -194,6 +196,7 @@ export default function PlansAdmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [viewing, setViewing] = useState(null);
 
   const load = useCallback(async () => {
     const [plansResult, optionsResult, assigneeResult] = await Promise.allSettled([
@@ -335,6 +338,47 @@ export default function PlansAdmin() {
       <AdminHeader eyebrow="Workspace / Planning" title="Plans" description="Build connected goals, periods, checklists, ownership, and visibility from one place." actions={canCreate ? <ActionButton onClick={openCreate}><Plus className="h-4 w-4" /> New plan</ActionButton> : null} />
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
 
+      <Modal open={!!viewing} onClose={() => setViewing(null)} eyebrow="Plan details" title={viewing?.title || 'Plan'} description="Complete record with hierarchy, checklists, assignees, and attached files.">
+        {viewing && <div className="space-y-5">
+          <ViewSection title="Overview" count={`${viewing.period || 'year'} ${viewing.year || ''}`.trim()}>
+            <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <ViewField label="Slug" value={viewing.slug} />
+              <ViewField label="Period" value={viewing.period} />
+              <ViewField label="Year" value={viewing.year} />
+              <ViewField label="Period number" value={viewing.periodNumber} />
+              <ViewField label="Start date" value={toDateInput(viewing.startDate) || viewing.startDate} />
+              <ViewField label="End date" value={toDateInput(viewing.endDate) || viewing.endDate} />
+            </dl>
+            <div className="mt-4"><p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Visibility</p>{viewing.visibility?.length ? <div className="flex flex-wrap gap-1.5">{viewing.visibility.map((visibility) => <Badge key={visibility} tone="indigo">{visibility}</Badge>)}</div> : <p className="text-xs text-slate-400">No visibility set.</p>}</div>
+          </ViewSection>
+          <ViewSection title="Hierarchy" description="Ancestor chain resolved from the plan tree.">
+            <PlanChain currentId={viewing._id} parentId={viewing.parentPlan} options={[...planOptions, ...items]} />
+            <dl className="mt-4 grid gap-4 sm:grid-cols-2"><ViewField label="Parent plan ID" value={viewing.parentPlan} /><ViewField label="Child plans" value={(items.filter((item) => item.parentPlan && String(item.parentPlan) === String(viewing._id)).map((item) => item.title || item.slug)).join(', ') || 'None'} /></dl>
+          </ViewSection>
+          <ViewSection title="Assigned users" count={Array.isArray(viewing.assignedTo) ? viewing.assignedTo.length : 0}>
+            <ViewList items={Array.isArray(viewing.assignedTo) ? viewing.assignedTo : []} empty="No users assigned.">
+              {(user) => <dl className="grid gap-3 sm:grid-cols-3"><ViewField label="Name" value={refLabel(user)} /><ViewField label="Email" value={typeof user === 'object' ? user.email : undefined} /><ViewField label="Role" value={typeof user === 'object' ? user.role : undefined} /></dl>}
+            </ViewList>
+          </ViewSection>
+          <ViewSection title="Intent">
+            <dl className="grid gap-4"><ViewField label="Description" value={viewing.description} /><ViewField label="Goal" value={viewing.goal} /><ViewField label="Target" value={viewing.target} /></dl>
+          </ViewSection>
+          <ViewSection title="Checklists" description="Milestones tracked against this plan." count={(viewing.checklists || []).length}>
+            <ViewList items={viewing.checklists || []} empty="No checklist items.">
+              {(checklist) => <div><div className="flex flex-wrap items-center justify-between gap-3"><ViewField label="Title" value={checklist.title} /><Badge tone={checklist.status === 'completed' ? 'green' : checklist.status === 'failed' ? 'rose' : checklist.status === 'cancelled' ? 'slate' : 'amber'}>{checklist.status || 'pending'}</Badge></div><ViewField label="Description" value={checklist.description} /><dl className="mt-2 grid gap-3 sm:grid-cols-4"><ViewField label="Order" value={checklist.order} /><ViewField label="Created at" value={formatDate(checklist.createdAt)} /><ViewField label="Updated at" value={formatDate(checklist.updatedAt)} /><ViewField label="Deleted at" value={formatDate(checklist.deletedAt)} /></dl></div>}
+            </ViewList>
+          </ViewSection>
+          <ViewSection title="Files" description="Assets linked to this plan." count={(viewing.files || []).length}>
+            <ViewFiles files={viewing.files || []} parentEntity="plan" />
+          </ViewSection>
+          <ViewEngagement parentEntity="plan" parentId={viewing._id} className="space-y-4" />
+          <ViewSection title="Record metadata">
+            <ViewTimestamps createdAt={viewing.createdAt} updatedAt={viewing.updatedAt} deletedAt={viewing.deletedAt} extra={[["ID", viewing._id]]} />
+          </ViewSection>
+          <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200/70 pt-5 dark:border-slate-800/70"><ActionButton type="button" variant="neutral" onClick={() => setViewing(null)}>Close</ActionButton>{canUpdate && <ActionButton type="button" onClick={() => { setError(''); setForm(toForm(viewing)); setViewing(null); }}><Pencil className="h-4 w-4" /> Edit plan</ActionButton>}</div>
+        </div>}
+      </Modal>
+
       <Modal open={!!form} onClose={() => !saving && setForm(null)} eyebrow={form?._id ? 'Editing plan' : 'New plan'} title={form?._id ? 'Refine plan structure' : 'Create a connected plan'} description="Every field is saved to the Plans schema, including hierarchy, checklists, ownership, and files.">
         {form && <form onSubmit={save}>
           <fieldset disabled={saving} className="space-y-6 border-0 p-0">
@@ -361,7 +405,7 @@ export default function PlansAdmin() {
         </form>}
       </Modal>
 
-      <AdminPanel className="overflow-hidden"><AdminToolbar><div><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Plan hierarchy <span className="ml-1 text-xs font-medium text-slate-400">({filteredItems.length})</span></h2><p className="mt-1 text-xs text-slate-400">Years contain periods; periods can contain nested plans and checklists.</p></div><SearchInput value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search plans…" className="w-full sm:w-64" /></AdminToolbar><div className="overflow-x-auto"><table className="w-full min-w-[980px] text-sm"><thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">Plan / hierarchy</th><th className="px-4 py-3">Period</th><th className="px-4 py-3">Visibility</th><th className="px-4 py-3">Assigned</th><th className="px-4 py-3">Files</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{loading ? <LoadingRows rows={5} /> : filteredItems.map((item) => { const depth = planDepth(item, map); const parent = item.parentPlan ? map.get(String(item.parentPlan)) : null; return <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-4"><div className="flex items-center gap-3" style={{ paddingLeft: `${Math.min(depth, 5) * 18}px` }}><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-300"><CalendarRange className="h-4 w-4" /></div><div className="min-w-0"><p className="truncate font-bold text-slate-800 dark:text-slate-200">{item.title || 'Untitled plan'}</p><p className="truncate text-xs text-slate-400">{parent ? `Child of ${parent.title}` : item.slug || 'Top-level plan'}</p></div></div></td><td className="px-4 py-4"><Badge tone="slate" dot>{item.period} {item.year || ''}</Badge><p className="mt-1 text-[10px] text-slate-400">#{item.periodNumber ?? 1}</p></td><td className="px-4 py-4"><div className="flex flex-wrap gap-1">{(item.visibility || []).map((visibility) => <Badge key={visibility} tone="indigo">{visibility}</Badge>)}</div></td><td className="px-4 py-4 text-xs text-slate-500">{Array.isArray(item.assignedTo) ? item.assignedTo.length : 0} users</td><td className="px-4 py-4 text-xs text-slate-500">{(item.files || []).length}</td><td className="px-4 py-4 text-right"><div className="flex justify-end gap-1">{canUpdate && <ActionButton variant="subtle" aria-label={`Edit ${item.title}`} onClick={() => openEdit(item)}><Pencil className="h-4 w-4" /></ActionButton>}{canDelete && <ActionButton variant="subtle" aria-label={`Delete ${item.title}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton>}</div></td></tr>; })}{!loading && filteredItems.length === 0 && <TableEmpty colSpan={6} icon={CalendarRange} title={search ? 'No matching plans' : 'No plans yet'} description={search ? 'Try a different search term.' : 'Create your first plan to start building the hierarchy.'} />}</tbody></table></div></AdminPanel>
+      <AdminPanel className="overflow-hidden"><AdminToolbar><div><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Plan hierarchy <span className="ml-1 text-xs font-medium text-slate-400">({filteredItems.length})</span></h2><p className="mt-1 text-xs text-slate-400">Years contain periods; periods can contain nested plans and checklists.</p></div><SearchInput value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search plans…" className="w-full sm:w-64" /></AdminToolbar><div className="overflow-x-auto"><table className="w-full min-w-[980px] text-sm"><thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">Plan / hierarchy</th><th className="px-4 py-3">Period</th><th className="px-4 py-3">Visibility</th><th className="px-4 py-3">Assigned</th><th className="px-4 py-3">Files</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{loading ? <LoadingRows rows={5} /> : filteredItems.map((item) => { const depth = planDepth(item, map); const parent = item.parentPlan ? map.get(String(item.parentPlan)) : null; return <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-4"><div className="flex items-center gap-3" style={{ paddingLeft: `${Math.min(depth, 5) * 18}px` }}><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-300"><CalendarRange className="h-4 w-4" /></div><div className="min-w-0"><p className="truncate font-bold text-slate-800 dark:text-slate-200">{item.title || 'Untitled plan'}</p><p className="truncate text-xs text-slate-400">{parent ? `Child of ${parent.title}` : item.slug || 'Top-level plan'}</p></div></div></td><td className="px-4 py-4"><Badge tone="slate" dot>{item.period} {item.year || ''}</Badge><p className="mt-1 text-[10px] text-slate-400">#{item.periodNumber ?? 1}</p></td><td className="px-4 py-4"><div className="flex flex-wrap gap-1">{(item.visibility || []).map((visibility) => <Badge key={visibility} tone="indigo">{visibility}</Badge>)}</div></td><td className="px-4 py-4 text-xs text-slate-500">{Array.isArray(item.assignedTo) ? item.assignedTo.length : 0} users</td><td className="px-4 py-4 text-xs text-slate-500">{(item.files || []).length}</td><td className="px-4 py-4 text-right"><div className="flex justify-end gap-1"><ActionButton variant="subtle" aria-label={`View ${item.title}`} onClick={() => setViewing(item)}><Eye className="h-4 w-4" /></ActionButton>{canUpdate && <ActionButton variant="subtle" aria-label={`Edit ${item.title}`} onClick={() => openEdit(item)}><Pencil className="h-4 w-4" /></ActionButton>}{canDelete && <ActionButton variant="subtle" aria-label={`Delete ${item.title}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton>}</div></td></tr>; })}{!loading && filteredItems.length === 0 && <TableEmpty colSpan={6} icon={CalendarRange} title={search ? 'No matching plans' : 'No plans yet'} description={search ? 'Try a different search term.' : 'Create your first plan to start building the hierarchy.'} />}</tbody></table></div></AdminPanel>
     </div>
   );
 }

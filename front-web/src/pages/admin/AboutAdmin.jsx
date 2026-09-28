@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Check, ExternalLink, Plus, RotateCcw, Sparkles, Trash2, UserRound } from 'lucide-react';
+import { Check, ExternalLink, Eye, Pencil, Plus, RotateCcw, Sparkles, Trash2, UserRound } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { filesApi } from '../../api/files.js';
 import { aboutApi } from '../../api/about.js';
-import { ActionButton, AdminHeader, AdminPanel, AttachmentField, Badge, Field, TextArea, TextInput } from '../../components/admin/form.jsx';
+import { ActionButton, AdminHeader, AdminPanel, AttachmentField, Badge, Field, Modal, TextArea, TextInput, ViewField, ViewFiles, ViewList, ViewSection, ViewTimestamps } from '../../components/admin/form.jsx';
+import ViewEngagement from '../../components/admin/ViewEngagement.jsx';
 
 const CONTACT_DEFAULT = { name: '', title: '', link: '', order: 0 };
 const SKILL_DEFAULT = { category: '', name: '', progress: 50, order: 0 };
@@ -167,16 +168,22 @@ export default function AboutAdmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [about, setAbout] = useState(null);
+  const [viewing, setViewing] = useState(null);
 
   const load = useCallback(async () => {
     try {
       const result = await aboutApi.get();
       setForm(toForm(result.about));
+      setAbout(result.about);
+      setViewing(result.about);
       setError('');
     } catch (err) {
       if (err.response?.status === 404) setError('');
       else setError(err.response?.data?.error || 'Unable to load profile.');
       setForm(emptyForm());
+      setAbout(null);
+      setViewing(null);
     } finally {
       setLoading(false);
     }
@@ -281,8 +288,34 @@ export default function AboutAdmin() {
 
   return (
     <div className="space-y-7">
-      <AdminHeader eyebrow="Workspace / Profile" title="About" description="Shape the story, contact details, and capabilities visitors see across your portfolio." actions={saved ? <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300"><Check className="h-3.5 w-3.5" /> Changes saved</span> : <Badge tone="indigo">{completedSections}/4 sections ready</Badge>} />
+      <AdminHeader eyebrow="Workspace / Profile" title="About" description="Shape the story, contact details, and capabilities visitors see across your portfolio." actions={<div className="flex flex-wrap items-center gap-2">{saved ? <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300"><Check className="h-3.5 w-3.5" /> Changes saved</span> : <Badge tone="indigo">{completedSections}/4 sections ready</Badge>}<ActionButton variant="neutral" onClick={() => setViewing(about)} disabled={!about}><Eye className="h-4 w-4" /> View profile</ActionButton></div>} />
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
+
+      <Modal open={!!viewing} onClose={() => setViewing(null)} eyebrow="Profile details" title={viewing?.headline || 'About profile'} description="Complete profile record with contacts, skills, and attached files.">
+        {viewing && <div className="space-y-5">
+          <ViewSection title="Profile" count={viewing._id ? 'Saved' : 'Draft'}>
+            <dl className="grid gap-4 sm:grid-cols-2"><ViewField label="Headline" value={viewing.headline} /><ViewField label="Bio" value={viewing.bio} /></dl>
+          </ViewSection>
+          <ViewSection title="Contacts" description="Directory of people and links shown across the site." count={(viewing.contacts || []).length}>
+            <ViewList items={viewing.contacts || []} empty="No contacts recorded.">
+              {(contact) => <dl className="grid gap-3 sm:grid-cols-[1fr_1fr_1.4fr_4rem]"><ViewField label="Name" value={contact.name} /><ViewField label="Title" value={contact.title} /><ViewField label="Link" value={contact.link} /><ViewField label="Order" value={contact.order} /></dl>}
+            </ViewList>
+          </ViewSection>
+          <ViewSection title="Skills" description="Capabilities grouped by category with progress from 1–100." count={(viewing.skills || []).length}>
+            <ViewList items={viewing.skills || []} empty="No skills recorded.">
+              {(skill) => <dl className="grid gap-3 sm:grid-cols-[1fr_1fr_8rem_5rem]"><ViewField label="Category" value={skill.category} /><ViewField label="Name" value={skill.name} /><ViewField label="Progress" value={skill.progress} /><ViewField label="Order" value={skill.order} /></dl>}
+            </ViewList>
+          </ViewSection>
+          <ViewSection title="Files" description="Assets linked to this profile." count={(viewing.files || []).length}>
+            <ViewFiles files={viewing.files || []} parentEntity="about" />
+          </ViewSection>
+          {viewing._id && <ViewEngagement parentEntity="about" parentId={viewing._id} className="space-y-4" />}
+          <ViewSection title="Record metadata">
+            <ViewTimestamps createdAt={viewing.createdAt} updatedAt={viewing.updatedAt} deletedAt={viewing.deletedAt} extra={[["ID", viewing._id]]} />
+          </ViewSection>
+          <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200/70 pt-5 dark:border-slate-800/70"><ActionButton type="button" variant="neutral" onClick={() => setViewing(null)}>Close</ActionButton>{can('about', 'UPDATE') && <ActionButton type="button" onClick={() => setViewing(null)}><Pencil className="h-4 w-4" /> Back to editing</ActionButton>}</div>
+        </div>}
+      </Modal>
 
       <form onSubmit={save}>
         <fieldset disabled={!canUpdate} className="grid gap-5 border-0 p-0 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.75fr)]">

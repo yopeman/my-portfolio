@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pencil, Plus, Trash2, Users as UsersIcon } from 'lucide-react';
+import { Eye, Pencil, Plus, Trash2, Users as UsersIcon } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { filesApi } from '../../api/files.js';
 import { usersApi } from '../../api/users.js';
-import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, Badge, Field, Modal, SearchInput, Select, TableEmpty, TextArea, TextInput } from '../../components/admin/form.jsx';
+import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, Badge, Field, Modal, SearchInput, Select, TableEmpty, TextArea, TextInput, ViewField, ViewFiles, ViewSection, ViewTimestamps } from '../../components/admin/form.jsx';
 
 const ROLE_TONE = { owner: 'indigo', admin: 'amber', member: 'green', user: 'slate' };
 const ROLES = ['user', 'member', 'admin', 'owner'];
@@ -68,7 +68,7 @@ function formatDate(value) {
 function PermissionMatrix({ permissions, disabled, onToggle, onReset }) {
   return (
     <div className="rounded-2xl border border-slate-200/70 bg-slate-50/50 p-4 dark:border-slate-800/70 dark:bg-slate-900/30">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">Permissions</h3><p className="mt-1 text-xs text-slate-400">Choose the actions this user can perform for each workspace resource.</p></div><ActionButton type="button" variant="neutral" onClick={onReset} disabled={disabled}>Reset to role defaults</ActionButton></div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">Permissions</h3><p className="mt-1 text-xs text-slate-400">Choose the actions this user can perform for each workspace resource.</p></div>{onReset && <ActionButton type="button" variant="neutral" onClick={onReset} disabled={disabled}>Reset to role defaults</ActionButton>}</div>
       <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200/70 dark:border-slate-800/70">
         <table className="w-full min-w-[620px] text-sm">
           <thead className="bg-white/70 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-900/60"><tr><th className="px-4 py-3">Resource</th>{PERMISSION_ACTIONS.map((action) => <th key={action} className="px-3 py-3 text-center">{action}</th>)}</tr></thead>
@@ -91,6 +91,7 @@ export default function UsersAdmin() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [viewing, setViewing] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -171,7 +172,7 @@ export default function UsersAdmin() {
     delete payload.deletedAt;
     const permissions = normalizePermissions(formPermissions);
     if ((!form._id || JSON.stringify(permissions) !== JSON.stringify(normalizePermissions(originalPermissions))) && (form._id ? me?.role === 'owner' || me?.role === 'admin' : true)) payload.permissions = permissions;
-    if (!password) delete payload.password;
+    if (password) payload.password = password;
     try {
       const result = form._id ? await usersApi.update(form._id, payload) : await usersApi.create(payload);
       const user = result.user;
@@ -232,6 +233,32 @@ export default function UsersAdmin() {
       <AdminHeader eyebrow="Workspace / Access" title="Users" description="Manage who can access the workspace and what they can do." actions={<div className="flex flex-wrap items-center gap-2"><div className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-700 dark:border-violet-900/40 dark:bg-violet-950/40 dark:text-violet-300">{items.length} members</div>{can('users', 'CREATE') && <ActionButton onClick={openCreate}><Plus className="h-4 w-4" /> New user</ActionButton>}</div>} />
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
 
+      <Modal open={!!viewing} onClose={() => setViewing(null)} eyebrow="User details" title={viewing?.name || 'User'} description="Complete record with role, permissions, and attached files. Password hashes are never returned.">
+        {viewing && <div className="space-y-5">
+          <ViewSection title="Identity" count={viewing.role}>
+            <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <ViewField label="Email" value={viewing.email} />
+              <ViewField label="Phone" value={viewing.phone} />
+              <ViewField label="Source" value={viewing.source} />
+              <ViewField label="User ID" value={viewing._id} />
+            </dl>
+          </ViewSection>
+          <ViewSection title="Profile">
+            <dl className="grid gap-4"><ViewField label="Additional contact information" value={viewing.additionalContact} /><ViewField label="Bio" value={viewing.bio} /></dl>
+          </ViewSection>
+          <ViewSection title="Permissions" description="Actions this user can perform for each workspace resource.">
+            <PermissionMatrix permissions={normalizePermissions(viewing.permissions)} disabled onToggle={() => {}} />
+          </ViewSection>
+          <ViewSection title="Files" description="Assets linked to this user." count={(viewing.files || []).length}>
+            <ViewFiles files={viewing.files || []} parentEntity="user" />
+          </ViewSection>
+          <ViewSection title="Record metadata">
+            <ViewTimestamps createdAt={viewing.createdAt} updatedAt={viewing.updatedAt} deletedAt={viewing.deletedAt} />
+          </ViewSection>
+          <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200/70 pt-5 dark:border-slate-800/70"><ActionButton type="button" variant="neutral" onClick={() => setViewing(null)}>Close</ActionButton>{can('users', 'UPDATE') && (viewing.role !== 'owner' || me?.role === 'owner') && <ActionButton type="button" onClick={() => { setError(''); setForm(toForm(viewing)); setViewing(null); }}><Pencil className="h-4 w-4" /> Edit user</ActionButton>}</div>
+        </div>}
+      </Modal>
+
       <Modal open={!!form} onClose={() => !saving && setForm(null)} eyebrow={form?._id ? 'Editing user' : 'New user'} title={form?._id ? 'Update user access' : 'Create a workspace user'} description="Manage identity, access, permissions, and user files from one place.">
         {form && <form onSubmit={save}>
           <fieldset disabled={saving} className="space-y-6 border-0 p-0">
@@ -261,7 +288,7 @@ export default function UsersAdmin() {
 
       <AdminPanel className="overflow-hidden">
         <AdminToolbar><div><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Team directory <span className="ml-1 text-xs font-medium text-slate-400">({filteredItems.length})</span></h2><p className="mt-1 text-xs text-slate-400">Search users, adjust roles, or open a profile to manage full access.</p></div><div className="flex flex-col gap-2 sm:flex-row"><SearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search users…" className="w-full sm:w-56" /><Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} options={[{ value: '', label: 'All roles' }, ...ROLES.map((role) => ({ value: role, label: role[0].toUpperCase() + role.slice(1) }))]} className="w-full sm:w-36" /></div></AdminToolbar>
-        <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm"><thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">User</th><th className="hidden px-4 py-3 sm:table-cell">Email</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Files</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{loading ? <tr><td colSpan={5} className="px-4 py-4"><div className="h-10 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" /></td></tr> : filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-xs font-extrabold text-violet-600 dark:bg-violet-950/50 dark:text-violet-300">{(item.name || '?').slice(0, 1).toUpperCase()}</div><div><p className="font-bold text-slate-800 dark:text-slate-200">{item.name}</p>{item._id === me?._id && <p className="text-xs text-indigo-500">That’s you</p>}</div></div></td><td className="hidden px-4 py-4 text-slate-500 sm:table-cell">{item.email}</td><td className="px-4 py-4">{can('users', 'UPDATE') && canManageAccess && item._id !== me?._id && item.role !== 'owner' ? <Field><Select value={item.role} onChange={(e) => changeRole(item, e.target.value)} options={ROLES} className="min-w-28" /></Field> : <div className="flex items-center gap-2"><Badge tone={ROLE_TONE[item.role] || 'slate'} dot>{item.role}</Badge>{item.role === 'owner' && <Badge tone="indigo">protected</Badge>}</div>}</td><td className="px-4 py-4 text-slate-500">{(item.files || []).length}</td><td className="px-4 py-4 text-right"><div className="flex justify-end gap-1">{can('users', 'UPDATE') && (item.role !== 'owner' || me?.role === 'owner') && <ActionButton variant="subtle" aria-label={`Edit ${item.name}`} onClick={() => openEdit(item)}><Pencil className="h-4 w-4" /></ActionButton>}{can('users', 'DELETE') && item._id !== me?._id && (item.role !== 'owner' || me?.role === 'owner') && <ActionButton variant="subtle" aria-label={`Remove ${item.name}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton>}</div></td></tr>)}{!loading && filteredItems.length === 0 && <TableEmpty colSpan={5} icon={UsersIcon} title={search || roleFilter ? 'No matching users' : 'No users yet'} description={search || roleFilter ? 'Try a different search or role filter.' : 'Create the first workspace user.'} />}</tbody></table>
+        <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm"><thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">User</th><th className="hidden px-4 py-3 sm:table-cell">Email</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Files</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{loading ? <tr><td colSpan={5} className="px-4 py-4"><div className="h-10 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" /></td></tr> : filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-xs font-extrabold text-violet-600 dark:bg-violet-950/50 dark:text-violet-300">{(item.name || '?').slice(0, 1).toUpperCase()}</div><div><p className="font-bold text-slate-800 dark:text-slate-200">{item.name}</p>{item._id === me?._id && <p className="text-xs text-indigo-500">That’s you</p>}</div></div></td><td className="hidden px-4 py-4 text-slate-500 sm:table-cell">{item.email}</td><td className="px-4 py-4">{can('users', 'UPDATE') && canManageAccess && item._id !== me?._id && item.role !== 'owner' ? <Field><Select value={item.role} onChange={(e) => changeRole(item, e.target.value)} options={ROLES} className="min-w-28" /></Field> : <div className="flex items-center gap-2"><Badge tone={ROLE_TONE[item.role] || 'slate'} dot>{item.role}</Badge>{item.role === 'owner' && <Badge tone="indigo">protected</Badge>}</div>}</td><td className="px-4 py-4 text-slate-500">{(item.files || []).length}</td><td className="px-4 py-4 text-right"><div className="flex justify-end gap-1"><ActionButton variant="subtle" aria-label={`View ${item.name}`} onClick={() => setViewing(item)}><Eye className="h-4 w-4" /></ActionButton>{can('users', 'UPDATE') && (item.role !== 'owner' || me?.role === 'owner') && <ActionButton variant="subtle" aria-label={`Edit ${item.name}`} onClick={() => openEdit(item)}><Pencil className="h-4 w-4" /></ActionButton>}{can('users', 'DELETE') && item._id !== me?._id && (item.role !== 'owner' || me?.role === 'owner') && <ActionButton variant="subtle" aria-label={`Remove ${item.name}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton>}</div></td></tr>)}{!loading && filteredItems.length === 0 && <TableEmpty colSpan={5} icon={UsersIcon} title={search || roleFilter ? 'No matching users' : 'No users yet'} description={search || roleFilter ? 'Try a different search or role filter.' : 'Create the first workspace user.'} />}</tbody></table>
         </div>
       </AdminPanel>
     </div>

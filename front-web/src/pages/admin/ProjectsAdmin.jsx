@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FolderKanban, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, FolderKanban, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { filesApi } from '../../api/files.js';
 import { projectsApi } from '../../api/projects.js';
-import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, Badge, Field, LoadingRows, Modal, SearchInput, Select, TableEmpty, TextArea, TextInput } from '../../components/admin/form.jsx';
+import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, Badge, Field, LoadingRows, Modal, SearchInput, Select, TableEmpty, TextArea, TextInput, ViewField, ViewFiles, ViewList, ViewSection, ViewTags, ViewTimestamps } from '../../components/admin/form.jsx';
+import ViewEngagement from '../../components/admin/ViewEngagement.jsx';
 
 const featureDefaults = { name: '', description: '', order: 0 };
 const linkDefaults = { type: '', link: '', order: 0 };
@@ -73,6 +74,7 @@ export default function ProjectsAdmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [viewing, setViewing] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -200,6 +202,49 @@ export default function ProjectsAdmin() {
 
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
 
+      <Modal open={!!viewing} onClose={() => setViewing(null)} eyebrow="Project details" title={viewing?.name || 'Project'} description="Complete record with every supporting model attached to this project.">
+        {viewing && <div className="space-y-5">
+          <ViewSection title="Overview" count={viewing.type}>
+            <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <ViewField label="Slug" value={viewing.slug} />
+              <ViewField label="Display order" value={viewing.order} />
+            </dl>
+            <div className="mt-4"><p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Tags</p><ViewTags items={viewing.tags || []} empty="No tags" /></div>
+          </ViewSection>
+          <ViewSection title="Narrative">
+            <dl className="grid gap-4">
+              <ViewField label="Summary" value={viewing.summary} />
+              <ViewField label="Problem solved" value={viewing.problem} />
+              <ViewField label="Solution" value={viewing.solution} />
+              <ViewField label="Description" value={viewing.description} mono />
+            </dl>
+          </ViewSection>
+          <ViewSection title="Features" description="Capabilities that make up this project." count={(viewing.features || []).length}>
+            <ViewList items={viewing.features || []} empty="No features recorded.">
+              {(feature) => <dl className="grid gap-3 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)_4rem]"><ViewField label="Name" value={feature.name} /><ViewField label="Description" value={feature.description} /><ViewField label="Order" value={feature.order} /></dl>}
+            </ViewList>
+          </ViewSection>
+          <ViewSection title="Stacks" description="Technologies and tools used." count={(viewing.stacks || []).length}>
+            <ViewList items={viewing.stacks || []} empty="No stack entries recorded.">
+              {(stack) => <dl className="grid gap-3 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)_4rem]"><ViewField label="Name" value={stack.name} /><ViewField label="Description" value={stack.description} /><ViewField label="Order" value={stack.order} /></dl>}
+            </ViewList>
+          </ViewSection>
+          <ViewSection title="Links" count={(viewing.links || []).length}>
+            <ViewList items={viewing.links || []} empty="No links recorded.">
+              {(link) => <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-2"><Badge tone="indigo">{link.type || 'link'}</Badge><a href={link.link} target="_blank" rel="noopener noreferrer" className="truncate text-sm font-semibold text-indigo-600 hover:underline dark:text-violet-300">{link.link || '—'}</a></div><span className="text-xs text-slate-400">Order {link.order ?? 0}</span></div>}
+            </ViewList>
+          </ViewSection>
+          <ViewSection title="Files" description="Assets linked to this project." count={(viewing.files || []).length}>
+            <ViewFiles files={viewing.files || []} parentEntity="project" />
+          </ViewSection>
+          <ViewEngagement parentEntity="project" parentId={viewing._id} className="space-y-4" />
+          <ViewSection title="Record metadata">
+            <ViewTimestamps createdAt={viewing.createdAt} updatedAt={viewing.updatedAt} deletedAt={viewing.deletedAt} extra={[["ID", viewing._id]]} />
+          </ViewSection>
+          <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200/70 pt-5 dark:border-slate-800/70"><ActionButton type="button" variant="neutral" onClick={() => setViewing(null)}>Close</ActionButton>{can('projects', 'UPDATE') && <ActionButton type="button" onClick={() => { setError(''); setForm(toForm(viewing)); setViewing(null); }}><Pencil className="h-4 w-4" /> Edit project</ActionButton>}</div>
+        </div>}
+      </Modal>
+
       <Modal open={!!form} onClose={() => !saving && setForm(null)} eyebrow={form?._id ? 'Editing project' : 'New project'} title={form?._id ? 'Update project details' : 'Add a project to your portfolio'} description="Use clear, specific language to make your work easy to scan.">
         {form && <form onSubmit={save}>
           <fieldset disabled={saving} className="space-y-6 border-0 p-0">
@@ -246,7 +291,7 @@ export default function ProjectsAdmin() {
           <table className="w-full min-w-[680px] text-sm">
             <thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">Project</th><th className="hidden px-4 py-3 md:table-cell">Slug</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Order</th><th className="px-4 py-3 text-right">Actions</th></tr></thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {loading ? <LoadingRows rows={5} /> : filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-300"><FolderKanban className="h-4 w-4" /></div><div className="min-w-0"><p className="truncate font-bold text-slate-800 dark:text-slate-200">{item.name || 'Untitled project'}</p><p className="truncate text-xs text-slate-400 md:hidden">{item.slug || 'No slug'}</p></div></div></td><td className="hidden max-w-48 truncate px-4 py-4 text-slate-500 md:table-cell">{item.slug || '—'}</td><td className="px-4 py-4"><Badge tone="indigo" dot>{item.type}</Badge></td><td className="px-4 py-4 font-semibold text-slate-500">{item.order ?? 0}</td><td className="px-4 py-4 text-right"><div className="flex justify-end gap-1">{can('projects', 'UPDATE') && <ActionButton variant="subtle" aria-label={`Edit ${item.name}`} onClick={() => { setError(''); setForm(toForm(item)); }}><Pencil className="h-4 w-4" /></ActionButton>}{can('projects', 'DELETE') && <ActionButton variant="subtle" aria-label={`Delete ${item.name}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton>}</div></td></tr>)}
+              {loading ? <LoadingRows rows={5} /> : filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-300"><FolderKanban className="h-4 w-4" /></div><div className="min-w-0"><p className="truncate font-bold text-slate-800 dark:text-slate-200">{item.name || 'Untitled project'}</p><p className="truncate text-xs text-slate-400 md:hidden">{item.slug || 'No slug'}</p></div></div></td><td className="hidden max-w-48 truncate px-4 py-4 text-slate-500 md:table-cell">{item.slug || '—'}</td><td className="px-4 py-4"><Badge tone="indigo" dot>{item.type}</Badge></td><td className="px-4 py-4 font-semibold text-slate-500">{item.order ?? 0}</td><td className="px-4 py-4 text-right"><div className="flex justify-end gap-1"><ActionButton variant="subtle" aria-label={`View ${item.name}`} onClick={() => setViewing(item)}><Eye className="h-4 w-4" /></ActionButton>{can('projects', 'UPDATE') && <ActionButton variant="subtle" aria-label={`Edit ${item.name}`} onClick={() => { setError(''); setForm(toForm(item)); }}><Pencil className="h-4 w-4" /></ActionButton>}{can('projects', 'DELETE') && <ActionButton variant="subtle" aria-label={`Delete ${item.name}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton>}</div></td></tr>)}
               {!loading && filteredItems.length === 0 && <TableEmpty colSpan={5} icon={FolderKanban} title={search ? 'No matching projects' : 'No projects yet'} description={search ? 'Try a different search term.' : 'Create your first project to start building your portfolio.'} />}
             </tbody>
           </table>

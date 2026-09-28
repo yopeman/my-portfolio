@@ -112,7 +112,7 @@
 - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Feedback:
-  - parent entity: about, project, blog, plan
+  - parent entity: about, project, blog, plan, system
   - parent id
   - type: feedback, comment, reply
   - user id
@@ -120,7 +120,7 @@
   - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Reactions:
-  - parent entity: about, project, blog, plan, feedback
+  - parent entity: about, project, blog, plan, system, feedback
   - parent id
   - user id
   - type: like, dislike, love

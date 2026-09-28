@@ -44,8 +44,11 @@ export const listBlogs = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
   const isStaff = !!req.user && hasPermission(req.user, 'blogs', 'READ');
   const filter = publicFilter(req.query, isStaff);
+  let query = Blog.find(filter);
+  // Staff need the author identity for the admin view; only expose the display name publicly.
+  if (isStaff) query = query.populate('author', 'name role');
   const [items, total] = await Promise.all([
-    Blog.find(filter).sort({ publishedAt: -1, createdAt: -1 }).skip(skip).limit(limit),
+    query.sort({ publishedAt: -1, createdAt: -1 }).skip(skip).limit(limit),
     Blog.countDocuments(filter),
   ]);
   await attachFiles(items);

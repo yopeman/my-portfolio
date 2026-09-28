@@ -225,6 +225,11 @@ export const listPlans = asyncHandler(async (req, res) => {
   const items = visible.slice(skip, skip + limit);
   const includeDetails = !!req.user && hasPermission(req.user, 'plans', 'READ');
   await attachFiles(items, includeDetails);
+  // Staff need assignee identities for the admin view. parentPlan is intentionally
+  // left unpopulated so the hierarchy chain can still be resolved from raw IDs.
+  if (includeDetails) {
+    await Promise.all(items.map((plan) => plan.populate('assignedTo', 'name email role')));
+  }
 
   return res.json({ items, meta: pageMeta(page, limit, visible.length) });
 });

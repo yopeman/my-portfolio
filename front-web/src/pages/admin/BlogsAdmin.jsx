@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FileText, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, FileText, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { filesApi } from '../../api/files.js';
 import { blogsApi } from '../../api/blogs.js';
-import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, Badge, Field, LoadingRows, Modal, SearchInput, Select, TableEmpty, TextArea, TextInput } from '../../components/admin/form.jsx';
+import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, Badge, Field, LoadingRows, Modal, SearchInput, Select, TableEmpty, TextArea, TextInput, ViewField, ViewFiles, ViewList, ViewSection, ViewTags, ViewTimestamps } from '../../components/admin/form.jsx';
+import ViewEngagement from '../../components/admin/ViewEngagement.jsx';
 
 const linkDefaults = { type: '', link: '' };
 const TYPE_TONE = { article: 'indigo', blog: 'green', event: 'amber' };
@@ -80,6 +81,7 @@ export default function BlogsAdmin() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [viewing, setViewing] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -187,6 +189,38 @@ export default function BlogsAdmin() {
 
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
 
+      <Modal open={!!viewing} onClose={() => setViewing(null)} eyebrow="Post details" title={viewing?.title || 'Post'} description="Complete record with author, links, and attached files.">
+        {viewing && <div className="space-y-5">
+          <ViewSection title="Overview" count={viewing.status}>
+            <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <ViewField label="Slug" value={viewing.slug} />
+              <ViewField label="Content type" value={viewing.type} />
+              <ViewField label="Author" value={authorLabel(viewing.author)} />
+              <ViewField label="Reading time" value={readingTimeLabel(viewing)} />
+              <ViewField label="Published at" value={publishedAtLabel(viewing.publishedAt)} />
+              <ViewField label="Author ID" value={typeof viewing.author === 'string' ? viewing.author : viewing.author?._id} />
+            </dl>
+            <div className="mt-4"><p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Tags</p><ViewTags items={viewing.tags || []} empty="No tags" /></div>
+          </ViewSection>
+          <ViewSection title="Content">
+            <dl className="grid gap-4"><ViewField label="Excerpt" value={viewing.excerpt} /><ViewField label="Body" value={viewing.content} mono /></dl>
+          </ViewSection>
+          <ViewSection title="Links" count={(viewing.links || []).length}>
+            <ViewList items={viewing.links || []} empty="No links recorded.">
+              {(link) => <div className="flex flex-wrap items-center gap-2"><Badge tone="indigo">{link.type || 'link'}</Badge><a href={link.link} target="_blank" rel="noopener noreferrer" className="truncate text-sm font-semibold text-indigo-600 hover:underline dark:text-violet-300">{link.link || '—'}</a></div>}
+            </ViewList>
+          </ViewSection>
+          <ViewSection title="Files" description="Assets linked to this post." count={(viewing.files || []).length}>
+            <ViewFiles files={viewing.files || []} parentEntity="blog" />
+          </ViewSection>
+          <ViewEngagement parentEntity="blog" parentId={viewing._id} className="space-y-4" />
+          <ViewSection title="Record metadata">
+            <ViewTimestamps createdAt={viewing.createdAt} updatedAt={viewing.updatedAt} deletedAt={viewing.deletedAt} extra={[["ID", viewing._id]]} />
+          </ViewSection>
+          <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200/70 pt-5 dark:border-slate-800/70"><ActionButton type="button" variant="neutral" onClick={() => setViewing(null)}>Close</ActionButton>{can('blogs', 'UPDATE') && <ActionButton type="button" onClick={() => { setError(''); setForm(toForm(viewing)); setViewing(null); }}><Pencil className="h-4 w-4" /> Edit post</ActionButton>}</div>
+        </div>}
+      </Modal>
+
       <Modal open={!!form} onClose={() => !saving && setForm(null)} eyebrow={form?._id ? 'Editing post' : 'New post'} title={form?._id ? 'Refine your story' : 'Start a new story'} description="Draft privately, then publish when it is ready.">
         {form && <form onSubmit={save}>
           <fieldset disabled={saving} className="space-y-6 border-0 p-0">
@@ -224,7 +258,7 @@ export default function BlogsAdmin() {
 
       <AdminPanel className="overflow-hidden">
         <AdminToolbar><div><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">All posts <span className="ml-1 text-xs font-medium text-slate-400">({filteredItems.length})</span></h2><p className="mt-1 text-xs text-slate-400">Search, filter, and manage your writing.</p></div><div className="flex flex-col gap-2 sm:flex-row"><SearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search posts…" className="w-full sm:w-56" /><Select value={status} onChange={(e) => setStatus(e.target.value)} options={[{ value: '', label: 'All statuses' }, { value: 'published', label: 'Published' }, { value: 'draft', label: 'Drafts' }, { value: 'archived', label: 'Archived' }]} className="w-full sm:w-36" /></div></AdminToolbar>
-        <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-sm"><thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">Post</th><th className="hidden px-4 py-3 md:table-cell">Slug</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{loading ? <LoadingRows rows={5} /> : filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300"><FileText className="h-4 w-4" /></div><div className="min-w-0"><p className="truncate font-bold text-slate-800 dark:text-slate-200">{item.title || 'Untitled post'}</p><p className="truncate text-xs text-slate-400 md:hidden">{item.slug || 'No slug'}</p></div></div></td><td className="hidden max-w-48 truncate px-4 py-4 text-slate-500 md:table-cell">{item.slug || '—'}</td><td className="px-4 py-4"><Badge tone={TYPE_TONE[item.type] || 'slate'} dot>{item.type}</Badge></td><td className="px-4 py-4"><Badge tone={STATUS_TONE[item.status] || 'slate'} dot>{item.status}</Badge></td><td className="px-4 py-4 text-right"><div className="flex justify-end gap-1">{can('blogs', 'UPDATE') && <ActionButton variant="subtle" aria-label={`Edit ${item.title}`} onClick={() => { setError(''); setForm(toForm(item)); }}><Pencil className="h-4 w-4" /></ActionButton>}{can('blogs', 'DELETE') && <ActionButton variant="subtle" aria-label={`Delete ${item.title}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton>}</div></td></tr>)}{!loading && filteredItems.length === 0 && <TableEmpty colSpan={5} icon={FileText} title={search || status ? 'No matching posts' : 'No posts yet'} description={search || status ? 'Try another search or filter.' : 'Create your first post to get started.'} />}</tbody></table></div>
+        <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-sm"><thead className="bg-slate-50/80 text-left text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:bg-slate-800/40"><tr><th className="px-4 py-3">Post</th><th className="hidden px-4 py-3 md:table-cell">Slug</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{loading ? <LoadingRows rows={5} /> : filteredItems.map((item) => <tr key={item._id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300"><FileText className="h-4 w-4" /></div><div className="min-w-0"><p className="truncate font-bold text-slate-800 dark:text-slate-200">{item.title || 'Untitled post'}</p><p className="truncate text-xs text-slate-400 md:hidden">{item.slug || 'No slug'}</p></div></div></td><td className="hidden max-w-48 truncate px-4 py-4 text-slate-500 md:table-cell">{item.slug || '—'}</td><td className="px-4 py-4"><Badge tone={TYPE_TONE[item.type] || 'slate'} dot>{item.type}</Badge></td><td className="px-4 py-4"><Badge tone={STATUS_TONE[item.status] || 'slate'} dot>{item.status}</Badge></td><td className="px-4 py-4 text-right"><div className="flex justify-end gap-1"><ActionButton variant="subtle" aria-label={`View ${item.title}`} onClick={() => setViewing(item)}><Eye className="h-4 w-4" /></ActionButton>{can('blogs', 'UPDATE') && <ActionButton variant="subtle" aria-label={`Edit ${item.title}`} onClick={() => { setError(''); setForm(toForm(item)); }}><Pencil className="h-4 w-4" /></ActionButton>}{can('blogs', 'DELETE') && <ActionButton variant="subtle" aria-label={`Delete ${item.title}`} onClick={() => remove(item)}><Trash2 className="h-4 w-4" /></ActionButton>}</div></td></tr>)}{!loading && filteredItems.length === 0 && <TableEmpty colSpan={5} icon={FileText} title={search || status ? 'No matching posts' : 'No posts yet'} description={search || status ? 'Try another search or filter.' : 'Create your first post to get started.'} />}</tbody></table></div>
       </AdminPanel>
     </div>
   );

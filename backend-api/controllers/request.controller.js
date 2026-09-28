@@ -6,12 +6,18 @@ import { parsePagination, pageMeta } from '../utils/pagination.js';
 
 const REQUEST_FIELDS = ['message', 'project', 'requirements', 'minBudget', 'maxBudget', 'timeline'];
 
+const REQUEST_POPULATE = [
+  { path: 'user', select: 'name email phone role bio' },
+  { path: 'project', select: 'name slug type summary' },
+  { path: 'assignedTo', select: 'name email role' },
+];
+
 export const listMyRequests = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
   const filter = { deletedAt: null, user: req.user._id };
 
   const [items, total] = await Promise.all([
-    Request.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Request.find(filter).populate(REQUEST_POPULATE).sort({ createdAt: -1 }).skip(skip).limit(limit),
     Request.countDocuments(filter),
   ]);
 
@@ -26,7 +32,7 @@ export const listAllRequests = asyncHandler(async (req, res) => {
   if (req.query.isRead === 'false') filter.isRead = false;
 
   const [items, total] = await Promise.all([
-    Request.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Request.find(filter).populate(REQUEST_POPULATE).sort({ createdAt: -1 }).skip(skip).limit(limit),
     Request.countDocuments(filter),
   ]);
 
