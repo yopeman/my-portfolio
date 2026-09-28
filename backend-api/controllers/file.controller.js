@@ -82,7 +82,7 @@ export const listFiles = asyncHandler(async (req, res) => {
   }
 
   const [items, total] = await Promise.all([
-    File.find(filter).sort({ order: 1, createdAt: 1 }).skip(skip).limit(limit),
+    File.find(filter).populate('uploadedBy', 'name email').sort({ order: 1, createdAt: 1 }).skip(skip).limit(limit),
     File.countDocuments(filter),
   ]);
 
