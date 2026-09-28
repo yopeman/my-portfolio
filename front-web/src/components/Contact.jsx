@@ -110,9 +110,13 @@ export default function Contact({ aboutMe }) {
       });
       const data = await response.json();
       if (response.ok) {
-        setSubStatus({ type: 'success', text: 'Subscribed successfully! Check your inbox.' });
+        const isNew = data.created !== false;
+        setSubStatus({
+          type: 'success',
+          text: isNew ? 'Subscribed successfully! Check your inbox.' : data.message || 'You are already subscribed.',
+        });
         setSubEmail('');
-        confetti({ particleCount: 50, spread: 40, origin: { y: 0.9 } });
+        if (isNew) confetti({ particleCount: 50, spread: 40, origin: { y: 0.9 } });
       } else {
         setSubStatus({ type: 'error', text: data.error || 'Failed to subscribe.' });
       }

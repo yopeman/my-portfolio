@@ -10,6 +10,7 @@ import fileRoutes from './file.routes.js';
 import feedbackRoutes from './feedback.routes.js';
 import reactionRoutes from './reaction.routes.js';
 import userRoutes from './user.routes.js';
+import * as subscriberController from '../controllers/subscriber.controller.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendMail } from '../services/email.service.js';
 import { handleChat } from '../services/chat.service.js';
@@ -87,50 +88,8 @@ router.post('/api/contact', asyncHandler(async (req, res) => {
   }
 }));
 
-router.post('/api/subscribe', asyncHandler(async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required.' });
-  }
-
-  try {
-    const receiver = env.receiverEmail;
-
-    await sendMail({
-      from: env.smtp.user,
-      to: receiver,
-      subject: `Portfolio Subscription: New Subscriber`,
-      text: `A new user has subscribed to your newsletter.\n\nEmail: ${email}`,
-      html:
-        `<h3>New Newsletter Subscription</h3>` +
-        `<p>A new user has subscribed to your newsletter.</p>` +
-        `<p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>`,
-    });
-
-    try {
-      await sendMail({
-        from: env.smtp.user,
-        to: email,
-        subject: `Thank you for subscribing!`,
-        text:
-          `Hello,\n\nThank you for subscribing to Yohanes Debebe's newsletter! You will receive updates about new projects and insights.\n\nBest regards,\nYohanes Debebe`,
-        html:
-          `<h3>Thank you for subscribing!</h3>` +
-          `<p>Hello,</p>` +
-          `<p>Thank you for subscribing to Yohanes Debebe's newsletter! You will receive updates about new projects and insights.</p>` +
-          `<p>Best regards,<br>Yohanes Debebe</p>`,
-      });
-    } catch (confError) {
-      console.warn('Could not send subscriber confirmation email:', confError);
-    }
-
-    return res.json({ success: true, message: 'Subscribed successfully.' });
-  } catch (error) {
-    console.error('Subscription email error:', error);
-    return res.status(500).json({ error: 'Failed to complete subscription. Please try again later.' });
-  }
-}));
+// Persists the Subscriber record first, then sends the notification emails.
+router.post('/api/subscribe', subscriberController.subscribeAndNotify);
 
 router.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date(), db: isDbReady() ? 'connected' : 'disconnected' });
