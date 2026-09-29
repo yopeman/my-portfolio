@@ -21,23 +21,6 @@ export default function ProjectDetailPage() {
   const project = data ? projectToCard(data) : null;
   const [imageIndex, setImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [parallax, setParallax] = useState(0);
-
-  useEffect(() => {
-    let frame = 0;
-    const updateParallax = () => {
-      frame = 0;
-      setParallax(Math.min(window.scrollY, 900) * -0.12);
-    };
-    const handleScroll = () => {
-      if (!frame) frame = window.requestAnimationFrame(updateParallax);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, []);
 
   useEffect(() => {
     if (!lightboxOpen) return undefined;
@@ -122,7 +105,7 @@ export default function ProjectDetailPage() {
           </div>
 
           {images.length > 0 && (
-            <AnimatedSection direction="scale" delay={220} className="mt-10">
+            <AnimatedSection direction="scale" delay={220} threshold={0} className="mt-10">
               <div className="group relative aspect-video max-h-[520px] overflow-hidden rounded-3xl border border-slate-200/70 bg-slate-950 shadow-2xl shadow-indigo-950/10 dark:border-slate-800">
                 <button type="button" className="absolute inset-0 z-10 cursor-zoom-in" onClick={() => setLightboxOpen(true)} aria-label="Open project gallery">
                   <span className="sr-only">Open project gallery</span>
@@ -130,8 +113,7 @@ export default function ProjectDetailPage() {
                 <img
                   src={images[currentImageIndex]}
                   alt={`${project.title} screenshot ${currentImageIndex + 1}`}
-                  className="h-full w-full object-contain transition-transform duration-500 will-change-transform group-hover:scale-[1.02]"
-                  style={{ transform: `translate3d(0, ${parallax}px, 0) scale(1.06)` }}
+                  className="h-full w-full object-cover transition-transform duration-500 will-change-transform group-hover:scale-[1.03]"
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent opacity-70" />
                 <div className="pointer-events-none absolute bottom-4 left-4 z-20 inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-950/50 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md"><ZoomIn className="h-3.5 w-3.5" /> View gallery</div>
@@ -193,12 +175,12 @@ export default function ProjectDetailPage() {
       </section>
 
       {lightboxOpen && images[currentImageIndex] && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="Project image gallery" onClick={() => setLightboxOpen(false)}>
+        <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-slate-950/90 p-4 pt-16 backdrop-blur-md sm:pt-20" role="dialog" aria-modal="true" aria-label="Project image gallery" onClick={() => setLightboxOpen(false)}>
           <button type="button" onClick={() => setLightboxOpen(false)} aria-label="Close gallery" className="absolute right-5 top-5 rounded-xl border border-white/20 bg-white/10 p-2 text-white transition-colors hover:bg-white/20"><X className="h-6 w-6" /></button>
-          <div className="relative flex max-h-[90vh] w-full max-w-6xl flex-col items-center gap-4" onClick={(event) => event.stopPropagation()}>
-            <img src={images[currentImageIndex]} alt={`${project.title} screenshot ${currentImageIndex + 1}`} className="max-h-[75vh] max-w-full rounded-2xl object-contain shadow-2xl" />
+          <div className="relative flex w-full max-w-6xl flex-col items-center gap-4" onClick={(event) => event.stopPropagation()}>
+            <img src={images[currentImageIndex]} alt={`${project.title} screenshot ${currentImageIndex + 1}`} className="block h-auto max-h-[75vh] w-auto max-w-full shrink-0 rounded-2xl object-contain shadow-2xl" />
             {images.length > 1 && (
-              <div className="flex items-center gap-3">
+              <div className="flex shrink-0 items-center gap-3">
                 <button type="button" onClick={selectPrevious} aria-label="Previous gallery image" className="rounded-xl border border-white/20 bg-white/10 p-2 text-white hover:bg-white/20"><ChevronLeft className="h-5 w-5" /></button>
                 <span className="text-sm font-semibold text-white/80">{currentImageIndex + 1} / {images.length}</span>
                 <button type="button" onClick={selectNext} aria-label="Next gallery image" className="rounded-xl border border-white/20 bg-white/10 p-2 text-white hover:bg-white/20"><ChevronRight className="h-5 w-5" /></button>
