@@ -6,10 +6,12 @@ import ProjectsSection from '../components/ProjectsSection.jsx';
 import WritingSection from '../components/WritingSection.jsx';
 import RoadmapSection from '../components/RoadmapSection.jsx';
 import Contact from '../components/Contact.jsx';
+import SiteFeedbackSection from '../components/SiteFeedbackSection.jsx';
 import PublicLayout from '../components/PublicLayout.jsx';
 import { useAsyncResource } from '../hooks/useAsyncResource.js';
 import { aboutApi } from '../api/about.js';
 import { mapAboutLike } from '../services/adapters.js';
+import { SectionShell } from '../components/ui.jsx';
 
 const EMPTY_ABOUT = {
   headline: '',
@@ -50,6 +52,11 @@ export default function HomePage() {
 
       {/* Conversion. */}
       <Contact aboutMe={aboutMe} />
+
+      {/* Feedback: the last word on the page, next to the footer. */}
+      <SectionShell id="site-feedback" size="wide" divider={false}>
+        <SiteFeedbackSection />
+      </SectionShell>
 
       {loading && <span className="sr-only" role="status">Loading profile…</span>}
     </PublicLayout>

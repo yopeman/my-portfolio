@@ -86,7 +86,7 @@ export function SectionShell({ id, size = 'wide', tone = 'plain', divider = true
 }
 
 /** Eyebrow + heading + lede, used at the top of each section. */
-export function SectionHeading({ eyebrow, icon: Icon, title, description, align = 'left', className = '', children, headingLevel: Heading = 'h2' }) {
+export function SectionHeading({ eyebrow, icon: Icon, title, highlight, description, align = 'left', className = '', children, headingLevel: Heading = 'h2' }) {
   const centered = align === 'center';
   return (
     <div className={`${centered ? 'mx-auto max-w-2xl text-center' : 'max-w-2xl'} ${className}`}>
@@ -98,6 +98,7 @@ export function SectionHeading({ eyebrow, icon: Icon, title, description, align 
       )}
       <Heading className="mt-4 text-balance text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
         {title}
+        {highlight && <> <span className="text-gradient-primary">{highlight}</span></>}
       </Heading>
       {description && (
         <p className="mt-4 text-base leading-relaxed text-slate-600 dark:text-slate-400 sm:text-lg">
