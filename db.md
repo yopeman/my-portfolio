@@ -31,6 +31,32 @@
   - name
   - progress (1-100)
   - order (float)
+- educations:
+  - institution
+  - degree
+  - field
+  - location
+  - startDate
+  - endDate
+  - cgpa
+  - description
+  - link
+  - order
+  - timestamps: { createdAt, updatedAt, deletedAt }
+- experiences
+  - company
+  - role
+  - type: full-time, part-time, contract, internship, freelance
+  - location
+  - remote
+  - startDate
+  - endDate       // null = current
+  - description
+  - highlights: []
+  - skills: []
+  - link
+  - order
+  - timestamps (createdAt, updatedAt, deletedAt)
 - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Projects

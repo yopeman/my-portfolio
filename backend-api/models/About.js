@@ -22,12 +22,52 @@ const skillSchema = new Schema(
   { _id: false }
 );
 
+const EXPERIENCE_TYPES = ['full-time', 'part-time', 'contract', 'internship', 'freelance'];
+
+const educationSchema = new Schema(
+  {
+    institution: { type: String, trim: true },
+    degree: { type: String, trim: true },
+    field: { type: String, trim: true },
+    location: { type: String, trim: true },
+    startDate: { type: Date, default: null },
+    endDate: { type: Date, default: null },
+    cgpa: { type: Number, min: 0, max: 10, default: null },
+    description: { type: String },
+    link: { type: String },
+    order: { type: Number, default: 0 },
+    deletedAt: { type: Date, default: null },
+  },
+  { timestamps: true }
+);
+
+const experienceSchema = new Schema(
+  {
+    company: { type: String, trim: true },
+    role: { type: String, trim: true },
+    type: { type: String, enum: EXPERIENCE_TYPES, default: 'full-time' },
+    location: { type: String, trim: true },
+    remote: { type: Boolean, default: false },
+    startDate: { type: Date, default: null },
+    endDate: { type: Date, default: null },
+    description: { type: String },
+    highlights: { type: [String], default: [] },
+    skills: { type: [String], default: [] },
+    link: { type: String },
+    order: { type: Number, default: 0 },
+    deletedAt: { type: Date, default: null },
+  },
+  { timestamps: true }
+);
+
 const aboutSchema = new Schema(
   {
     bio: { type: String },
     headline: { type: String },
     contacts: { type: [contactSchema], default: [] },
     skills: { type: [skillSchema], default: [] },
+    educations: { type: [educationSchema], default: [] },
+    experiences: { type: [experienceSchema], default: [] },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true }

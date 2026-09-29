@@ -1,6 +1,7 @@
 import Hero from '../components/Hero.jsx';
 import About from '../components/About.jsx';
 import Skills from '../components/Skills.jsx';
+import Timeline from '../components/Timeline.jsx';
 import ProjectsSection from '../components/ProjectsSection.jsx';
 import Contact from '../components/Contact.jsx';
 import PublicLayout from '../components/PublicLayout.jsx';
@@ -13,6 +14,8 @@ const EMPTY_ABOUT = {
   about: '',
   contact: '',
   skills: '',
+  educations: [],
+  experiences: [],
   images: [],
 };
 
@@ -57,6 +60,12 @@ export default function HomePage() {
 
       {/* Skills */}
       <Skills aboutMe={aboutMe} />
+
+      {/* Section Divider */}
+      <div className="section-divider h-12" />
+
+      {/* Experience & Education */}
+      <Timeline aboutMe={aboutMe} />
 
       {/* Section Divider */}
       <div className="section-divider h-12" />

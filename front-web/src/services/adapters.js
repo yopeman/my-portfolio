@@ -105,6 +105,61 @@ function linksToCard(links) {
   return card;
 }
 
+function safeUrl(value) {
+  try {
+    const url = new URL(String(value || '').trim());
+    return ['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol) ? url.toString() : '';
+  } catch {
+    return '';
+  }
+}
+
+function toIsoDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+export function educationsToList(educations) {
+  return orderedItems(educations)
+    .map((education) => ({
+      _id: education._id,
+      institution: education.institution || '',
+      degree: education.degree || '',
+      field: education.field || '',
+      location: education.location || '',
+      startDate: toIsoDate(education.startDate),
+      endDate: toIsoDate(education.endDate),
+      cgpa: Number.isFinite(Number(education.cgpa)) ? Number(education.cgpa) : null,
+      description: education.description || '',
+      link: safeUrl(education.link),
+      order: education.order ?? 0,
+    }))
+    .filter((education) => education.institution || education.degree || education.field);
+}
+
+export function experiencesToList(experiences) {
+  return orderedItems(experiences)
+    .map((experience) => ({
+      _id: experience._id,
+      company: experience.company || '',
+      role: experience.role || '',
+      type: experience.type || 'full-time',
+      location: experience.location || '',
+      remote: Boolean(experience.remote),
+      startDate: toIsoDate(experience.startDate),
+      // A null endDate means the role is current.
+      endDate: toIsoDate(experience.endDate),
+      current: !toIsoDate(experience.endDate),
+      description: experience.description || '',
+      highlights: (experience.highlights || []).map(String).filter(Boolean),
+      skills: (experience.skills || []).map(String).filter(Boolean),
+      link: safeUrl(experience.link),
+      order: experience.order ?? 0,
+    }))
+    .filter((experience) => experience.company || experience.role);
+}
+
 export function mapAboutLike(about) {
   const files = orderedFiles(about?.files);
   return {
@@ -113,6 +168,8 @@ export function mapAboutLike(about) {
     contact: contactsToMarkdown(about?.contacts),
     skills: skillsToMarkdown(about?.skills),
     skillCount: Array.isArray(about?.skills) ? about.skills.length : 0,
+    educations: educationsToList(about?.educations),
+    experiences: experiencesToList(about?.experiences),
     images: files.filter(isImageFile).map(fileUrl).filter(Boolean),
   };
 }

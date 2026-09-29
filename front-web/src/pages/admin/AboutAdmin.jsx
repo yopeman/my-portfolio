@@ -3,13 +3,47 @@ import { Check, ExternalLink, Eye, MessageSquare, Pencil, Plus, RotateCcw, Spark
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { filesApi } from '../../api/files.js';
 import { aboutApi } from '../../api/about.js';
-import { ActionButton, AdminHeader, AdminPanel, AttachmentField, Badge, Field, Modal, TextArea, TextInput, ViewField, ViewFiles, ViewList, ViewSection, ViewTimestamps } from '../../components/admin/form.jsx';
+import { ActionButton, AdminHeader, AdminPanel, AttachmentField, Badge, Field, Modal, Select, TextArea, TextInput, ViewField, ViewFiles, ViewList, ViewSection, ViewTimestamps } from '../../components/admin/form.jsx';
 import ViewEngagement from '../../components/admin/ViewEngagement.jsx';
 import EngagementCell from '../../components/admin/EngagementCell.jsx';
 import { engagementFor, useEngagement } from '../../components/admin/useEngagement.js';
 
 const CONTACT_DEFAULT = { name: '', title: '', link: '', order: 0 };
 const SKILL_DEFAULT = { category: '', name: '', progress: 50, order: 0 };
+const EDUCATION_DEFAULT = {
+  institution: '',
+  degree: '',
+  field: '',
+  location: '',
+  startDate: '',
+  endDate: '',
+  cgpa: '',
+  description: '',
+  link: '',
+  order: 0,
+};
+const EXPERIENCE_DEFAULT = {
+  company: '',
+  role: '',
+  type: 'full-time',
+  location: '',
+  remote: false,
+  startDate: '',
+  endDate: '',
+  description: '',
+  highlights: '',
+  skills: '',
+  link: '',
+  order: 0,
+};
+const EXPERIENCE_TYPES = ['full-time', 'part-time', 'contract', 'internship', 'freelance'];
+
+const REPEATER_DEFAULTS = {
+  contacts: CONTACT_DEFAULT,
+  skills: SKILL_DEFAULT,
+  educations: EDUCATION_DEFAULT,
+  experiences: EXPERIENCE_DEFAULT,
+};
 
 function makeKey(prefix) {
   const value = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
@@ -19,6 +53,13 @@ function makeKey(prefix) {
 function repeaterItems(items, defaults) {
   if (!Array.isArray(items) || items.length === 0) return [{ ...defaults, _key: makeKey('item') }];
   return items.map((item, index) => ({ ...defaults, ...(item || {}), _key: item?._key || makeKey('item'), order: item?.order ?? index }));
+}
+
+// The form edits highlights/skills as a single editable string, while the API
+// stores them as string arrays.
+function toTagString(value) {
+  if (Array.isArray(value)) return value.join(', ');
+  return String(value ?? '');
 }
 
 function emptyForm() {
@@ -31,6 +72,8 @@ function emptyForm() {
     bio: '',
     contacts: [{ ...CONTACT_DEFAULT, _key: makeKey('contact') }],
     skills: [{ ...SKILL_DEFAULT, _key: makeKey('skill') }],
+    educations: [{ ...EDUCATION_DEFAULT, _key: makeKey('education') }],
+    experiences: [{ ...EXPERIENCE_DEFAULT, _key: makeKey('experience') }],
     attachments: [],
     attachmentMetadata: [],
     existingFiles: [],
@@ -49,6 +92,12 @@ function toForm(about = {}) {
     bio: about.bio || '',
     contacts: repeaterItems(about.contacts, CONTACT_DEFAULT),
     skills: repeaterItems(about.skills, SKILL_DEFAULT),
+    educations: repeaterItems(about.educations, EDUCATION_DEFAULT),
+    experiences: repeaterItems(about.experiences, EXPERIENCE_DEFAULT).map((experience) => ({
+      ...experience,
+      highlights: toTagString(experience.highlights),
+      skills: toTagString(experience.skills),
+    })),
     attachments: [],
     attachmentMetadata: [],
     existingFiles,
@@ -60,6 +109,19 @@ function formatDate(value) {
   if (!value) return 'Not set';
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? 'Not set' : date.toLocaleString();
+}
+
+function formatMonthYear(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+function formatPeriod(startDate, endDate, current = false) {
+  const start = formatMonthYear(startDate);
+  const end = current ? 'Present' : formatMonthYear(endDate);
+  if (start && end) return `${start} – ${end}`;
+  return start || end || 'Not set';
 }
 
 function formatBytes(value) {
@@ -103,6 +165,62 @@ function cleanSkills(skills) {
         order: skill.order === '' || skill.order === undefined || skill.order === null || !Number.isFinite(order) ? index : order,
       };
     });
+}
+
+function cleanEducations(educations) {
+  return (educations || [])
+    .filter((education) => education?.institution?.trim() || education?.degree?.trim() || education?.field?.trim())
+    .map((education, index) => {
+      const order = Number(education.order);
+      const cgpa = Number(education.cgpa);
+      return {
+        // The backend uses the _id to keep createdAt and to soft-delete, so it
+        // must survive every round trip.
+        ...(education._id ? { _id: education._id } : {}),
+        institution: education.institution?.trim() || '',
+        degree: education.degree?.trim() || '',
+        field: education.field?.trim() || '',
+        location: education.location?.trim() || '',
+        startDate: education.startDate || null,
+        endDate: education.endDate || null,
+        cgpa: education.cgpa === '' || education.cgpa === null || education.cgpa === undefined || !Number.isFinite(cgpa) ? null : cgpa,
+        description: education.description?.trim() || '',
+        link: safeHref(education.link),
+        order: education.order === '' || education.order === null || education.order === undefined || !Number.isFinite(order) ? index : order,
+      };
+    });
+}
+
+function cleanExperiences(experiences) {
+  return (experiences || [])
+    .filter((experience) => experience?.company?.trim() || experience?.role?.trim())
+    .map((experience, index) => {
+      const order = Number(experience.order);
+      const type = EXPERIENCE_TYPES.includes(experience.type) ? experience.type : 'full-time';
+      return {
+        ...(experience._id ? { _id: experience._id } : {}),
+        company: experience.company?.trim() || '',
+        role: experience.role?.trim() || '',
+        type,
+        location: experience.location?.trim() || '',
+        remote: experience.remote === true,
+        startDate: experience.startDate || null,
+        // A blank endDate means the role is current, so it is sent as null.
+        endDate: experience.endDate || null,
+        description: experience.description?.trim() || '',
+        highlights: splitTags(experience.highlights),
+        skills: splitTags(experience.skills),
+        link: safeHref(experience.link),
+        order: experience.order === '' || experience.order === null || experience.order === undefined || !Number.isFinite(order) ? index : order,
+      };
+    });
+}
+
+function splitTags(value) {
+  return toTagString(value)
+    .split(/[,\n]/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
 }
 
 function RepeaterField({ title, description, items, onAdd, onRemove, children }) {
@@ -211,7 +329,7 @@ export default function AboutAdmin() {
 
   const addRepeater = (collection) => updateForm((current) => ({
     ...current,
-    [collection]: [...current[collection], collection === 'contacts' ? { ...CONTACT_DEFAULT, _key: makeKey('contact'), order: current[collection].length } : { ...SKILL_DEFAULT, _key: makeKey('skill'), order: current[collection].length }],
+    [collection]: [...current[collection], { ...REPEATER_DEFAULTS[collection], _key: makeKey(collection), order: current[collection].length }],
   }));
 
   const removeRepeater = (collection, index) => updateForm((current) => ({
@@ -243,6 +361,8 @@ export default function AboutAdmin() {
       bio: form.bio,
       contacts: cleanContacts(form.contacts),
       skills: cleanSkills(form.skills),
+      educations: cleanEducations(form.educations),
+      experiences: cleanExperiences(form.experiences),
     };
     try {
       const result = await aboutApi.update(payload);
@@ -285,16 +405,20 @@ export default function AboutAdmin() {
 
   const canUpdate = can('about', 'UPDATE');
   const canDelete = can('about', 'DELETE');
-  const completedSections = [Boolean(form.headline.trim()), Boolean(form.bio.trim()), cleanContacts(form.contacts).length > 0, cleanSkills(form.skills).length > 0].filter(Boolean).length;
+  const completedSections = [Boolean(form.headline.trim()), Boolean(form.bio.trim()), cleanContacts(form.contacts).length > 0, cleanSkills(form.skills).length > 0, cleanEducations(form.educations).length > 0, cleanExperiences(form.experiences).length > 0].filter(Boolean).length;
+  const totalSections = 6;
+  const readinessPercent = Math.round((completedSections / totalSections) * 100);
   const visibleContacts = cleanContacts(form.contacts).slice(0, 4);
   const visibleSkills = cleanSkills(form.skills).slice(0, 6);
+  const visibleEducations = cleanEducations(form.educations).slice(0, 3);
+  const visibleExperiences = cleanExperiences(form.experiences).slice(0, 3);
 
   return (
     <div className="space-y-7">
-      <AdminHeader eyebrow="Workspace / Profile" title="About" description="Shape the story, contact details, and capabilities visitors see across your portfolio." actions={<div className="flex flex-wrap items-center gap-2">{saved ? <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300"><Check className="h-3.5 w-3.5" /> Changes saved</span> : <Badge tone="indigo">{completedSections}/4 sections ready</Badge>}<ActionButton variant="neutral" onClick={() => setViewing(about)} disabled={!about}><Eye className="h-4 w-4" /> View profile</ActionButton></div>} />
+      <AdminHeader eyebrow="Workspace / Profile" title="About" description="Shape the story, contact details, and capabilities visitors see across your portfolio." actions={<div className="flex flex-wrap items-center gap-2">{saved ? <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300"><Check className="h-3.5 w-3.5" /> Changes saved</span> : <Badge tone="indigo">{completedSections}/{totalSections} sections ready</Badge>}<ActionButton variant="neutral" onClick={() => setViewing(about)} disabled={!about}><Eye className="h-4 w-4" /> View profile</ActionButton></div>} />
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
 
-      <Modal open={!!viewing} onClose={() => setViewing(null)} eyebrow="Profile details" title={viewing?.headline || 'About profile'} description="Complete profile record with contacts, skills, and attached files.">
+      <Modal open={!!viewing} onClose={() => setViewing(null)} eyebrow="Profile details" title={viewing?.headline || 'About profile'} description="Complete profile record with contacts, skills, experiences, educations, and attached files.">
         {viewing && <div className="space-y-5">
           <ViewSection title="Profile" count={viewing._id ? 'Saved' : 'Draft'}>
             <dl className="grid gap-4 sm:grid-cols-2"><ViewField label="Headline" value={viewing.headline} /><ViewField label="Bio" value={viewing.bio} /></dl>
@@ -307,6 +431,16 @@ export default function AboutAdmin() {
           <ViewSection title="Skills" description="Capabilities grouped by category with progress from 1–100." count={(viewing.skills || []).length}>
             <ViewList items={viewing.skills || []} empty="No skills recorded.">
               {(skill) => <dl className="grid gap-3 sm:grid-cols-[1fr_1fr_8rem_5rem]"><ViewField label="Category" value={skill.category} /><ViewField label="Name" value={skill.name} /><ViewField label="Progress" value={skill.progress} /><ViewField label="Order" value={skill.order} /></dl>}
+            </ViewList>
+          </ViewSection>
+          <ViewSection title="Educations" description="Academic history shown on the public timeline." count={(viewing.educations || []).length}>
+            <ViewList items={viewing.educations || []} empty="No educations recorded.">
+              {(education) => <dl className="grid gap-3 sm:grid-cols-[1.2fr_1fr_1fr_0.8fr]"><ViewField label="Institution" value={education.institution} /><ViewField label="Degree" value={[education.degree, education.field].filter(Boolean).join(' · ')} /><ViewField label="Location" value={education.location} /><ViewField label="CGPA" value={education.cgpa} /><ViewField label="Period" value={formatPeriod(education.startDate, education.endDate)} /><ViewField label="Description" value={education.description} /><ViewField label="Link" value={education.link} /><ViewField label="Order" value={education.order} /><ViewField label="Created at" value={formatDate(education.createdAt)} /><ViewField label="Updated at" value={formatDate(education.updatedAt)} /></dl>}
+            </ViewList>
+          </ViewSection>
+          <ViewSection title="Experiences" description="Roles and engagements, newest first." count={(viewing.experiences || []).length}>
+            <ViewList items={viewing.experiences || []} empty="No experiences recorded.">
+              {(experience) => <dl className="grid gap-3 sm:grid-cols-[1.2fr_1fr_1fr_0.8fr]"><ViewField label="Role" value={experience.role} /><ViewField label="Company" value={experience.company} /><ViewField label="Type" value={experience.type} /><ViewField label="Remote" value={experience.remote ? 'Yes' : 'No'} /><ViewField label="Location" value={experience.location} /><ViewField label="Period" value={formatPeriod(experience.startDate, experience.endDate, !experience.endDate)} /><ViewField label="Description" value={experience.description} /><ViewField label="Highlights" value={(experience.highlights || []).join(', ')} /><ViewField label="Skills" value={(experience.skills || []).join(', ')} /><ViewField label="Link" value={experience.link} /><ViewField label="Order" value={experience.order} /><ViewField label="Created at" value={formatDate(experience.createdAt)} /><ViewField label="Updated at" value={formatDate(experience.updatedAt)} /></dl>}
             </ViewList>
           </ViewSection>
           <ViewSection title="Files" description="Assets linked to this profile." count={(viewing.files || []).length}>
@@ -344,6 +478,61 @@ export default function AboutAdmin() {
             </AdminPanel>
 
             <AdminPanel className="space-y-5 p-5 sm:p-7">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-indigo-600 dark:text-violet-400">Career timeline</p><h2 className="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">Experiences</h2><p className="mt-1 text-sm leading-relaxed text-slate-400">Record each role with its type, period, and impact. Leave the end date empty for a current position.</p></div><Badge tone="indigo">{cleanExperiences(form.experiences).length} experiences</Badge></div>
+              <RepeaterField title="Experiences" description="Highlights and skills are comma-separated. A blank end date marks the current role." items={form.experiences} onAdd={() => addRepeater('experiences')} onRemove={(index) => removeRepeater('experiences', index)}>
+                {(experience, index) => <div className="space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_10rem]">
+                    <Field label="Role"><TextInput value={experience.role || ''} onChange={(event) => updateRepeater('experiences', index, 'role', event.target.value)} placeholder="Backend Developer" /></Field>
+                    <Field label="Company"><TextInput value={experience.company || ''} onChange={(event) => updateRepeater('experiences', index, 'company', event.target.value)} placeholder="Acme Corp" /></Field>
+                    <Field label="Type"><Select value={experience.type || 'full-time'} options={EXPERIENCE_TYPES.map((type) => ({ value: type, label: type }))} onChange={(event) => updateRepeater('experiences', index, 'type', event.target.value)} /></Field>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_5rem]">
+                    <Field label="Location"><TextInput value={experience.location || ''} onChange={(event) => updateRepeater('experiences', index, 'location', event.target.value)} placeholder="Addis Ababa" /></Field>
+                    <Field label="Start date"><TextInput type="date" value={experience.startDate || ''} onChange={(event) => updateRepeater('experiences', index, 'startDate', event.target.value)} /></Field>
+                    <Field label="End date" hint="Leave empty for current."><TextInput type="date" value={experience.endDate || ''} onChange={(event) => updateRepeater('experiences', index, 'endDate', event.target.value)} /></Field>
+                    <Field label="Order"><TextInput type="number" step="0.1" value={experience.order ?? 0} onChange={(event) => updateRepeater('experiences', index, 'order', event.target.value === '' ? '' : Number(event.target.value))} /></Field>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      <input type="checkbox" checked={experience.remote === true} onChange={(event) => updateRepeater('experiences', index, 'remote', event.target.checked)} className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-900" />
+                      Remote role
+                    </label>
+                  </div>
+                  <Field label="Description"><TextArea rows={3} value={experience.description || ''} onChange={(event) => updateRepeater('experiences', index, 'description', event.target.value)} placeholder="What you owned and what shipped…" /></Field>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Highlights" hint="Comma-separated."><TextArea rows={3} value={toTagString(experience.highlights)} onChange={(event) => updateRepeater('experiences', index, 'highlights', event.target.value)} placeholder="Cut latency by 40%" /></Field>
+                    <Field label="Skills" hint="Comma-separated."><TextArea rows={3} value={toTagString(experience.skills)} onChange={(event) => updateRepeater('experiences', index, 'skills', event.target.value)} placeholder="Node.js, PostgreSQL" /></Field>
+                  </div>
+                  <Field label="Link"><TextInput type="text" value={experience.link || ''} onChange={(event) => updateRepeater('experiences', index, 'link', event.target.value)} placeholder="https://..." /></Field>
+                </div>}
+              </RepeaterField>
+            </AdminPanel>
+
+            <AdminPanel className="space-y-5 p-5 sm:p-7">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">Academic background</p><h2 className="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">Educations</h2><p className="mt-1 text-sm leading-relaxed text-slate-400">Add each qualification with its institution, field of study, period, and grade.</p></div><Badge tone="green">{cleanEducations(form.educations).length} educations</Badge></div>
+              <RepeaterField title="Educations" description="CGPA is optional and must fall between 0 and 10." items={form.educations} onAdd={() => addRepeater('educations')} onRemove={(index) => removeRepeater('educations', index)}>
+                {(education, index) => <div className="space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr]">
+                    <Field label="Institution"><TextInput value={education.institution || ''} onChange={(event) => updateRepeater('educations', index, 'institution', event.target.value)} placeholder="Addis Ababa University" /></Field>
+                    <Field label="Degree"><TextInput value={education.degree || ''} onChange={(event) => updateRepeater('educations', index, 'degree', event.target.value)} placeholder="BSc" /></Field>
+                    <Field label="Field"><TextInput value={education.field || ''} onChange={(event) => updateRepeater('educations', index, 'field', event.target.value)} placeholder="Computer Science" /></Field>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_7rem]">
+                    <Field label="Location"><TextInput value={education.location || ''} onChange={(event) => updateRepeater('educations', index, 'location', event.target.value)} placeholder="Addis Ababa, Ethiopia" /></Field>
+                    <Field label="Start date"><TextInput type="date" value={education.startDate || ''} onChange={(event) => updateRepeater('educations', index, 'startDate', event.target.value)} /></Field>
+                    <Field label="End date"><TextInput type="date" value={education.endDate || ''} onChange={(event) => updateRepeater('educations', index, 'endDate', event.target.value)} /></Field>
+                    <Field label="CGPA"><TextInput type="number" min="0" max="10" step="0.01" value={education.cgpa ?? ''} onChange={(event) => updateRepeater('educations', index, 'cgpa', event.target.value === '' ? '' : Number(event.target.value))} placeholder="3.85" /></Field>
+                  </div>
+                  <Field label="Description"><TextArea rows={3} value={education.description || ''} onChange={(event) => updateRepeater('educations', index, 'description', event.target.value)} placeholder="Thesis, honours, coursework…" /></Field>
+                  <div className="grid gap-3 sm:grid-cols-[1fr_5rem]">
+                    <Field label="Link"><TextInput type="text" value={education.link || ''} onChange={(event) => updateRepeater('educations', index, 'link', event.target.value)} placeholder="https://..." /></Field>
+                    <Field label="Order"><TextInput type="number" step="0.1" value={education.order ?? 0} onChange={(event) => updateRepeater('educations', index, 'order', event.target.value === '' ? '' : Number(event.target.value))} /></Field>
+                  </div>
+                </div>}
+              </RepeaterField>
+            </AdminPanel>
+
+            <AdminPanel className="space-y-5 p-5 sm:p-7">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-indigo-600 dark:text-violet-400">Media library</p><h2 className="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">Profile files</h2><p className="mt-1 text-sm leading-relaxed text-slate-400">Upload profile images and supporting files. Editable metadata is shown inline.</p></div><Badge tone="slate">{form.existingFiles.length + form.attachments.length} files</Badge></div>
               <AttachmentField label="About files" hint="Upload images or supporting documents. Set title, alt text, and order for each file." files={form.attachments} existingFiles={form.existingFiles} metadata={form.attachmentMetadata} onChange={(attachments) => updateForm((current) => ({ ...current, attachments }))} onMetadataChange={(attachmentMetadata) => updateForm((current) => ({ ...current, attachmentMetadata }))} onExistingChange={(existingFiles) => updateForm((current) => ({ ...current, existingFiles }))} onRemoveExisting={canDelete ? removeAttachment : undefined} showMetadata disabled={saving || !!removingFileId || !canUpdate} />
               <p className="text-[10px] leading-relaxed text-slate-400">Parent entity and ID, name, path, size, MIME type, uploader, and timestamps are generated by the backend. Only order, title, and alt are editable.</p>
@@ -354,7 +543,9 @@ export default function AboutAdmin() {
           <aside className="space-y-5 xl:sticky xl:top-24 xl:self-start">
             <AdminPanel className="overflow-hidden p-0">
               <div className="bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 p-6 text-white"><div className="flex items-center justify-between"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur"><Sparkles className="h-5 w-5" /></div><span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em]">Live preview</span></div><p className="mt-6 text-[10px] font-extrabold uppercase tracking-[0.18em] text-indigo-100">Public introduction</p><h2 className="mt-2 text-2xl font-extrabold leading-tight">{form.headline || 'Your professional headline'}</h2></div>
-              <div className="space-y-5 p-5"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Bio preview</p><p className="mt-2 line-clamp-8 whitespace-pre-line text-sm leading-6 text-slate-600 dark:text-slate-300">{form.bio || 'Your bio will appear here once you add it.'}</p></div><div className="h-px bg-slate-200/70 dark:bg-slate-800/70" /><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Contact preview</p><div className="mt-3 space-y-2">{visibleContacts.length > 0 ? visibleContacts.map((contact, index) => { const href = safeHref(contact.link); return <div key={`${contact.name}-${index}`} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">{href ? <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 items-center gap-1.5 font-bold text-indigo-600 hover:underline dark:text-violet-300"><ExternalLink className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{contact.name || contact.title || 'Contact'}</span></a> : <span className="inline-flex min-w-0 items-center gap-1.5 font-semibold"><UserRound className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">{contact.name || contact.title || 'Contact'}</span></span>}{contact.title && <span className="truncate text-slate-400">· {contact.title}</span>}</div>; }) : <p className="text-xs text-slate-400">No contacts added yet.</p>}</div></div><div className="h-px bg-slate-200/70 dark:bg-slate-800/70" /><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Skill preview</p><div className="mt-3 space-y-3">{visibleSkills.length > 0 ? visibleSkills.map((skill, index) => <div key={`${skill.name}-${index}`}><div className="flex items-center justify-between gap-3 text-xs"><span className="truncate font-semibold text-slate-600 dark:text-slate-300">{skill.name || skill.category}</span><span className="font-bold text-slate-400">{skill.progress}%</span></div><div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" style={{ width: `${Math.min(100, Math.max(1, Number(skill.progress) || 1))}%` }} /></div></div>) : <p className="text-xs text-slate-400">No skills added yet.</p>}</div></div></div>
+              <div className="space-y-5 p-5"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Bio preview</p><p className="mt-2 line-clamp-8 whitespace-pre-line text-sm leading-6 text-slate-600 dark:text-slate-300">{form.bio || 'Your bio will appear here once you add it.'}</p></div><div className="h-px bg-slate-200/70 dark:bg-slate-800/70" /><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Contact preview</p><div className="mt-3 space-y-2">{visibleContacts.length > 0 ? visibleContacts.map((contact, index) => { const href = safeHref(contact.link); return <div key={`${contact.name}-${index}`} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">{href ? <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 items-center gap-1.5 font-bold text-indigo-600 hover:underline dark:text-violet-300"><ExternalLink className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{contact.name || contact.title || 'Contact'}</span></a> : <span className="inline-flex min-w-0 items-center gap-1.5 font-semibold"><UserRound className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">{contact.name || contact.title || 'Contact'}</span></span>}{contact.title && <span className="truncate text-slate-400">· {contact.title}</span>}</div>; }) : <p className="text-xs text-slate-400">No contacts added yet.</p>}</div></div>                <div className="h-px bg-slate-200/70 dark:bg-slate-800/70" /><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Experience preview</p><div className="mt-3 space-y-2">{visibleExperiences.length > 0 ? visibleExperiences.map((experience, index) => <div key={experience._id || `${experience.company}-${index}`} className="min-w-0"><p className="truncate text-xs font-extrabold text-slate-700 dark:text-slate-200">{experience.role || experience.company}</p><p className="truncate text-xs text-slate-400">{[experience.company, experience.location, experience.remote ? 'Remote' : ''].filter(Boolean).join(' · ')}</p><p className="text-[10px] font-bold uppercase tracking-wider text-indigo-500 dark:text-violet-400">{formatPeriod(experience.startDate, experience.endDate, !experience.endDate)}</p></div>) : <p className="text-xs text-slate-400">No experiences added yet.</p>}</div></div>
+                <div className="h-px bg-slate-200/70 dark:bg-slate-800/70" /><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Education preview</p><div className="mt-3 space-y-2">{visibleEducations.length > 0 ? visibleEducations.map((education, index) => <div key={education._id || `${education.institution}-${index}`} className="min-w-0"><p className="truncate text-xs font-extrabold text-slate-700 dark:text-slate-200">{education.institution || education.degree}</p><p className="truncate text-xs text-slate-400">{[education.degree, education.field].filter(Boolean).join(' · ')}</p><p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 dark:text-emerald-400">{formatPeriod(education.startDate, education.endDate)}</p></div>) : <p className="text-xs text-slate-400">No educations added yet.</p>}</div></div>
+                <div className="h-px bg-slate-200/70 dark:bg-slate-800/70" /><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Skill preview</p><div className="mt-3 space-y-3">{visibleSkills.length > 0 ? visibleSkills.map((skill, index) => <div key={`${skill.name}-${index}`}><div className="flex items-center justify-between gap-3 text-xs"><span className="truncate font-semibold text-slate-600 dark:text-slate-300">{skill.name || skill.category}</span><span className="font-bold text-slate-400">{skill.progress}%</span></div><div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" style={{ width: `${Math.min(100, Math.max(1, Number(skill.progress) || 1))}%` }} /></div></div>) : <p className="text-xs text-slate-400">No skills added yet.</p>}</div></div></div>
             </AdminPanel>
 
             <AdminPanel className="p-5">
@@ -372,8 +563,8 @@ export default function AboutAdmin() {
             </AdminPanel>
 
             <AdminPanel className="p-5">
-              <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Profile readiness</p><p className="mt-1 text-sm font-extrabold text-slate-800 dark:text-slate-100">{completedSections} of 4 sections ready</p></div><div className="flex h-12 w-12 items-center justify-center rounded-full border-4 border-indigo-100 text-sm font-extrabold text-indigo-600 dark:border-indigo-950 dark:text-indigo-300">{Math.round((completedSections / 4) * 100)}%</div></div>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all" style={{ width: `${(completedSections / 4) * 100}%` }} /></div>
+              <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Profile readiness</p><p className="mt-1 text-sm font-extrabold text-slate-800 dark:text-slate-100">{completedSections} of {totalSections} sections ready</p></div><div className="flex h-12 w-12 items-center justify-center rounded-full border-4 border-indigo-100 text-sm font-extrabold text-indigo-600 dark:border-indigo-950 dark:text-indigo-300">{readinessPercent}%</div></div>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all" style={{ width: `${readinessPercent}%` }} /></div>
             </AdminPanel>
 
             <AdminPanel className="p-5">
