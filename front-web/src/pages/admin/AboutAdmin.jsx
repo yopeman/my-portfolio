@@ -297,7 +297,6 @@ export default function AboutAdmin() {
       const result = await aboutApi.get();
       setForm(toForm(result.about));
       setAbout(result.about);
-      setViewing(result.about);
       setError('');
     } catch (err) {
       if (err.response?.status === 404) setError('');

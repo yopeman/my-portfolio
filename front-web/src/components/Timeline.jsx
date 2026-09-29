@@ -94,7 +94,10 @@ export default function Timeline({ aboutMe }) {
   const experiences = aboutMe?.experiences || [];
   const educations = aboutMe?.educations || [];
   const hasContent = experiences.length > 0 || educations.length > 0;
-  const { ref, isRevealed } = useScrollReveal({ threshold: 0.1 });
+  // Each column needs its own observer: a ref can only track one element, and
+  // .stagger-children keeps children at opacity 0 until the parent reveals.
+  const { ref: experiencesRef, isRevealed: experiencesRevealed } = useScrollReveal({ threshold: 0.1 });
+  const { ref: educationsRef, isRevealed: educationsRevealed } = useScrollReveal({ threshold: 0.1 });
 
   if (!hasContent) return null;
 
@@ -111,6 +114,7 @@ export default function Timeline({ aboutMe }) {
         </AnimatedSection>
 
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
+
           {experiences.length > 0 && (
             <div>
               <AnimatedSection direction="up" delay={100}>
@@ -120,12 +124,12 @@ export default function Timeline({ aboutMe }) {
                 <h3 className="mt-2 text-xl font-extrabold text-slate-900 dark:text-white">Where I have worked</h3>
               </AnimatedSection>
               <ol
-                ref={ref}
-                className={`mt-6 space-y-8 stagger-children ${isRevealed ? 'revealed' : ''}`}
+                ref={experiencesRef}
+                className={`mt-6 space-y-8 stagger-children ${experiencesRevealed ? 'revealed' : ''}`}
               >
-                {experiences.map((experience) => (
+                {experiences.map((experience, index) => (
                   <TimelineEntry
-                    key={experience._id || `${experience.company}-${experience.startDate}`}
+                    key={experience._id || `experience-${index}`}
                     entry={{
                       title: experience.role || experience.company,
                       location: experience.location,
@@ -162,9 +166,9 @@ export default function Timeline({ aboutMe }) {
                         )}
                         {experience.skills.length > 0 && (
                           <div className="flex flex-wrap gap-1.5">
-                            {experience.skills.map((skill) => (
+                            {experience.skills.map((skill, index) => (
                               <span
-                                key={skill}
+                                key={`${skill}-${index}`}
                                 className="rounded-xl border border-slate-200/60 px-2.5 py-1 text-xs font-semibold text-slate-600 transition-colors hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-700/60 dark:text-slate-300 dark:hover:border-violet-500/50 dark:hover:text-violet-300"
                               >
                                 {skill}
@@ -189,12 +193,12 @@ export default function Timeline({ aboutMe }) {
                 <h3 className="mt-2 text-xl font-extrabold text-slate-900 dark:text-white">How I was trained</h3>
               </AnimatedSection>
               <ol
-                ref={ref}
-                className={`mt-6 space-y-8 stagger-children ${isRevealed ? 'revealed' : ''}`}
+                ref={educationsRef}
+                className={`mt-6 space-y-8 stagger-children ${educationsRevealed ? 'revealed' : ''}`}
               >
-                {educations.map((education) => (
+                {educations.map((education, index) => (
                   <TimelineEntry
-                    key={education._id || `${education.institution}-${education.startDate}`}
+                    key={education._id || `education-${index}`}
                     entry={{
                       title: education.institution || education.degree,
                       location: education.location,
