@@ -10,14 +10,14 @@ import RequestsAdmin from './pages/admin/RequestsAdmin.jsx';
 import SubscribersAdmin from './pages/admin/SubscribersAdmin.jsx';
 import UsersAdmin from './pages/admin/UsersAdmin.jsx';
 import AboutAdmin from './pages/admin/AboutAdmin.jsx';
-import PlansAdmin from './pages/admin/PlansAdmin.jsx';
+import PlansAdminPage from './pages/admin/PlansAdmin.jsx';
 import SiteFeedbackAdmin from './pages/admin/SiteFeedbackAdmin.jsx';
 import FilesAdmin from './pages/admin/FilesAdmin.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
+import PlansPage from './pages/PlansPage.jsx';
 import ProjectDetailPage from './pages/ProjectDetailPage.jsx';
 import BlogsPage from './pages/BlogsPage.jsx';
 import BlogDetailPage from './pages/BlogDetailPage.jsx';
-import PlansPage from './pages/PlansPage.jsx';
 import FeedbackPage from './pages/FeedbackPage.jsx';
 
 export default function App() {
@@ -26,9 +26,9 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/projects" element={<ProjectsPage />} />
       <Route path="/projects/:slug" element={<ProjectDetailPage />} />
+      <Route path="/plans" element={<PlansPage />} />
       <Route path="/blogs" element={<BlogsPage />} />
       <Route path="/blog/:slug" element={<BlogDetailPage />} />
-      <Route path="/plans" element={<PlansPage />} />
       <Route path="/feedback" element={<FeedbackPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route
@@ -46,7 +46,7 @@ export default function App() {
         <Route path="subscribers" element={<GuardedRoute permission={{ resource: 'subscribers', action: 'READ' }}><SubscribersAdmin /></GuardedRoute>} />
         <Route path="users" element={<GuardedRoute permission={{ resource: 'users', action: 'READ' }}><UsersAdmin /></GuardedRoute>} />
         <Route path="about" element={<GuardedRoute permission={{ resource: 'about', action: 'READ' }}><AboutAdmin /></GuardedRoute>} />
-        <Route path="plans" element={<GuardedRoute permission={{ resource: 'plans', action: 'READ' }}><PlansAdmin /></GuardedRoute>} />
+        <Route path="plans" element={<GuardedRoute permission={{ resource: 'plans', action: 'READ' }}><PlansAdminPage /></GuardedRoute>} />
         <Route path="feedback" element={<GuardedRoute permission={{ resource: 'users', action: 'READ' }}><SiteFeedbackAdmin /></GuardedRoute>} />
         <Route path="files" element={<GuardedRoute roles={['owner', 'admin']}><FilesAdmin /></GuardedRoute>} />
       </Route>
