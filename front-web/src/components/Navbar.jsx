@@ -56,7 +56,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <a href="/#contact" className="hidden cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-xs font-bold text-white transition-all duration-300 hover:glow-accent sm:inline-flex">Hire Me</a>
+          <a href="/#contact" className="hidden cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-xs font-bold text-white transition-all duration-300 hover:glow-accent sm:inline-flex">Contact Me</a>
           <button
             type="button"
             className={`hamburger relative z-50 flex h-8 w-8 flex-col items-center justify-center gap-1.5 focus:outline-none md:hidden ${mobileMenuOpen ? 'hamburger-open' : ''}`}
@@ -81,7 +81,7 @@ export default function Navbar() {
               <a key={link.name} href={link.href} onClick={() => setMobileMenuOpen(false)} className={`border-b border-slate-100 py-3 text-sm font-semibold text-slate-600 last:border-0 dark:border-slate-800/60 dark:text-slate-300 ${isActive(link) ? 'text-indigo-600 dark:text-violet-400' : ''}`}>{link.name}</a>
             )
           ))}
-          <a href="/#contact" onClick={() => setMobileMenuOpen(false)} className="mt-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-2.5 text-center text-sm font-bold text-white">Hire Me</a>
+          <a href="/#contact" onClick={() => setMobileMenuOpen(false)} className="mt-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-2.5 text-center text-sm font-bold text-white">Contact Me</a>
         </nav>
       </div>
     </header>

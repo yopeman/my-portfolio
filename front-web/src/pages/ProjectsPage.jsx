@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { ArrowRight, SlidersHorizontal } from 'lucide-react';
 import PublicLayout from '../components/PublicLayout.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
+import ProjectRequest from '../components/ProjectRequest.jsx';
 import AnimatedSection from '../components/AnimatedSection.jsx';
 import { useAsyncResource } from '../hooks/useAsyncResource.js';
 import { projectsApi } from '../api/projects.js';
@@ -62,10 +62,10 @@ export default function ProjectsPage() {
                 );
               })}
             </div>
-            <Link to="/#contact" className="group inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-indigo-600 dark:text-violet-400">
+            <a href="#request-a-project" className="group inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-indigo-600 dark:text-violet-400">
               Have a project in mind?
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Link>
+            </a>
           </AnimatedSection>
         </div>
 
@@ -88,6 +88,12 @@ export default function ProjectsPage() {
           ) : !error ? (
             <p className="rounded-2xl glass-subtle px-5 py-10 text-center text-sm text-slate-500 dark:text-slate-400">No projects in this category yet.</p>
           ) : null}
+        </div>
+
+        <div className="relative mx-auto max-w-3xl scroll-mt-20 px-4 pb-20 sm:px-6 lg:px-8" id="request-a-project">
+          <AnimatedSection direction="up">
+            <ProjectRequest idPrefix="new-project" />
+          </AnimatedSection>
         </div>
       </section>
     </PublicLayout>
