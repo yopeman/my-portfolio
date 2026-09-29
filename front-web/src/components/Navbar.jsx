@@ -87,7 +87,7 @@ export default function Navbar() {
     >
       <div className="glass absolute inset-0 -z-10" />
 
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-8xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link to="/" className="focus-ring group flex items-center gap-2.5 rounded-xl" onClick={() => setMobileMenuOpen(false)}>
           <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 text-base font-black text-white shadow-lg shadow-indigo-600/25 transition-transform duration-300 group-hover:scale-110">
             Y

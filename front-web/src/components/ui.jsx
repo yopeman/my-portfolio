@@ -14,7 +14,7 @@ import { AlertCircle, ArrowRight, CheckCircle2, Info, Loader2, X } from 'lucide-
 const CONTAINER_WIDTH = {
   narrow: 'max-w-3xl',
   default: 'max-w-5xl',
-  wide: 'max-w-7xl',
+  wide: 'max-w-8xl',
 };
 
 export function Container({ size = 'wide', className = '', children }) {

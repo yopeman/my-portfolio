@@ -10,6 +10,10 @@
   --font-sans: 'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif;
   --font-heading: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+
+  /* The default scale stops at 7xl (80rem), which leaves wide gutters on
+     large displays. max-w-8xl is the shared width for the page shell. */
+  --container-8xl: 96rem;
 }
 
 /* ═══════════════════════════════════════════

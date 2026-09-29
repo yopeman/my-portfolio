@@ -133,7 +133,7 @@ export default function Hero({ aboutMe }) {
       <div className="aurora-blob -bottom-32 -right-24 h-[22rem] w-[22rem] bg-fuchsia-500/20 [animation-delay:-9s]" />
 
       <div
-        className={`relative mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl grid-cols-1 items-center px-4 sm:px-6 lg:px-8 ${
+        className={`relative mx-auto grid min-h-[calc(100svh-4rem)] max-w-8xl grid-cols-1 items-center px-4 sm:px-6 lg:px-8 ${
           images.length ? 'lg:grid-cols-2 lg:gap-12' : 'max-w-4xl'
         }`}
       >
