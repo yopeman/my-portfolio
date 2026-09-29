@@ -6,6 +6,7 @@ import PublicLayout from '../components/PublicLayout.jsx';
 import AnimatedSection from '../components/AnimatedSection.jsx';
 import ReactionBar from '../components/ReactionBar.jsx';
 import FeedbackSection from '../components/FeedbackSection.jsx';
+import ProjectRequest from '../components/ProjectRequest.jsx';
 import { markdownComponents } from '../components/markdownComponents.jsx';
 import { useAsyncResource } from '../hooks/useAsyncResource.js';
 import { projectsApi } from '../api/projects.js';
@@ -174,6 +175,12 @@ export default function ProjectDetailPage() {
                 {project.website && <a href={project.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-500 dark:text-violet-400"><ExternalLink className="h-4 w-4" /> Website</a>}
               </div>
             </AnimatedSection>
+
+            {project._id && (
+              <AnimatedSection direction="up" delay={160}>
+                <ProjectRequest project={project} />
+              </AnimatedSection>
+            )}
 
             {project._id && (
               <AnimatedSection className="border-t border-slate-100 pt-8 dark:border-slate-800">

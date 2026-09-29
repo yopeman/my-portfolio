@@ -1,4 +1,5 @@
-import { Request } from '../models/index.js';
+import mongoose from 'mongoose';
+import { Request, Project } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { pick } from '../utils/helpers.js';
@@ -42,6 +43,23 @@ export const listAllRequests = asyncHandler(async (req, res) => {
 export const createRequest = asyncHandler(async (req, res) => {
   const data = pick(req.body, REQUEST_FIELDS);
   if (!data.message) throw ApiError.badRequest('message is required');
+
+  // The project is optional, but when supplied it has to point at a live project
+  // so staff can trust the request is attached to the right work.
+  if (data.project) {
+    if (!mongoose.isValidObjectId(data.project)) throw ApiError.badRequest('project must be a valid project ID');
+    const project = await Project.findOne({ _id: data.project, deletedAt: null }).select('_id');
+    if (!project) throw ApiError.badRequest('project does not reference an available project');
+  }
+  for (const field of ['minBudget', 'maxBudget']) {
+    if (data[field] === undefined) continue;
+    const value = Number(data[field]);
+    if (!Number.isFinite(value) || value < 0) throw ApiError.badRequest(`${field} must be a positive number`);
+    data[field] = value;
+  }
+  if (data.minBudget !== undefined && data.maxBudget !== undefined && data.maxBudget < data.minBudget) {
+    throw ApiError.badRequest('maxBudget cannot be lower than minBudget');
+  }
 
   if (req.user) data.user = req.user._id;
   const request = await Request.create(data);
