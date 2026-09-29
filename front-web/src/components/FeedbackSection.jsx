@@ -7,6 +7,15 @@ import CommentReactions from './CommentReactions.jsx';
 
 const EMPTY = { like: 0, dislike: 0, love: 0, total: 0 };
 
+// Mirrors RESOURCE_MAP on the server: which permission resource moderates a thread.
+const MODERATION_RESOURCES = {
+  about: 'about',
+  project: 'projects',
+  blog: 'blogs',
+  plan: 'plans',
+  system: 'users',
+};
+
 function toCountMap(summaries) {
   const map = {};
   for (const [id, value] of Object.entries(summaries || {})) {
@@ -130,7 +139,14 @@ export default function FeedbackSection({ parentEntity, parentId }) {
     setOpenReply((current) => (current === commentId ? '' : commentId));
   }
 
-  const canDelete = (item) => !!user && (can('projects', 'DELETE') || can('blogs', 'DELETE') || (item.user?._id && item.user._id === user._id));
+  // Own comments are always deletable. Otherwise the thread is moderated by
+  // whoever holds DELETE on the resource that owns it.
+  const canDelete = (item) => {
+    if (!user) return false;
+    if (item.user?._id && item.user._id === user._id) return true;
+    const resource = MODERATION_RESOURCES[parentEntity] || 'projects';
+    return can(resource, 'DELETE');
+  };
 
   return (
     <div className="mt-8 space-y-6">

@@ -163,6 +163,7 @@ export function experiencesToList(experiences) {
 export function mapAboutLike(about) {
   const files = orderedFiles(about?.files);
   return {
+    _id: about?._id || '',
     headline: about?.headline || '',
     about: about?.bio || '',
     contact: contactsToMarkdown(about?.contacts),

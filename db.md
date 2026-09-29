@@ -117,7 +117,7 @@
 
 ## Plans
 - slug (unique)
-- visibility: [] value in (owner, admin, member, user, guest)
+- visibility: minimum role that can view, one of (owner, admin, member, user, guest)
 - period: year, half, quarter, month, week, day
 - year (e.g. 2026)
 - periodNumber
@@ -141,6 +141,7 @@
   - parent entity: about, project, blog, plan, system, feedback
   - parent id
     - a reply sets parent entity to feedback and parent id to the comment _id
+    - the site itself has no row, so parent entity system always uses the well-known id 000000000000000000000001
   - type: comment, reply
   - user id
   - content
@@ -149,6 +150,7 @@
 ## Reactions:
   - parent entity: about, project, blog, plan, system, feedback
   - parent id
+    - the site itself has no row, so parent entity system always uses the well-known id 000000000000000000000001
   - user id
   - type: like, dislike, love
   - timestamps (createdAt, updatedAt, deletedAt)

@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { Reaction } from '../models/index.js';
-import { REACTION_ENTITIES } from '../utils/entities.js';
+import { REACTION_ENTITIES, isSystemEntity, SYSTEM_PARENT_ID } from '../utils/entities.js';
 
 const TYPES = ['like', 'dislike', 'love'];
 
@@ -18,6 +18,8 @@ function assertParent(query) {
   const { parentEntity, parentId } = query;
   if (!parentEntity || !parentId) throw ApiError.badRequest('parentEntity and parentId are required');
   if (!REACTION_ENTITIES.includes(parentEntity)) throw ApiError.badRequest('Invalid parentEntity');
+  if (!mongoose.Types.ObjectId.isValid(parentId)) throw ApiError.badRequest('Invalid parentId');
+  if (isSystemEntity(parentEntity)) return { parentEntity, parentId: SYSTEM_PARENT_ID };
   return { parentEntity, parentId };
 }
 

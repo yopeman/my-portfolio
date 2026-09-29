@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarRange, CheckCircle2, Circle, Target, XCircle } from 'lucide-react';
+import { CalendarRange, CheckCircle2, Circle, MessagesSquare, Target, XCircle } from 'lucide-react';
 import PublicLayout from '../components/PublicLayout.jsx';
 import AnimatedSection from '../components/AnimatedSection.jsx';
+import ReactionBar from '../components/ReactionBar.jsx';
+import FeedbackSection from '../components/FeedbackSection.jsx';
 import { useAsyncResource } from '../hooks/useAsyncResource.js';
 import { plansApi } from '../api/plans.js';
 
@@ -41,6 +43,8 @@ function progressOf(plan) {
 
 function PlanNode({ plan, depth = 0 }) {
   const [open, setOpen] = useState(depth === 0);
+  // Discussion is opt-in per plan, so fetching stays off the default render path.
+  const [discussing, setDiscussing] = useState(false);
   const progress = progressOf(plan);
   const checklists = plan.checklists || [];
   const hasChildren = plan.children.length > 0;
@@ -93,10 +97,30 @@ function PlanNode({ plan, depth = 0 }) {
           </ul>
         )}
 
-        {hasChildren && (
-          <button type="button" onClick={() => setOpen((value) => !value)} className="mt-4 text-xs font-bold text-indigo-600 transition-colors hover:text-indigo-500 dark:text-violet-400">
-            {open ? 'Hide' : 'Show'} {plan.children.length} nested plan{plan.children.length > 1 ? 's' : ''}
+        <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+          {hasChildren && (
+            <button type="button" onClick={() => setOpen((value) => !value)} className="text-xs font-bold text-indigo-600 transition-colors hover:text-indigo-500 dark:text-violet-400">
+              {open ? 'Hide' : 'Show'} {plan.children.length} nested plan{plan.children.length > 1 ? 's' : ''}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setDiscussing((value) => !value)}
+            aria-expanded={discussing}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 transition-colors hover:text-indigo-600 dark:text-slate-400 dark:hover:text-violet-400"
+          >
+            <MessagesSquare className="h-3.5 w-3.5" />
+            {discussing ? 'Hide discussion' : 'Discuss this plan'}
           </button>
+        </div>
+
+        {discussing && (
+          <div className="mt-4">
+            <ReactionBar parentEntity="plan" parentId={plan._id} />
+            <div className="mt-6">
+              <FeedbackSection parentEntity="plan" parentId={plan._id} />
+            </div>
+          </div>
         )}
       </article>
 

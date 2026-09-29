@@ -7,6 +7,8 @@ import AnimatedSection from './AnimatedSection';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useAsyncResource } from '../hooks/useAsyncResource.js';
 import { projectsApi } from '../api/projects.js';
+import ReactionBar from './ReactionBar.jsx';
+import FeedbackSection from './FeedbackSection.jsx';
 
 function AnimatedCounter({ end, suffix, label, delay = 0 }) {
   const { ref, isRevealed } = useScrollReveal({ threshold: 0.1 });
@@ -139,6 +141,18 @@ export default function About({ aboutMe }) {
           )}
         </div>
       </AnimatedSection>
+
+      {/* Reactions and discussion on the profile itself */}
+      {aboutMe?._id && (
+        <AnimatedSection direction="up" className="mx-auto max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">
+          <div className="rounded-3xl glass-subtle p-6 shadow-sm sm:p-8">
+            <ReactionBar parentEntity="about" parentId={aboutMe._id} />
+          </div>
+          <div className="mt-8">
+            <FeedbackSection parentEntity="about" parentId={aboutMe._id} />
+          </div>
+        </AnimatedSection>
+      )}
     </section>
   );
 }

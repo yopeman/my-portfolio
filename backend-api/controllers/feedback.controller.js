@@ -3,16 +3,21 @@ import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { parsePagination, pageMeta } from '../utils/pagination.js';
 import { Feedback } from '../models/index.js';
-import { FEEDBACK_ENTITIES, parentResource } from '../utils/entities.js';
+import { FEEDBACK_ENTITIES, parentResource, isSystemEntity, SYSTEM_PARENT_ID } from '../utils/entities.js';
 import { hasPermission } from '../utils/permissions.js';
 
 const USER_POPULATE = { path: 'user', select: 'name email role' };
 const MAX_BATCH = 200;
+const FEEDBACK_TYPES = ['comment', 'reply'];
 
 function assertParent(query, body) {
   const { parentEntity, parentId } = query;
   if (!parentEntity || !parentId) throw ApiError.badRequest('parentEntity and parentId are required');
   if (!FEEDBACK_ENTITIES.includes(parentEntity)) throw ApiError.badRequest('Invalid parentEntity');
+  if (!mongoose.Types.ObjectId.isValid(parentId)) throw ApiError.badRequest('Invalid parentId');
+  // Site-wide threads all share one well-known id, so a client cannot fork the
+  // discussion by inventing another parent.
+  if (isSystemEntity(parentEntity)) return { parentEntity, parentId: SYSTEM_PARENT_ID };
   return { parentEntity, parentId };
 }
 
@@ -131,7 +136,7 @@ export const createFeedback = asyncHandler(async (req, res) => {
 
   const feedback = await Feedback.create({
     ...params,
-    type: req.body.type || 'feedback',
+    type: req.body.type || 'comment',
     user: req.user?._id ?? null,
     content: req.body.content,
   });
@@ -147,7 +152,10 @@ export const updateFeedback = asyncHandler(async (req, res) => {
   assertOwnerOrStaff(req, feedback, 'UPDATE');
 
   if (req.body.content !== undefined) feedback.content = req.body.content;
-  if (req.body.type !== undefined) feedback.type = req.body.type;
+  if (req.body.type !== undefined) {
+    if (!FEEDBACK_TYPES.includes(req.body.type)) throw ApiError.badRequest('Invalid feedback type');
+    feedback.type = req.body.type;
+  }
   await feedback.save();
   await feedback.populate(USER_POPULATE);
   return res.json({ feedback });
