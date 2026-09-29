@@ -45,9 +45,15 @@ The frontend uses `http://localhost:5000` by default. Set `VITE_API_URL` when th
 
 `src/components/ui.jsx` holds the shared public primitives — `PageHeader`, `SectionShell`, `SectionHeading`, `SectionLinkCard`, `Card`, `Chip`, `Button`, `ButtonLink`, `Notice`, `EmptyState`, `Skeleton`, `ProgressBar`, `Field`, and an accessible `Modal` (focus trap, Escape, scroll lock, focus restore). Public pages and components compose these instead of restyling markup locally, so spacing, type scale, and dark/night theming stay consistent.
 
-Public routes: `/`, `/about`, `/skills`, `/contact`, `/projects`, `/projects/:slug`, `/plans`, `/blogs`, `/blog/:slug`, `/feedback`, `/login`, and a `NotFoundPage` for unmatched paths.
+Public routes: `/`, `/about`, `/skills`, `/experience`, `/projects`, `/projects/:slug`, `/plans`, `/blogs`, `/blog/:slug`, `/contact`, `/feedback`, `/login`, and a `NotFoundPage` for unmatched paths.
 
-The About, Skills, and Contact sections appear on the home page as the full component, followed by a "At a glance" `SectionLinkCard` — real numbers pulled from the API plus a link to the section's own page. Navbar, footer, and the hero CTAs point at those routes; the `/#section` hashes remain only as "back to home section" links from the detail pages. `src/hooks/useAbout.js` loads and normalises the profile for all of them, and `src/services/skillsSummary.js` parses the skills markdown into categories, counts, and proficiency levels for the summaries.
+### Navigation model
+
+The navbar and footer both link to eight home-page anchors — `/#about`, `/#skills`, `/#experience`, `/#projects`, `/#blogs`, `/#plans`, `/#contact`, `/#feedback` — so the nav is a single row of jump targets. Every one of those sections then closes with an "At a glance" `SectionLinkCard` that shows real numbers from the API plus a link through to the section's own page. The inline nav only appears at `xl` and above; below that the drawer takes over, since eight items no longer fit a single row.
+
+Discussions follow the same split: the home page caps a thread with `FeedbackSection`'s `limit` and renders a "View all N comments" link, while the section's own page renders the full thread.
+
+`src/hooks/useAbout.js` loads and normalises the profile for every page that needs it, and `src/services/skillsSummary.js` parses the skills markdown into categories, counts, and proficiency levels for the summaries.
 
 Section art direction (mesh gradients, fading grid, grain, animated borders) lives in `src/index.css` under the *Public site system* block, driven by the `--mesh-hero`, `--mesh-muted`, and `--shadow-lift` tokens so light, dark, and night themes each get their own backdrop.
 

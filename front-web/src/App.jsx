@@ -23,6 +23,7 @@ import NotFoundPage from './pages/NotFoundPage.jsx';
 import AboutPage from './pages/AboutPage.jsx';
 import SkillsPage from './pages/SkillsPage.jsx';
 import ContactPage from './pages/ContactPage.jsx';
+import ExperiencePage from './pages/ExperiencePage.jsx';
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
       <Route path="/about" element={<AboutPage />} />
       <Route path="/skills" element={<SkillsPage />} />
       <Route path="/contact" element={<ContactPage />} />
+      <Route path="/experience" element={<ExperiencePage />} />
       <Route path="/projects" element={<ProjectsPage />} />
       <Route path="/projects/:slug" element={<ProjectDetailPage />} />
       <Route path="/plans" element={<PlansPage />} />

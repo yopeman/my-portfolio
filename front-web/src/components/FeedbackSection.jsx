@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CornerDownRight, Loader2, MessageSquare, SendHorizonal, Trash2 } from 'lucide-react';
+import { ArrowRight, CornerDownRight, Loader2, MessageSquare, SendHorizonal, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { feedbackApi } from '../api/feedback.js';
 import { reactionsApi } from '../api/reactions.js';
@@ -80,7 +81,14 @@ function ReplyList({ replies, counts, canDelete, onDelete, adjustCount, busyId }
   );
 }
 
-export default function FeedbackSection({ parentEntity, parentId }) {
+/**
+ * A discussion thread.
+ *
+ * `limit` caps how many root comments render, so a section can show a few on
+ * the home page. Pass `viewAllTo` with it to link through to the page that
+ * carries the full thread. Without a `limit`, the whole thread renders.
+ */
+export default function FeedbackSection({ parentEntity, parentId, limit, viewAllTo }) {
   const { user, can } = useAuth();
   const [items, setItems] = useState([]);
   const [replies, setReplies] = useState({});
@@ -96,7 +104,9 @@ export default function FeedbackSection({ parentEntity, parentId }) {
   const [replyError, setReplyError] = useState('');
 
   // Replies are threaded, so the top level only renders root entries.
-  const roots = useMemo(() => items.filter((item) => item.type !== 'reply'), [items]);
+  const allRoots = useMemo(() => items.filter((item) => item.type !== 'reply'), [items]);
+  const truncated = limit ? allRoots.length > limit : false;
+  const visibleRoots = limit ? allRoots.slice(0, limit) : allRoots;
 
   const load = useCallback(async () => {
     try {
@@ -208,20 +218,20 @@ export default function FeedbackSection({ parentEntity, parentId }) {
       <h3 className="flex items-center gap-2 text-lg font-extrabold text-slate-900 dark:text-white">
         <MessageSquare className="h-5 w-5 text-indigo-500" aria-hidden="true" />
         Discussion
-        {roots.length > 0 && (
+        {allRoots.length > 0 && (
           <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-            {roots.length}
+            {allRoots.length}
           </span>
         )}
       </h3>
 
       <div className="mt-5 space-y-4">
-        {roots.length === 0 ? (
+        {visibleRoots.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-slate-300/80 px-5 py-8 text-center text-sm text-slate-400 dark:border-slate-700/80">
             No feedback yet. Be the first to share your thoughts.
           </p>
         ) : (
-          roots.map((item) => {
+          visibleRoots.map((item) => {
             const nested = replies[item._id] || [];
             const replyOpen = openReply === item._id;
             return (
@@ -308,6 +318,16 @@ export default function FeedbackSection({ parentEntity, parentId }) {
               </article>
             );
           })
+        )}
+
+        {truncated && viewAllTo && (
+          <Link
+            to={viewAllTo}
+            className="focus-ring flex items-center justify-center gap-2 rounded-2xl border border-dashed border-indigo-300/70 bg-indigo-500/[0.04] px-5 py-4 text-sm font-bold text-indigo-600 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-400 hover:bg-indigo-500/[0.08] dark:border-violet-500/40 dark:bg-violet-500/[0.05] dark:text-violet-300"
+          >
+            View all {allRoots.length} comments
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
         )}
       </div>
 

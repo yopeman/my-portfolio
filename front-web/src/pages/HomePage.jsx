@@ -37,9 +37,9 @@ export default function HomePage() {
       {/* Conversion. */}
       <Contact aboutMe={aboutMe} />
 
-      {/* Feedback: the last word on the page, next to the footer. */}
-      <SectionShell id="site-feedback" size="wide" divider={false}>
-        <SiteFeedbackSection />
+      {/* Feedback: a few of the latest, then through to the full thread. */}
+      <SectionShell id="feedback" size="wide" divider={false}>
+        <SiteFeedbackSection limit={3} viewAllTo="/feedback" />
       </SectionShell>
 
       {loading && <span className="sr-only" role="status">Loading profile…</span>}

@@ -8,14 +8,17 @@ const SOCIALS = [
   { name: 'Telegram', href: 'https://t.me/yope_man', icon: Send },
 ];
 
+// Mirrors the navbar: every link jumps to a home-page section, and each
+// section carries its own link through to the full page.
 const SECTIONS = [
-  { name: 'About', to: '/about' },
-  { name: 'Skills', to: '/skills' },
-  { name: 'Projects', to: '/projects' },
-  { name: 'Roadmap', to: '/plans' },
-  { name: 'Blog', to: '/blogs' },
-  { name: 'Feedback', to: '/feedback' },
-  { name: 'Contact', to: '/contact' },
+  { name: 'About', to: '/#about' },
+  { name: 'Skills', to: '/#skills' },
+  { name: 'Experience', to: '/#experience' },
+  { name: 'Projects', to: '/#projects' },
+  { name: 'Blog', to: '/#blogs' },
+  { name: 'Plans', to: '/#plans' },
+  { name: 'Contact', to: '/#contact' },
+  { name: 'Feedback', to: '/#feedback' },
 ];
 
 export default function Footer() {
@@ -60,8 +63,8 @@ export default function Footer() {
           </div>
 
           <nav aria-label="Footer">
-            <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Explore</h2>
-            <ul className="mt-4 space-y-2.5">
+            <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Sections</h2>
+            <ul className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2.5">
               {SECTIONS.map((item) => (
                 <li key={item.to}>
                   <Link

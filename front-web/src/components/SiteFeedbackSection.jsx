@@ -9,9 +9,9 @@ import { Card, Notice, SectionHeading, Skeleton } from './ui.jsx';
 /**
  * The whole-site feedback thread, keyed to the `system` parent entity.
  * Shared by the home page and the dedicated /feedback route so both render
- * the same thread.
+ * the same thread. The home page caps it with `limit`; /feedback shows it all.
  */
-export default function SiteFeedbackSection({ showHeading = true, className = '' }) {
+export default function SiteFeedbackSection({ showHeading = true, limit, viewAllTo, className = '' }) {
   const { data, error } = useAsyncResource(() => systemApi.get().then((r) => r.system), []);
   const systemId = data?._id || null;
 
@@ -45,7 +45,12 @@ export default function SiteFeedbackSection({ showHeading = true, className = ''
         <Card interactive={false} className="p-6 sm:p-8">
           <ReactionBar parentEntity="system" parentId={systemId} />
         </Card>
-        <FeedbackSection parentEntity="system" parentId={systemId} />
+        <FeedbackSection
+          parentEntity="system"
+          parentId={systemId}
+          limit={limit}
+          viewAllTo={viewAllTo}
+        />
       </div>
     </div>
   );

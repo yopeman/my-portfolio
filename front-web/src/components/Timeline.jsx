@@ -1,7 +1,7 @@
-import { Briefcase, ExternalLink, Globe, GraduationCap, MapPin } from 'lucide-react';
+import { Briefcase, ExternalLink, Globe, GraduationCap, MapPin, Route } from 'lucide-react';
 import AnimatedSection from './AnimatedSection';
 import { useScrollReveal } from '../hooks/useScrollReveal';
-import { Chip, SectionHeading, SectionShell } from './ui.jsx';
+import { Chip, SectionHeading, SectionLinkCard, SectionShell } from './ui.jsx';
 
 const MONTH_YEAR = { month: 'short', year: 'numeric' };
 
@@ -72,7 +72,7 @@ function TimelineEntry({ title, subtitle, period, link, icon, accent, children }
   );
 }
 
-export default function Timeline({ aboutMe }) {
+export default function Timeline({ aboutMe, showHeading = true, showSummary = true }) {
   const experiences = aboutMe?.experiences || [];
   const educations = aboutMe?.educations || [];
   const hasContent = experiences.length > 0 || educations.length > 0;
@@ -84,15 +84,17 @@ export default function Timeline({ aboutMe }) {
   if (!hasContent) return null;
 
   return (
-    <SectionShell id="timeline" size="wide">
-      <AnimatedSection>
-        <SectionHeading
-          eyebrow="Trajectory"
-          icon={Briefcase}
-          title={'Experience & education'}
-          description="Where I have worked, what I have shipped, and the study that got me there."
-        />
-      </AnimatedSection>
+    <SectionShell id="experience" size="wide">
+      {showHeading && (
+        <AnimatedSection>
+          <SectionHeading
+            eyebrow="Trajectory"
+            icon={Briefcase}
+            title={'Experience & education'}
+            description="Where I have worked, what I have shipped, and the study that got me there."
+          />
+        </AnimatedSection>
+      )}
 
       <div className="mt-14 grid grid-cols-1 gap-14 lg:grid-cols-2 lg:gap-20">
         {experiences.length > 0 && (
@@ -223,6 +225,38 @@ export default function Timeline({ aboutMe }) {
           </section>
         )}
       </div>
+
+      {showSummary && (
+        <AnimatedSection delay={160}>
+          <SectionLinkCard
+            icon={Route}
+            eyebrow="At a glance"
+            title="The full timeline"
+            description="Every role and every programme, with dates, highlights, and the stack used at each one."
+            to="/experience"
+            linkLabel="Open the full timeline"
+            facts={[
+              { label: 'Roles', value: experiences.length },
+              { label: 'Programmes', value: educations.length },
+              {
+                label: 'Highlights',
+                value: experiences.reduce((sum, experience) => sum + experience.highlights.length, 0),
+              },
+            ]}
+          >
+            <ul className="mt-5 flex flex-wrap gap-2">
+              {experiences.slice(0, 4).map((experience, index) => (
+                <li
+                  key={experience._id || index}
+                  className="rounded-full border border-slate-200/70 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700/70 dark:text-slate-300"
+                >
+                  {experience.company || experience.role}
+                </li>
+              ))}
+            </ul>
+          </SectionLinkCard>
+        </AnimatedSection>
+      )}
     </SectionShell>
   );
 }

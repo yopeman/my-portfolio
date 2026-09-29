@@ -1,35 +1,42 @@
 import { Link } from 'react-router-dom';
-import { FolderGit2, Sparkles } from 'lucide-react';
+import { FolderGit2, FolderKanban, Sparkles } from 'lucide-react';
 import ProjectCard from './ProjectCard.jsx';
 import AnimatedSection from './AnimatedSection';
 import { useAsyncResource } from '../hooks/useAsyncResource.js';
 import { projectsApi } from '../api/projects.js';
 import { projectToCard } from '../services/adapters.js';
-import { ButtonLink, EmptyState, Notice, SectionHeading, SectionShell, Skeleton } from './ui.jsx';
+import { ButtonLink, EmptyState, Notice, SectionHeading, SectionLinkCard, SectionShell, Skeleton } from './ui.jsx';
 
 const PREVIEW_LIMIT = 6;
 
-export default function ProjectsSection({ images = [] }) {
+export default function ProjectsSection({ images = [], showHeading = true, showSummary = true }) {
   const { data, loading, error } = useAsyncResource(
-    () => projectsApi.list({ limit: PREVIEW_LIMIT }).then((r) => r.items),
+    // The response carries `meta.total` as well, so one request gives both the
+    // preview grid and the real count.
+    () => projectsApi.list({ limit: PREVIEW_LIMIT }).then((r) => ({ items: r.items, total: r.meta?.total ?? 0 })),
     [],
   );
-  const projects = (data || []).map(projectToCard);
+  const projects = (data?.items || []).map(projectToCard);
+  const total = data?.total ?? projects.length;
+  const types = [...new Set(projects.map((project) => project.type).filter(Boolean))];
+  const linked = projects.filter((project) => project.repository || project.website).length;
 
   return (
     <SectionShell id="projects" size="wide" tone={images.length ? 'plain' : 'muted'}>
-      <AnimatedSection>
-        <SectionHeading
-          eyebrow="Portfolio"
-          icon={FolderGit2}
-          title="Selected work"
-          description="Experiments, platforms, and tools shaped by curiosity and a bias toward useful software."
-        >
-          <ButtonLink to="/projects" variant="secondary" size="sm" className="mt-6">
-            Browse all projects
-          </ButtonLink>
-        </SectionHeading>
-      </AnimatedSection>
+      {showHeading && (
+        <AnimatedSection>
+          <SectionHeading
+            eyebrow="Portfolio"
+            icon={FolderGit2}
+            title="Selected work"
+            description="Experiments, platforms, and tools shaped by curiosity and a bias toward useful software."
+          >
+            <ButtonLink to="/projects" variant="secondary" size="sm" className="mt-6">
+              Browse all projects
+            </ButtonLink>
+          </SectionHeading>
+        </AnimatedSection>
+      )}
 
       <div className="mt-12">
         {error && (
@@ -64,7 +71,36 @@ export default function ProjectsSection({ images = [] }) {
         ) : null}
       </div>
 
-      {projects.length > 0 && (
+      {showSummary && projects.length > 0 && (
+        <AnimatedSection delay={120}>
+          <SectionLinkCard
+            icon={FolderKanban}
+            eyebrow="At a glance"
+            title="The full portfolio"
+            description="Every project with its stack, screenshots, problem statement, and a place to request something similar."
+            to="/projects"
+            linkLabel="Open the projects page"
+            facts={[
+              { label: 'Projects', value: total },
+              { label: 'Types', value: types.length },
+              { label: 'With links', value: linked },
+            ]}
+          >
+            <ul className="mt-5 flex flex-wrap gap-2">
+              {types.map((type) => (
+                <li
+                  key={type}
+                  className="rounded-full border border-slate-200/70 px-2.5 py-1 text-xs font-semibold capitalize text-slate-600 dark:border-slate-700/70 dark:text-slate-300"
+                >
+                  {type}
+                </li>
+              ))}
+            </ul>
+          </SectionLinkCard>
+        </AnimatedSection>
+      )}
+
+      {showSummary && projects.length > 0 && (
         <p className="mt-10 text-center text-sm text-slate-500 dark:text-slate-400">
           Want something built like this?{' '}
           <Link

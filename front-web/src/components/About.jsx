@@ -225,7 +225,12 @@ export default function About({ aboutMe, showHeading = true, showSummary = true 
             <div className="mt-5">
               <ReactionBar parentEntity="about" parentId={aboutMe._id} />
             </div>
-            <FeedbackSection parentEntity="about" parentId={aboutMe._id} />
+            <FeedbackSection
+              parentEntity="about"
+              parentId={aboutMe._id}
+              limit={showSummary ? 3 : undefined}
+              viewAllTo="/about"
+            />
           </Card>
         </AnimatedSection>
       )}

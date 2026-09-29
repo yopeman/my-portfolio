@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, CalendarDays, Clock, PenLine } from 'lucide-react';
+import { ArrowUpRight, CalendarDays, Clock, Library, PenLine } from 'lucide-react';
 import AnimatedSection from './AnimatedSection';
 import { useAsyncResource } from '../hooks/useAsyncResource.js';
 import { blogsApi } from '../api/blogs.js';
 import { blogToCard } from '../services/adapters.js';
-import { ButtonLink, Chip, SectionHeading, SectionShell, Skeleton } from './ui.jsx';
+import { ButtonLink, Chip, SectionHeading, SectionLinkCard, SectionShell, Skeleton } from './ui.jsx';
 
 const PREVIEW_LIMIT = 3;
 
@@ -21,33 +21,38 @@ function formatDate(value) {
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-export default function WritingSection() {
+export default function WritingSection({ showHeading = true, showSummary = true }) {
   const { data, loading } = useAsyncResource(
-    () => blogsApi.list({ limit: PREVIEW_LIMIT }).then((r) => r.items),
+    () => blogsApi.list({ limit: PREVIEW_LIMIT }).then((r) => ({ items: r.items, total: r.meta?.total ?? 0 })),
     [],
   );
 
-  const posts = (data || [])
+  const posts = (data?.items || [])
     .filter((blog) => blog.status === 'published')
     .map(blogToCard);
+  const total = data?.total ?? posts.length;
+  const types = [...new Set(posts.map((post) => post.type).filter(Boolean))];
+  const readMinutes = posts.reduce((sum, post) => sum + (post.readingTime || 0), 0);
 
   // Nothing to show and nothing to show while loading — do not render a stub.
   if (!loading && posts.length === 0) return null;
 
   return (
-    <SectionShell id="writing" size="wide" tone="muted">
-      <AnimatedSection>
-        <SectionHeading
-          eyebrow="Writing"
-          icon={PenLine}
-          title="Notes from the workbench"
-          description="Field notes on backend design, AI systems, and the small details that make a product feel finished."
-        >
-          <ButtonLink to="/blogs" variant="secondary" size="sm" className="mt-6">
-            Read the blog
-          </ButtonLink>
-        </SectionHeading>
-      </AnimatedSection>
+    <SectionShell id="blogs" size="wide" tone="muted">
+      {showHeading && (
+        <AnimatedSection>
+          <SectionHeading
+            eyebrow="Writing"
+            icon={PenLine}
+            title="Notes from the workbench"
+            description="Field notes on backend design, AI systems, and the small details that make a product feel finished."
+          >
+            <ButtonLink to="/blogs" variant="secondary" size="sm" className="mt-6">
+              Read the blog
+            </ButtonLink>
+          </SectionHeading>
+        </AnimatedSection>
+      )}
 
       <div className="mt-12">
         {loading ? (
@@ -107,6 +112,35 @@ export default function WritingSection() {
           </AnimatedSection>
         )}
       </div>
+
+      {showSummary && posts.length > 0 && (
+        <AnimatedSection delay={120}>
+          <SectionLinkCard
+            icon={Library}
+            eyebrow="At a glance"
+            title="The full blog"
+            description="Every published post with its reading time, tags, and outbound links."
+            to="/blogs"
+            linkLabel="Open the blog"
+            facts={[
+              { label: 'Posts', value: total },
+              { label: 'Types', value: types.length },
+              { label: 'Minutes here', value: readMinutes },
+            ]}
+          >
+            <ul className="mt-5 flex flex-wrap gap-2">
+              {types.map((type) => (
+                <li
+                  key={type}
+                  className="rounded-full border border-slate-200/70 px-2.5 py-1 text-xs font-semibold capitalize text-slate-600 dark:border-slate-700/70 dark:text-slate-300"
+                >
+                  {type}
+                </li>
+              ))}
+            </ul>
+          </SectionLinkCard>
+        </AnimatedSection>
+      )}
     </SectionShell>
   );
 }

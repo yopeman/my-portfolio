@@ -3,14 +3,30 @@ import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
+// Every top-level section is a home-page anchor. The section itself carries
+// an "open full page" link, so the nav stays a single row of jump targets.
 const NAV_LINKS = [
-  { name: 'About', to: '/about' },
-  { name: 'Skills', to: '/skills' },
-  { name: 'Projects', to: '/projects' },
-  { name: 'Roadmap', to: '/plans' },
-  { name: 'Blog', to: '/blogs' },
-  { name: 'Feedback', to: '/feedback' },
+  { name: 'About', to: '/#about' },
+  { name: 'Skills', to: '/#skills' },
+  { name: 'Experience', to: '/#experience' },
+  { name: 'Projects', to: '/#projects' },
+  { name: 'Blog', to: '/#blogs' },
+  { name: 'Plans', to: '/#plans' },
+  { name: 'Contact', to: '/#contact' },
+  { name: 'Feedback', to: '/#feedback' },
 ];
+
+// Which home anchor to highlight while a section's own page is open.
+const SECTION_FOR_PATH = {
+  '/about': '#about',
+  '/skills': '#skills',
+  '/experience': '#experience',
+  '/projects': '#projects',
+  '/blogs': '#blogs',
+  '/plans': '#plans',
+  '/contact': '#contact',
+  '/feedback': '#feedback',
+};
 
 export default function Navbar() {
   const { pathname, hash } = useLocation();
@@ -56,12 +72,7 @@ export default function Navbar() {
     };
   }, [mobileMenuOpen]);
 
-  const isActive = (link) => {
-    const [path, targetHash] = link.to.split('#');
-    if (targetHash) return pathname === path && hash === `#${targetHash}`;
-    if (path === '/') return false;
-    return pathname === path || pathname.startsWith(`${path}/`);
-  };
+  const activeSection = hash || SECTION_FOR_PATH[pathname] || '';
 
   const drawerHidden = hidden && !mobileMenuOpen;
 
@@ -91,15 +102,15 @@ export default function Navbar() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 text-sm font-semibold md:flex" aria-label="Main">
+        <nav className="hidden items-center gap-0.5 text-[13px] font-semibold xl:flex" aria-label="Main">
           {NAV_LINKS.map((link) => {
-            const active = isActive(link);
+            const active = activeSection === link.to.slice(link.to.indexOf('#'));
             return (
               <Link
                 key={link.to}
                 to={link.to}
                 aria-current={active ? 'page' : undefined}
-                className={`focus-ring relative rounded-lg px-3 py-2 transition-colors ${
+                className={`focus-ring relative rounded-lg px-2.5 py-2 transition-colors ${
                   active
                     ? 'text-indigo-600 dark:text-violet-300'
                     : 'text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-violet-300'
@@ -107,7 +118,7 @@ export default function Navbar() {
               >
                 {link.name}
                 <span
-                  className={`absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 transition-transform duration-300 ${
+                  className={`absolute inset-x-2.5 -bottom-0.5 h-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 transition-transform duration-300 ${
                     active ? 'scale-x-100' : 'scale-x-0'
                   }`}
                   aria-hidden="true"
@@ -125,7 +136,7 @@ export default function Navbar() {
           </Link>
           <button
             type="button"
-            className={`hamburger focus-ring relative z-50 flex h-9 w-9 flex-col items-center justify-center gap-1.5 rounded-lg md:hidden ${
+            className={`hamburger focus-ring relative z-50 flex h-9 w-9 flex-col items-center justify-center gap-1.5 rounded-lg xl:hidden ${
               mobileMenuOpen ? 'hamburger-open' : ''
             }`}
             onClick={() => setMobileMenuOpen((open) => !open)}
@@ -144,11 +155,11 @@ export default function Navbar() {
       <div
         id="mobile-navigation"
         hidden={!mobileMenuOpen}
-        className="glass-strong absolute left-0 top-full w-full overflow-hidden border-b border-slate-200/60 shadow-2xl dark:border-slate-800/60 md:hidden"
+        className="glass-strong absolute left-0 top-full w-full overflow-hidden border-b border-slate-200/60 shadow-2xl dark:border-slate-800/60 xl:hidden"
       >
         <nav className="stagger-children revealed flex flex-col gap-1 px-5 py-5" aria-label="Mobile">
           {NAV_LINKS.map((link) => {
-            const active = isActive(link);
+            const active = activeSection === link.to.slice(link.to.indexOf('#'));
             return (
               <Link
                 key={link.to}
