@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { ArrowUpRight, CalendarRange, FileText, FolderKanban, ImageIcon, Inbox, LayoutDashboard, LogOut, Mail, Menu, UserRound, Users, X } from 'lucide-react';
+import { ArrowUpRight, CalendarRange, FileText, FolderKanban, ImageIcon, Inbox, LayoutDashboard, LogOut, Mail, Menu, MessageSquareHeart, UserRound, Users, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import ThemeToggle from '../../components/ThemeToggle.jsx';
 
@@ -21,6 +21,7 @@ const NAV_GROUPS = [
     label: 'Community',
     items: [
       { to: '/admin/requests', label: 'Requests', icon: Inbox, resource: 'requests' },
+      { to: '/admin/feedback', label: 'Site Feedback', icon: MessageSquareHeart, resource: 'users' },
       { to: '/admin/subscribers', label: 'Subscribers', icon: Mail, resource: 'subscribers' },
     ],
   },

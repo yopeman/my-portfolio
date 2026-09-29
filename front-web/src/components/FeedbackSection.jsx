@@ -71,8 +71,15 @@ export default function FeedbackSection({ parentEntity, parentId }) {
         feedbackApi.replies(rootIds),
         reactionsApi.counts('feedback', rootIds),
       ]);
-      setReplies(nested.replies || {});
+      const replyMap = nested.replies || {};
+      setReplies(replyMap);
       setCounts(toCountMap(reactions.summaries));
+
+      // Replies carry their own reactions, so they need a second batched lookup.
+      const replyIds = Object.values(replyMap).flat().map((reply) => reply._id);
+      if (replyIds.length === 0) return;
+      const replyReactions = await reactionsApi.counts('feedback', replyIds);
+      setCounts((current) => ({ ...current, ...toCountMap(replyReactions.summaries) }));
     } catch {
       /* ignore */
     }
@@ -224,6 +231,10 @@ export default function FeedbackSection({ parentEntity, parentId }) {
                         )}
                       </div>
                       <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">{reply.content}</p>
+                      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+                        <CommentReactions commentId={reply._id} summary={counts[reply._id]} onCountChange={adjustCount} />
+                        <span className="text-[10px] text-slate-400">{new Date(reply.createdAt).toLocaleString()}</span>
+                      </div>
                     </li>
                   ))}
                 </ul>

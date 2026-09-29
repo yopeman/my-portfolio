@@ -168,15 +168,20 @@ export default function ViewEngagement({ parentEntity, parentId, className = '' 
     }
 
     // Comments and replies both carry reactions, fetched as a single batched request.
+    // The list call only returns root comments, so the reply ids have to come from
+    // the threaded lookup and be merged into the same request.
     if (feedbackItems.length > 0) {
+      let replyMap = {};
       try {
         const all = await feedbackApi.replies(roots.map((item) => item._id));
-        setReplies(all.replies || {});
+        replyMap = all.replies || {};
+        setReplies(replyMap);
       } catch {
         setReplies({});
       }
+      const replyIds = Object.values(replyMap).flat().map((reply) => reply._id);
       try {
-        const batch = await reactionsApi.counts('feedback', feedbackItems.map((item) => item._id));
+        const batch = await reactionsApi.counts('feedback', [...roots.map((item) => item._id), ...replyIds]);
         setCounts(batch.summaries || {});
       } catch {
         setCounts({});
@@ -196,13 +201,28 @@ export default function ViewEngagement({ parentEntity, parentId, className = '' 
 
   const totalComments = items.length;
   const totalReplies = Object.values(replies).reduce((sum, list) => sum + (list?.length || 0), 0);
+  // Reactions recorded against comments and replies, broken out from the
+  // per-thread counts so the totals can be reported separately.
+  const sumCounts = (source) => Object.values(source || {}).reduce(
+    (totals, entry) => ({
+      like: totals.like + (entry.like || 0),
+      love: totals.love + (entry.love || 0),
+      dislike: totals.dislike + (entry.dislike || 0),
+    }),
+    { like: 0, love: 0, dislike: 0 }
+  );
+  const replyIds = new Set(Object.values(replies).flat().map((reply) => String(reply._id)));
+  const commentCounts = sumCounts(Object.fromEntries(Object.entries(counts).filter(([id]) => !replyIds.has(String(id)))));
+  const replyCounts = sumCounts(counts);
+  const threadTotal = (replyCounts.like + replyCounts.love + replyCounts.dislike);
+  const commentTotal = (commentCounts.like + commentCounts.love + commentCounts.dislike);
 
   return (
     <div className={className}>
       <ViewSection
         title="Reactions"
-        description={`Aggregated ${parentEntity} reactions recorded by visitors.`}
-        count={summary.total ?? 0}
+        description={`Aggregated ${parentEntity} reactions recorded by visitors, plus reactions left on the comments and replies below.`}
+        count={(summary.total ?? 0) + commentTotal + threadTotal}
       >
         {loading ? (
           <div className="grid gap-3 sm:grid-cols-3">
@@ -210,6 +230,12 @@ export default function ViewEngagement({ parentEntity, parentId, className = '' 
           </div>
         ) : (
           <ReactionCounts summary={summary} />
+        )}
+        {!loading && (
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <StatTile label="On comments" value={commentTotal} tone="sky" icon={MessageSquare} />
+            <StatTile label="On replies" value={threadTotal} tone="violet" icon={Reply} />
+          </div>
         )}
       </ViewSection>
 

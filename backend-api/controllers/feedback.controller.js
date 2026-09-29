@@ -117,6 +117,27 @@ export const listReplies = asyncHandler(async (req, res) => {
   return res.json({ replies });
 });
 
+// Every comment and reply across all parent entities, for the admin review
+// screen. Staff only, since it ignores the per-resource permission scoping.
+export const listAllFeedback = asyncHandler(async (req, res) => {
+  if (!hasPermission(req.user, 'users', 'READ')) throw ApiError.forbidden('Missing permission: READ on users');
+  const { page, limit, skip } = parsePagination(req.query);
+
+  const filter = { deletedAt: null };
+  if (req.query.parentEntity) {
+    if (!FEEDBACK_ENTITIES.includes(req.query.parentEntity)) throw ApiError.badRequest('Invalid parentEntity');
+    filter.parentEntity = req.query.parentEntity;
+  }
+  if (req.query.type) filter.type = req.query.type;
+
+  const [items, total] = await Promise.all([
+    Feedback.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate(USER_POPULATE),
+    Feedback.countDocuments(filter),
+  ]);
+
+  return res.json({ items, meta: pageMeta(page, limit, total) });
+});
+
 export const getFeedback = asyncHandler(async (req, res) => {
   const feedback = await Feedback.findOne({ _id: req.params.id, deletedAt: null }).populate(USER_POPULATE);
   if (!feedback) throw ApiError.notFound('Feedback not found');

@@ -11,6 +11,7 @@ import SubscribersAdmin from './pages/admin/SubscribersAdmin.jsx';
 import UsersAdmin from './pages/admin/UsersAdmin.jsx';
 import AboutAdmin from './pages/admin/AboutAdmin.jsx';
 import PlansAdmin from './pages/admin/PlansAdmin.jsx';
+import SiteFeedbackAdmin from './pages/admin/SiteFeedbackAdmin.jsx';
 import FilesAdmin from './pages/admin/FilesAdmin.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import ProjectDetailPage from './pages/ProjectDetailPage.jsx';
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="users" element={<GuardedRoute permission={{ resource: 'users', action: 'READ' }}><UsersAdmin /></GuardedRoute>} />
         <Route path="about" element={<GuardedRoute permission={{ resource: 'about', action: 'READ' }}><AboutAdmin /></GuardedRoute>} />
         <Route path="plans" element={<GuardedRoute permission={{ resource: 'plans', action: 'READ' }}><PlansAdmin /></GuardedRoute>} />
+        <Route path="feedback" element={<GuardedRoute permission={{ resource: 'users', action: 'READ' }}><SiteFeedbackAdmin /></GuardedRoute>} />
         <Route path="files" element={<GuardedRoute roles={['owner', 'admin']}><FilesAdmin /></GuardedRoute>} />
       </Route>
       <Route path="*" element={<HomePage />} />
