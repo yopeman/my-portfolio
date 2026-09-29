@@ -11,6 +11,7 @@ import feedbackRoutes from './feedback.routes.js';
 import reactionRoutes from './reaction.routes.js';
 import userRoutes from './user.routes.js';
 import systemRoutes from './system.routes.js';
+import aiRoutes from './ai.routes.js';
 import * as subscriberController from '../controllers/subscriber.controller.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendMail } from '../services/email.service.js';
@@ -32,6 +33,7 @@ router.use('/api/feedback', feedbackRoutes);
 router.use('/api/reactions', reactionRoutes);
 router.use('/api/users', userRoutes);
 router.use('/api/system', systemRoutes);
+router.use('/api/ai', aiRoutes);
 
 router.post('/api/chat', asyncHandler(async (req, res) => {
   const { messages } = req.body;

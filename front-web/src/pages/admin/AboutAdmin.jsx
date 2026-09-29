@@ -7,6 +7,7 @@ import { ActionButton, AdminHeader, AdminPanel, AttachmentField, Badge, Field, M
 import ViewEngagement from '../../components/admin/ViewEngagement.jsx';
 import EngagementCell from '../../components/admin/EngagementCell.jsx';
 import { engagementFor, useEngagement } from '../../components/admin/useEngagement.js';
+import AiEnhanceBar from '../../components/admin/AiEnhanceBar.jsx';
 
 const CONTACT_DEFAULT = { name: '', title: '', link: '', order: 0 };
 const SKILL_DEFAULT = { category: '', name: '', progress: 50, order: 0 };
@@ -460,6 +461,7 @@ export default function AboutAdmin() {
               <div className="flex items-start gap-4"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/20"><Sparkles className="h-5 w-5" /></div><div><p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-indigo-600 dark:text-violet-400">Public profile</p><h2 className="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">The essentials</h2><p className="mt-1 text-sm leading-relaxed text-slate-400">These fields appear across your public site and form the foundation of your introduction.</p></div></div>
               <Field label="Headline" hint="A short, specific sentence that sets the tone."><TextInput value={form.headline} onChange={set('headline')} placeholder="Backend-Focused Software Developer" /></Field>
               <Field label="Bio" hint="Markdown is supported. Tell visitors what you build and why it matters."><TextArea rows={12} value={form.bio} onChange={set('bio')} className="leading-7" placeholder="I build reliable products..." /></Field>
+              <AiEnhanceBar entity="about" form={form} onChange={(next) => updateForm(() => next)} disabled={saving || !canUpdate} />
             </AdminPanel>
 
             <AdminPanel className="space-y-5 p-5 sm:p-7">

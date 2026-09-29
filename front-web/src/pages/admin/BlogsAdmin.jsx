@@ -7,6 +7,7 @@ import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, B
 import ViewEngagement from '../../components/admin/ViewEngagement.jsx';
 import EngagementCell from '../../components/admin/EngagementCell.jsx';
 import { engagementFor, useEngagement } from '../../components/admin/useEngagement.js';
+import AiEnhanceBar from '../../components/admin/AiEnhanceBar.jsx';
 
 const linkDefaults = { type: '', link: '' };
 const TYPE_TONE = { article: 'indigo', blog: 'green', event: 'amber' };
@@ -236,6 +237,7 @@ export default function BlogsAdmin() {
               <Field label="Publication status"><Select value={form.status} onChange={set('status')} options={[{ value: 'draft', label: 'Draft' }, { value: 'published', label: 'Published' }, { value: 'archived', label: 'Archived' }]} /></Field>
               <Field label="Tags" className="md:col-span-2" hint="Separate tags with commas."><TextInput value={form.tags} onChange={set('tags')} placeholder="AI, backend, tutorial" /></Field>
             </div>
+            <AiEnhanceBar entity="blog" form={form} onChange={setForm} disabled={saving} />
             <div className="h-px bg-slate-200/70 dark:bg-slate-800/70" />
             <Field label="Excerpt" hint="A short introduction for cards and search results."><TextArea rows={3} value={form.excerpt} onChange={set('excerpt')} /></Field>
             <Field label="Content" hint="Markdown is supported."><TextArea rows={14} value={form.content} onChange={set('content')} required className="font-mono text-sm leading-7" /></Field>

@@ -7,6 +7,7 @@ import { ActionButton, AdminHeader, AdminPanel, AdminToolbar, AttachmentField, B
 import ViewEngagement from '../../components/admin/ViewEngagement.jsx';
 import EngagementCell from '../../components/admin/EngagementCell.jsx';
 import { engagementFor, useEngagement } from '../../components/admin/useEngagement.js';
+import AiEnhanceBar from '../../components/admin/AiEnhanceBar.jsx';
 
 const featureDefaults = { name: '', description: '', order: 0 };
 const linkDefaults = { type: '', link: '', order: 0 };
@@ -260,6 +261,7 @@ export default function ProjectsAdmin() {
               <Field label="Display order" hint="Lower numbers appear first."><TextInput type="number" value={form.order} onChange={set('order')} /></Field>
               <Field label="Tags" className="md:col-span-2" hint="Separate tags with commas."><TextInput value={form.tags} onChange={set('tags')} placeholder="Node.js, React, MongoDB" /></Field>
             </div>
+            <AiEnhanceBar entity="project" form={form} onChange={setForm} disabled={saving} />
             <div className="h-px bg-slate-200/70 dark:bg-slate-800/70" />
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <Field label="Problem solved" hint="What challenge did this project address?"><TextArea rows={3} value={form.problem} onChange={set('problem')} /></Field>

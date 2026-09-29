@@ -27,7 +27,9 @@ npm start
 
 `npm run seed` only bootstraps the owner configured by `SEED_OWNER_*`. About and Projects must be created through the authenticated admin API or dashboard.
 
-The API exposes `/api/about`, `/api/projects`, `/api/blogs`, `/api/plans`, `/api/requests`, `/api/subscribers`, `/api/auth`, `/api/users`, `/api/files`, `/api/feedback`, `/api/reactions`, `/api/contact`, `/api/subscribe`, and `/api/chat`.
+The API exposes `/api/about`, `/api/projects`, `/api/blogs`, `/api/plans`, `/api/requests`, `/api/subscribers`, `/api/auth`, `/api/users`, `/api/files`, `/api/feedback`, `/api/reactions`, `/api/contact`, `/api/subscribe`, `/api/ai`, and `/api/chat`.
+
+`POST /api/ai/enhance` rewrites About, Project, or Blog form values with the LLM and returns the improved values. It never writes to the database — the admin dashboard applies the response to the form so you can review and undo it before saving. It requires the same `UPDATE` permission as editing that content, and `GROQ_API_KEY` must be set.
 
 ## Frontend
 
