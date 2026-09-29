@@ -1,118 +1,117 @@
 import { Link } from 'react-router-dom';
-import { ExternalLink, Github, Code, ArrowRight } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { ArrowUpRight, Code2, ExternalLink, Github } from 'lucide-react';
+import { Chip } from './ui.jsx';
 
-export default function ProjectCard({ project }) {
-  const cardRef = useRef(null);
-  const [transform, setTransform] = useState('');
+const MAX_TAGS = 3;
 
-  const handleMouseMove = (e) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    const rotateX = ((y - centerY) / centerY) * -5;
-    const rotateY = ((x - centerX) / centerX) * 5;
-    setTransform(`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`);
-  };
-
-  const handleMouseLeave = () => {
-    setTransform('');
-  };
+export default function ProjectCard({ project, compact = false }) {
+  const { slug, title, summary, tags = [], images = [], folderName, repository, website } = project;
+  const cover = images[0];
 
   return (
-    <div
-      ref={cardRef}
-      className="card-3d transition-transform duration-300 ease-out h-full"
-      style={{ transform }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-    >
+    <article className="card-surface card-surface-tight group relative flex h-full flex-col overflow-hidden">
+      <div className="relative flex h-44 shrink-0 items-center justify-center overflow-hidden border-b border-slate-200/60 bg-gradient-to-br from-indigo-500/10 via-violet-500/5 to-fuchsia-500/10 dark:border-slate-800/70 dark:from-indigo-950/30 dark:via-violet-950/20 dark:to-fuchsia-950/30">
+        {cover ? (
+          <img
+            src={cover}
+            alt={`${title} preview`}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-2 p-6 text-indigo-500/50 dark:text-violet-300/40">
+            <Code2 className="h-10 w-10 transition-transform duration-500 group-hover:scale-110" aria-hidden="true" />
+            <span className="max-w-[85%] truncate font-mono text-[10px] uppercase tracking-wider">
+              {folderName || title}
+            </span>
+          </div>
+        )}
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-slate-950/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          aria-hidden="true"
+        />
+        {project.type && (
+          <span className="absolute left-3 top-3">
+            <Chip tone="accent" className="backdrop-blur-md">
+              {project.type}
+            </Chip>
+          </span>
+        )}
+      </div>
+
+      <div className="relative z-[2] flex flex-1 flex-col p-6">
+        <h3 className="text-lg font-extrabold leading-snug tracking-tight text-slate-900 transition-colors duration-200 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-violet-300">
+          {title}
+        </h3>
+        {summary && (
+          <p className="mt-2.5 line-clamp-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+            {summary}
+          </p>
+        )}
+
+        {tags.length > 0 && (
+          <ul className="mt-5 flex flex-wrap gap-1.5">
+            {tags.slice(0, compact ? 2 : MAX_TAGS).map((tag) => (
+              <li key={tag}>
+                <Chip>{tag}</Chip>
+              </li>
+            ))}
+            {tags.length > (compact ? 2 : MAX_TAGS) && (
+              <li>
+                <span className="px-2 py-1 text-xs font-semibold text-slate-400">
+                  +{tags.length - (compact ? 2 : MAX_TAGS)} more
+                </span>
+              </li>
+            )}
+          </ul>
+        )}
+
+        <div className="mt-6 flex items-center justify-between gap-3 border-t border-slate-200/60 pt-4 dark:border-slate-800/60">
+          <div className="flex items-center gap-4">
+            {repository && (
+              <a
+                href={repository}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${title} repository on GitHub`}
+                className="focus-ring inline-flex items-center gap-1.5 rounded text-xs font-semibold text-slate-500 transition-colors hover:text-indigo-600 dark:text-slate-400 dark:hover:text-violet-300"
+              >
+                <Github className="h-3.5 w-3.5" aria-hidden="true" />
+                Code
+              </a>
+            )}
+            {website && (
+              <a
+                href={website}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${title} live demo`}
+                className="focus-ring inline-flex items-center gap-1.5 rounded text-xs font-semibold text-slate-500 transition-colors hover:text-indigo-600 dark:text-slate-400 dark:hover:text-violet-300"
+              >
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                Live
+              </a>
+            )}
+          </div>
+
+          <span
+            className="inline-flex items-center gap-1 text-xs font-extrabold text-indigo-600 opacity-0 transition-all duration-300 group-hover:opacity-100 dark:text-violet-300"
+            aria-hidden="true"
+          >
+            View
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </span>
+        </div>
+      </div>
+
+      {/* The whole card navigates. External links sit above it via z-index. */}
       <Link
-        to={`/projects/${project.slug || project.id}`}
-        className="group flex flex-col h-full bg-white dark:bg-slate-800/40 night:bg-black/40 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 night:border-purple-900/20 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden relative gradient-border"
+        to={`/projects/${slug}`}
+        className="focus-ring absolute inset-0 z-[1] rounded-2xl"
+        aria-label={`View ${title}`}
       >
-        <div className="h-48 w-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 dark:from-indigo-950/20 dark:to-purple-950/20 flex items-center justify-center border-b border-slate-100 dark:border-slate-800/50 relative overflow-hidden">
-          {project.images?.length > 0 ? (
-            <>
-              <img
-                src={project.images[0]}
-                alt={project.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center p-6 text-indigo-500/40 dark:text-indigo-400/30">
-              <Code className="w-12 h-12 mb-2 group-hover:scale-110 transition-transform duration-300" />
-              <span className="text-xs font-mono tracking-wider uppercase">{project.folderName || project.title}</span>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-slate-950/5 dark:bg-slate-950/20 group-hover:bg-slate-950/0 transition-colors duration-300" />
-        </div>
-
-        <div className="p-6 flex-grow flex flex-col justify-between">
-          <div>
-            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-indigo-600 group-hover:to-purple-600 dark:group-hover:from-violet-400 dark:group-hover:to-fuchsia-400 transition-colors duration-200">
-              {project.title}
-            </h3>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 line-clamp-3">
-              {project.summary}
-            </p>
-          </div>
-
-          <div className="mt-6">
-            <div className="flex flex-wrap gap-1.5 mb-4">
-              {(project.tags || []).slice(0, 3).map((tag, idx) => (
-                <span
-                  key={idx}
-                  className="px-2 py-0.5 text-xs font-medium rounded-md bg-slate-100 dark:bg-slate-800/80 night:bg-purple-950/20 text-slate-600 dark:text-slate-300 night:text-purple-400 border border-slate-200/50 dark:border-slate-700/50 night:border-purple-900/10 hover:bg-indigo-100 hover:text-indigo-700 dark:hover:bg-violet-900/50 dark:hover:text-violet-300 transition-colors"
-                >
-                  {tag}
-                </span>
-              ))}
-              {project.tags.length > 3 && (
-                <span className="px-2 py-0.5 text-xs font-medium text-slate-400">
-                  +{project.tags.length - 3} more
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-xs font-semibold text-slate-600 dark:text-slate-400 night:text-purple-400">
-                {project.repository && (
-                  <a
-                    href={project.repository}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-1 hover:text-indigo-600 dark:hover:text-violet-400"
-                  >
-                    <Github className="w-3.5 h-3.5" /> Repository
-                  </a>
-                )}
-                {project.website && (
-                  <a
-                    href={project.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-1 hover:text-indigo-600 dark:hover:text-violet-400"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" /> Live Demo
-                  </a>
-                )}
-              </div>
-              <div className="flex items-center text-sm font-semibold text-indigo-600 dark:text-violet-400 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                <span className="mr-1">View</span>
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-        </div>
+        <span className="sr-only">View {title}</span>
       </Link>
-    </div>
+    </article>
   );
 }

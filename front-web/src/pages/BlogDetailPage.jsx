@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import { Calendar, ChevronRight, Clock, ExternalLink } from 'lucide-react';
+import { CalendarDays, ChevronRight, Clock, ExternalLink, MessageSquare, PenLine } from 'lucide-react';
 import PublicLayout from '../components/PublicLayout.jsx';
 import AnimatedSection from '../components/AnimatedSection.jsx';
 import ReactionBar from '../components/ReactionBar.jsx';
@@ -10,12 +10,20 @@ import { markdownComponents } from '../components/markdownComponents.jsx';
 import { useAsyncResource } from '../hooks/useAsyncResource.js';
 import { blogsApi } from '../api/blogs.js';
 import { blogToCard } from '../services/adapters.js';
+import { Card, Chip, Container, Notice } from '../components/ui.jsx';
 
-const TYPE_STYLES = {
-  article: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-violet-400',
-  blog: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400',
-  event: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400',
+const TYPE_TONE = {
+  article: 'accent',
+  blog: 'emerald',
+  event: 'amber',
 };
+
+function formatDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
 
 export default function BlogDetailPage() {
   const { slug } = useParams();
@@ -24,6 +32,7 @@ export default function BlogDetailPage() {
     () => blogsApi.bySlug(slug).then((r) => r.blog),
     [slug],
   );
+
   const blog = data ? blogToCard(data) : null;
 
   useEffect(() => {
@@ -49,7 +58,9 @@ export default function BlogDetailPage() {
   if (loading && !blog) {
     return (
       <PublicLayout>
-        <div className="mx-auto max-w-3xl px-4 py-24 text-center text-slate-500">Loading post…</div>
+        <Container size="narrow" className="py-32">
+          <div className="h-96 animate-shimmer rounded-3xl bg-slate-200/70 dark:bg-slate-800/70" aria-label="Loading post" />
+        </Container>
       </PublicLayout>
     );
   }
@@ -57,7 +68,11 @@ export default function BlogDetailPage() {
   if (error && !blog) {
     return (
       <PublicLayout>
-        <p role="alert" className="mx-auto max-w-3xl px-4 py-24 text-center text-rose-600 dark:text-rose-400">Unable to load this post from the database.</p>
+        <Container size="narrow" className="py-32">
+          <Notice tone="error" title="Post unavailable">
+            This post could not be loaded from the database.
+          </Notice>
+        </Container>
       </PublicLayout>
     );
   }
@@ -65,79 +80,126 @@ export default function BlogDetailPage() {
   if (!blog) {
     return (
       <PublicLayout>
-        <div className="mx-auto max-w-3xl px-4 py-24 text-center">
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Post not found</h1>
-          <Link to="/blogs" className="mt-4 inline-block text-indigo-600 dark:text-violet-400 font-semibold">← Back to blog</Link>
-        </div>
+        <Container size="narrow" className="py-32 text-center">
+          <p className="eyebrow mx-auto">404</p>
+          <h1 className="mt-5 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            Post not found
+          </h1>
+          <p className="mt-3 text-slate-500 dark:text-slate-400">
+            This post may have been unpublished or renamed.
+          </p>
+          <Link to="/blogs" className="btn-primary mt-8">
+            Back to blog
+          </Link>
+        </Container>
       </PublicLayout>
     );
   }
 
+  const published = formatDate(blog.publishedAt);
+  const links = blog.links || [];
+
   return (
     <PublicLayout>
-      <div className="reading-progress z-[60]" style={{ transform: `scaleX(${progress / 100})` }} aria-hidden="true" />
-      <section className="border-b border-slate-100 dark:border-slate-800 night:border-purple-900/10">
-        <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 lg:px-8">
-          <AnimatedSection direction="up" className="mb-8">
-            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
-              <Link to="/blogs" className="transition-colors hover:text-indigo-600 dark:hover:text-violet-400">Blog</Link>
-              <ChevronRight className="h-3.5 w-3.5" />
-              <span className="max-w-[16rem] truncate text-slate-500 dark:text-slate-300">{blog.title}</span>
-            </nav>
-          </AnimatedSection>
+      <div className="reading-progress" style={{ transform: `scaleX(${progress / 100})` }} aria-hidden="true" />
 
-          <AnimatedSection direction="up" delay={80}>
-            <div className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${TYPE_STYLES[blog.type] || TYPE_STYLES.article}`}>
+      <div className="relative isolate">
+        <div className="mesh-muted absolute inset-0 -z-10" />
+
+        <Container size="narrow" className="py-10 sm:py-14">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+            <Link to="/blogs" className="focus-ring rounded transition-colors hover:text-indigo-600 dark:hover:text-violet-300">
+              Blog
+            </Link>
+            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="max-w-[16rem] truncate text-slate-500 dark:text-slate-300">{blog.title}</span>
+          </nav>
+
+          <AnimatedSection className="mt-8">
+            <Chip tone={TYPE_TONE[blog.type] || 'neutral'} icon={PenLine}>
               {blog.type}
-            </div>
-            <h1 className="mt-5 text-4xl font-extrabold leading-tight tracking-tight text-slate-900 dark:text-white sm:text-6xl">
+            </Chip>
+            <h1 className="mt-5 text-balance text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900 dark:text-white sm:text-5xl">
               {blog.title}
             </h1>
-            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400">
-              {blog.publishedAt && (
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {new Date(blog.publishedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
-                </span>
-              )}
-              {blog.readingTime > 0 && (
-                <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {blog.readingTime} min read</span>
-              )}
-            </div>
-            {(blog.tags || []).length > 0 && (
-              <div className="mt-5 flex flex-wrap gap-2">
-                {blog.tags.map((tag) => <span key={tag} className="rounded-full glass-subtle px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300">{tag}</span>)}
+
+            {(published || blog.readingTime > 0) && (
+              <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400">
+                {published && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                    {published}
+                  </span>
+                )}
+                {blog.readingTime > 0 && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                    {blog.readingTime} min read
+                  </span>
+                )}
               </div>
+            )}
+
+            {blog.tags.length > 0 && (
+              <ul className="mt-6 flex flex-wrap gap-2">
+                {blog.tags.map((tag) => (
+                  <li key={tag}>
+                    <Chip>{tag}</Chip>
+                  </li>
+                ))}
+              </ul>
             )}
           </AnimatedSection>
 
-          <AnimatedSection direction="up" delay={160} className="mt-10">
-            <div className="markdown-content max-w-none rounded-3xl glass-subtle p-6 text-base leading-relaxed text-slate-600 shadow-sm sm:p-9 dark:text-slate-300">
-              <ReactMarkdown components={markdownComponents}>{blog.content || ''}</ReactMarkdown>
-            </div>
-           </AnimatedSection>
+          <AnimatedSection delay={80} className="mt-12">
+            <Card interactive={false} className="p-6 sm:p-10">
+              <div className="markdown-content max-w-none text-[16px] leading-[1.75] text-slate-600 dark:text-slate-300">
+                {blog.content ? (
+                  <ReactMarkdown components={markdownComponents}>{blog.content}</ReactMarkdown>
+                ) : (
+                  <p className="text-slate-400">This post has no content yet.</p>
+                )}
+              </div>
+            </Card>
+          </AnimatedSection>
 
-           {(blog.links || []).length > 0 && (
-             <AnimatedSection direction="up" delay={200} className="mt-8">
-               <div className="flex flex-wrap gap-2">
-                 {blog.links.map((link, index) => (
-                   <a key={`${link.type}-${link.link}-${index}`} href={link.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/70 px-3.5 py-2 text-xs font-bold capitalize text-slate-600 transition hover:-translate-y-0.5 hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300 dark:hover:border-violet-700 dark:hover:text-violet-300">
-                     {link.type || 'link'} <ExternalLink className="h-3.5 w-3.5" />
-                   </a>
-                 ))}
-               </div>
-             </AnimatedSection>
-           )}
+          {links.length > 0 && (
+            <AnimatedSection delay={120} className="mt-8">
+              <h2 className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
+                Links in this post
+              </h2>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {links.map((link, index) => (
+                  <li key={`${link.type}-${link.link}-${index}`}>
+                    <a
+                      href={link.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-secondary px-3.5 py-2 text-xs capitalize"
+                    >
+                      {link.type || 'link'}
+                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </AnimatedSection>
+          )}
 
-           {blog._id && (
-
-            <AnimatedSection className="mt-12 border-t border-slate-100 pt-8 dark:border-slate-800">
-              <ReactionBar parentEntity="blog" parentId={blog._id} />
+          {blog._id && (
+            <AnimatedSection className="mt-16 border-t border-slate-200/60 pt-10 dark:border-slate-800/60">
+              <h2 className="flex items-center gap-2 text-lg font-extrabold text-slate-900 dark:text-white">
+                <MessageSquare className="h-5 w-5 text-indigo-500" aria-hidden="true" />
+                Reactions &amp; discussion
+              </h2>
+              <div className="mt-5">
+                <ReactionBar parentEntity="blog" parentId={blog._id} />
+              </div>
               <FeedbackSection parentEntity="blog" parentId={blog._id} />
             </AnimatedSection>
           )}
-        </div>
-      </section>
+        </Container>
+      </div>
     </PublicLayout>
   );
 }

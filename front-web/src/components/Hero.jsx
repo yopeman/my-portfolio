@@ -1,13 +1,23 @@
 import { useRef, useState } from 'react';
-import { Terminal, GraduationCap, Award, Calendar, ChevronDown, ArrowRight, Sparkles } from 'lucide-react';
-import SlideImage from './SlideImage';
+import {
+  ArrowRight,
+  Award,
+  CalendarDays,
+  ChevronDown,
+  GraduationCap,
+  Sparkles,
+  Terminal,
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 import ParticleCanvas from './ParticleCanvas';
-import useTypingEffect from '../hooks/useTypingEffect';
+import SlideImage from './SlideImage';
 import AnimatedSection from './AnimatedSection';
+import useTypingEffect from '../hooks/useTypingEffect';
 
 const ROLES = ['Software Developer', 'Full-Stack Engineer', 'Backend Specialist', 'Open Source Enthusiast'];
 
-function MagneticLink({ href, children, className = '', secondary = false }) {
+// Ripple + magnetic pull on a primary call to action.
+function MagneticLink({ to, children, className = '', ...rest }) {
   const linkRef = useRef(null);
   const [transform, setTransform] = useState('');
   const [ripples, setRipples] = useState([]);
@@ -29,94 +39,177 @@ function MagneticLink({ href, children, className = '', secondary = false }) {
     if (!rect) return;
     const id = Date.now();
     setRipples((current) => [...current, { id, x: event.clientX - rect.left, y: event.clientY - rect.top }]);
-    window.setTimeout(() => setRipples((current) => current.filter((ripple) => ripple.id !== id)), 650);
+    window.setTimeout(() => setRipples((current) => current.filter((r) => r.id !== id)), 650);
   };
 
   return (
-    <a
+    <Link
       ref={linkRef}
-      href={href}
+      to={to}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
       onClick={handleClick}
       style={{ transform }}
-      className={`btn-ripple group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-5 py-3 text-sm font-bold transition-all duration-300 ${secondary ? 'glass text-slate-700 hover:-translate-y-0.5 hover:text-indigo-600 dark:text-slate-200 dark:hover:text-violet-400' : 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-600/20 hover:shadow-xl hover:shadow-indigo-500/25'} ${className}`}
+      className={`btn-ripple group relative inline-flex items-center justify-center gap-2 overflow-hidden ${className}`}
+      {...rest}
     >
-      {ripples.map((ripple) => <span key={ripple.id} className="ripple-effect" style={{ left: ripple.x, top: ripple.y }} />)}
-      <span className="relative z-10">{children}</span>
-    </a>
+      {ripples.map((ripple) => (
+        <span
+          key={ripple.id}
+          className="ripple-effect"
+          style={{ left: ripple.x, top: ripple.y }}
+          aria-hidden="true"
+        />
+      ))}
+      <span className="relative z-10 inline-flex items-center gap-2">{children}</span>
+    </Link>
   );
+}
+
+function FactTile({ icon: Icon, label, value, accentClass, delay }) {
+  if (!value) return null;
+  return (
+    <div
+      className="animate-pop flex items-center gap-3 rounded-2xl border border-slate-200/60 bg-white/80 px-4 py-3.5 shadow-sm backdrop-blur-md transition-transform duration-300 hover:-translate-y-1 dark:border-slate-700/60 dark:bg-slate-800/60 night:border-purple-900/15 night:bg-black/60"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accentClass}`}>
+        <Icon className="h-5 w-5" aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">{label}</span>
+        <span className="mt-0.5 block truncate text-sm font-bold text-slate-800 dark:text-slate-100">{value}</span>
+      </span>
+    </div>
+  );
+}
+
+// These facts are read from the education record so the hero never drifts
+// out of sync with the timeline further down the page.
+function useHeroFacts(aboutMe) {
+  const education = aboutMe?.educations?.[0];
+  const degree = [education?.degree, education?.field].filter(Boolean).join(' · ');
+  const graduationYear = education?.endDate ? new Date(education.endDate).getFullYear() : null;
+
+  return [
+    {
+      key: 'degree',
+      label: 'Degree',
+      value: degree,
+      icon: GraduationCap,
+      accent: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300',
+    },
+    {
+      key: 'cgpa',
+      label: 'CGPA',
+      value: Number.isFinite(education?.cgpa) ? `${education.cgpa} / 4.0` : '',
+      icon: Award,
+      accent: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300',
+    },
+    {
+      key: 'graduation',
+      label: 'Graduation',
+      value: graduationYear ? `Class of ${graduationYear}` : '',
+      icon: CalendarDays,
+      accent: 'bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-500/15 dark:text-fuchsia-300',
+    },
+  ].filter((fact) => fact.value);
 }
 
 export default function Hero({ aboutMe }) {
   const images = aboutMe?.images || [];
   const typingText = useTypingEffect(ROLES, { typingSpeed: 100, pauseDuration: 2000 });
+  const facts = useHeroFacts(aboutMe);
 
   return (
-    <section className="relative overflow-hidden border-b border-slate-100 ticks-bg dark:border-slate-800 night:border-purple-900/10">
-      <div className="absolute inset-0 z-0 opacity-50"><ParticleCanvas /></div>
-      <div className="deco-shape animate-float absolute -left-10 -top-10 z-0 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl dark:bg-violet-500/10" />
-      <div className="deco-shape animate-float-slow absolute bottom-10 right-10 z-0 h-80 w-80 rounded-full bg-purple-500/10 blur-3xl dark:bg-fuchsia-500/10" />
+    <section className="relative isolate overflow-hidden border-b border-slate-200/60 dark:border-slate-800/60 night:border-purple-900/10">
+      <div className="mesh-hero absolute inset-0 -z-10" />
+      <div className="grid-fade absolute inset-0 -z-10" />
+      <div className="noise-overlay absolute inset-0 -z-10" />
+      <div className="pointer-events-none absolute inset-0 -z-10 opacity-60" aria-hidden="true">
+        <ParticleCanvas />
+      </div>
+      <div className="aurora-blob -left-24 -top-32 h-[26rem] w-[26rem] bg-indigo-500/25 dark:bg-violet-500/20" />
+      <div className="aurora-blob -bottom-32 -right-24 h-[22rem] w-[22rem] bg-fuchsia-500/20 [animation-delay:-9s]" />
 
-      <div className={`relative z-10 mx-auto grid min-h-screen max-w-7xl grid-cols-1 items-center gap-0 px-4 sm:px-6 lg:px-8 ${images.length ? 'lg:grid-cols-2' : 'max-w-3xl'}`}>
-        <div className="relative z-10 space-y-8 py-24 sm:py-32 lg:pr-16">
-          <AnimatedSection delay={0}>
-            {aboutMe?.headline && (
-              <div className="inline-flex items-center gap-2 rounded-full border border-indigo-100/50 bg-indigo-50 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-indigo-600 shadow-sm dark:border-indigo-900/30 dark:bg-indigo-950/40 dark:text-violet-400">
-                <Terminal className="h-3.5 w-3.5" /> {aboutMe.headline}
-              </div>
-            )}
-          </AnimatedSection>
+      <div
+        className={`relative mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl grid-cols-1 items-center px-4 sm:px-6 lg:px-8 ${
+          images.length ? 'lg:grid-cols-2 lg:gap-12' : 'max-w-4xl'
+        }`}
+      >
+        <div className="py-16 sm:py-20 lg:py-24">
+          {aboutMe?.headline && (
+            <AnimatedSection delay={0}>
+              <p className="eyebrow animate-pop">
+                <Terminal className="h-3.5 w-3.5" aria-hidden="true" />
+                {aboutMe.headline}
+              </p>
+            </AnimatedSection>
+          )}
 
-          <AnimatedSection delay={100}>
-            <h1 className="text-4xl font-extrabold leading-none tracking-tight text-slate-900 dark:text-white sm:text-6xl">
-              Hi, I’m <span className="text-gradient-primary">Yohanes<br />Debebe</span>
+          <AnimatedSection delay={80}>
+            <h1 className="mt-6 text-balance text-5xl font-extrabold leading-[0.95] tracking-tight text-slate-900 dark:text-white sm:text-6xl lg:text-7xl">
+              Hi, I&rsquo;m{' '}
+              <span className="text-gradient-primary">
+                Yohanes
+                <br />
+                Debebe
+              </span>
             </h1>
           </AnimatedSection>
 
-          <AnimatedSection delay={200}>
-            <p className="flex h-8 max-w-lg items-center text-lg font-medium text-slate-600 dark:text-slate-300 sm:text-xl">
-              A {typingText.text}<span className="ml-0.5 animate-cursor-blink text-indigo-500">|</span>
+          <AnimatedSection delay={160}>
+            <p className="mt-8 flex h-8 max-w-lg items-center text-lg font-medium text-slate-600 dark:text-slate-300 sm:text-xl">
+              <span className="truncate">
+                A <span className="text-slate-900 dark:text-white">{typingText.text}</span>
+              </span>
+              <span className="ml-0.5 animate-cursor-blink text-indigo-500" aria-hidden="true">|</span>
             </p>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-500 dark:text-slate-400 sm:text-lg">
-              I turn ambitious ideas into dependable products — from backend architecture and AI systems to interfaces that feel effortless.
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 dark:text-slate-400 sm:text-lg">
+              I turn ambitious ideas into dependable products — from backend architecture and AI systems to
+              interfaces that feel effortless.
             </p>
           </AnimatedSection>
 
-          <AnimatedSection delay={280} className="flex flex-wrap gap-3">
-            <MagneticLink href="#about">Explore my work <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></MagneticLink>
-            <MagneticLink href="#contact" secondary>Let’s talk <Sparkles className="h-4 w-4" /></MagneticLink>
+          <AnimatedSection delay={240} className="mt-9 flex flex-wrap items-center gap-3">
+            <MagneticLink to="/projects" className="btn-primary px-6 py-3.5 text-sm">
+              Explore my work
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+            </MagneticLink>
+            <MagneticLink to="/#contact" className="btn-secondary px-6 py-3.5 text-sm">
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
+              Let&rsquo;s talk
+            </MagneticLink>
           </AnimatedSection>
 
-          <AnimatedSection delay={360}>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="gradient-border flex items-center gap-3 rounded-2xl border border-slate-200/50 bg-white/80 p-4 shadow-sm backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1 dark:border-slate-700/60 dark:bg-slate-800/60 night:bg-black/60">
-                <div className="shrink-0 rounded-xl bg-indigo-50 p-2 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400"><GraduationCap className="h-5 w-5" /></div>
-                <div><div className="text-xs font-semibold uppercase tracking-wider text-slate-400">Degree</div><div className="text-xs font-bold text-slate-800 dark:text-slate-100">B.Sc. Computer Science</div></div>
+          {facts.length > 0 && (
+            <AnimatedSection delay={320} className="mt-12">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {facts.map((fact, index) => (
+                  <FactTile key={fact.key} {...fact} delay={index * 90} />
+                ))}
               </div>
-              <div className="gradient-border flex items-center gap-3 rounded-2xl border border-slate-200/50 bg-white/80 p-4 shadow-sm backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1 dark:border-slate-700/60 dark:bg-slate-800/60 night:bg-black/60">
-                <div className="shrink-0 rounded-xl bg-emerald-50 p-2 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400"><Award className="h-5 w-5" /></div>
-                <div><div className="text-xs font-semibold uppercase tracking-wider text-slate-400">CGPA</div><div className="text-xs font-bold text-slate-800 dark:text-slate-100">3.8 / 4.0</div></div>
-              </div>
-              <div className="gradient-border flex items-center gap-3 rounded-2xl border border-slate-200/50 bg-white/80 p-4 shadow-sm backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1 dark:border-slate-700/60 dark:bg-slate-800/60 night:bg-black/60">
-                <div className="shrink-0 rounded-xl bg-purple-50 p-2 text-purple-600 dark:bg-purple-950/50 dark:text-purple-400"><Calendar className="h-5 w-5" /></div>
-                <div><div className="text-xs font-semibold uppercase tracking-wider text-slate-400">Graduation</div><div className="text-xs font-bold text-slate-800 dark:text-slate-100">Class of 2026</div></div>
-              </div>
-            </div>
-          </AnimatedSection>
+            </AnimatedSection>
+          )}
         </div>
 
         {images.length > 0 && (
-          <AnimatedSection delay={440} className="hidden items-center justify-center py-16 pl-8 lg:flex">
-            <SlideImage images={images} className="aspect-[4/5] max-h-[80vh] w-full overflow-hidden rounded-2xl shadow-2xl shadow-indigo-900/10" />
+          <AnimatedSection delay={400} className="hidden items-center justify-center py-16 lg:flex">
+            <SlideImage
+              images={images}
+              className="aspect-[4/5] max-h-[78vh] w-full overflow-hidden rounded-3xl shadow-2xl shadow-indigo-950/20"
+            />
           </AnimatedSection>
         )}
       </div>
 
-      <a href="#about" className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center justify-center text-slate-400 opacity-80 transition-colors hover:text-indigo-500 dark:text-slate-500">
-        <span className="mb-1 text-[10px] font-bold uppercase tracking-widest">Scroll</span>
-        <ChevronDown className="animate-scroll-bounce h-5 w-5" />
-      </a>
+      <Link
+        to="/#about"
+        className="focus-ring absolute bottom-6 left-1/2 z-20 hidden -translate-x-1/2 flex-col items-center justify-center rounded-2xl px-3 py-2 text-slate-400 transition-colors hover:text-indigo-500 sm:flex"
+      >
+        <span className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]">Scroll</span>
+        <ChevronDown className="animate-scroll-bounce h-5 w-5" aria-hidden="true" />
+      </Link>
     </section>
   );
 }

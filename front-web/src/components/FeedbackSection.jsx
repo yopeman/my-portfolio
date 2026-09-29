@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { feedbackApi } from '../api/feedback.js';
 import { reactionsApi } from '../api/reactions.js';
 import CommentReactions from './CommentReactions.jsx';
+import { Notice, TextArea } from './ui.jsx';
 
 const EMPTY = { like: 0, dislike: 0, love: 0, total: 0 };
 
@@ -25,14 +26,57 @@ function toCountMap(summaries) {
 }
 
 function Author({ user }) {
-  return <span className="font-bold text-slate-700 dark:text-slate-200">{user?.name || 'Guest'}</span>;
+  return (
+    <span className="font-extrabold text-slate-800 dark:text-slate-100">
+      {user?.name || 'Guest'}
+    </span>
+  );
 }
 
 function Timestamp({ value }) {
+  if (!value) return null;
   return (
-    <span className="text-slate-400">
-      {value ? new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''}
-    </span>
+    <time dateTime={new Date(value).toISOString()} className="text-slate-400">
+      {new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+    </time>
+  );
+}
+
+function ReplyList({ replies, counts, canDelete, onDelete, adjustCount, busyId }) {
+  return (
+    <ul className="space-y-2.5 border-t border-slate-200/60 p-4 dark:border-slate-800/60">
+      {replies.map((reply) => (
+        <li key={reply._id} className="rounded-xl bg-slate-50/80 p-3.5 dark:bg-slate-900/50">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <Author user={reply.user} />
+              <span className="rounded-full bg-slate-200/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-700/70 dark:text-slate-300">
+                Reply
+              </span>
+              <Timestamp value={reply.createdAt} />
+            </div>
+            {canDelete(reply) && (
+              <button
+                type="button"
+                onClick={() => onDelete(reply._id)}
+                aria-label={`Delete reply from ${reply.user?.name || 'guest'}`}
+                className="focus-ring shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+          <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{reply.content}</p>
+          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+            <CommentReactions commentId={reply._id} summary={counts[reply._id]} onCountChange={adjustCount} />
+            <time dateTime={new Date(reply.createdAt).toISOString()} className="text-[10px] text-slate-400">
+              {new Date(reply.createdAt).toLocaleString()}
+            </time>
+          </div>
+        </li>
+      ))}
+      {busyId && <li className="sr-only" role="status">Posting reply…</li>}
+    </ul>
   );
 }
 
@@ -81,7 +125,7 @@ export default function FeedbackSection({ parentEntity, parentId }) {
       const replyReactions = await reactionsApi.counts('feedback', replyIds);
       setCounts((current) => ({ ...current, ...toCountMap(replyReactions.summaries) }));
     } catch {
-      /* ignore */
+      /* the thread stays empty rather than showing an error wall */
     }
   }, [parentEntity, parentId]);
 
@@ -90,8 +134,8 @@ export default function FeedbackSection({ parentEntity, parentId }) {
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  async function submit(e) {
-    e.preventDefault();
+  async function submit(event) {
+    event.preventDefault();
     if (!content.trim()) return;
     setSubmitting(true);
     setError('');
@@ -106,13 +150,18 @@ export default function FeedbackSection({ parentEntity, parentId }) {
     }
   }
 
-  async function submitReply(e, commentId) {
-    e.preventDefault();
+  async function submitReply(event, commentId) {
+    event.preventDefault();
     if (!replyDraft.trim()) return;
     setReplyBusy(commentId);
     setReplyError('');
     try {
-      await feedbackApi.create({ parentEntity: 'feedback', parentId: commentId, type: 'reply', content: replyDraft });
+      await feedbackApi.create({
+        parentEntity: 'feedback',
+        parentId: commentId,
+        type: 'reply',
+        content: replyDraft,
+      });
       setReplyDraft('');
       setOpenReply('');
       load();
@@ -151,142 +200,136 @@ export default function FeedbackSection({ parentEntity, parentId }) {
   const canDelete = (item) => {
     if (!user) return false;
     if (item.user?._id && item.user._id === user._id) return true;
-    const resource = MODERATION_RESOURCES[parentEntity] || 'projects';
-    return can(resource, 'DELETE');
+    return can(MODERATION_RESOURCES[parentEntity] || 'projects', 'DELETE');
   };
 
   return (
-    <div className="mt-8 space-y-6">
-      <div className="flex items-center gap-2">
-        <MessageSquare className="w-5 h-5 text-indigo-500" />
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Discussion</h3>
-      </div>
-
-      {/* Existing comments, each with reactions and replies */}
-      <div className="space-y-4">
-        {roots.length === 0 && (
-          <p className="text-sm text-slate-400">No feedback yet. Be the first to share your thoughts.</p>
+    <section className="mt-10">
+      <h3 className="flex items-center gap-2 text-lg font-extrabold text-slate-900 dark:text-white">
+        <MessageSquare className="h-5 w-5 text-indigo-500" aria-hidden="true" />
+        Discussion
+        {roots.length > 0 && (
+          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+            {roots.length}
+          </span>
         )}
-        {roots.map((item) => {
-          const nested = replies[item._id] || [];
-          const replyOpen = openReply === item._id;
-          return (
-            <div
-              key={item._id}
-              className="rounded-2xl bg-white dark:bg-slate-800/40 night:bg-black/40 border border-slate-200/60 dark:border-slate-800 night:border-purple-900/20"
-            >
-              <div className="p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-xs">
-                    <Author user={item.user} />
-                    <Timestamp value={item.createdAt} />
+      </h3>
+
+      <div className="mt-5 space-y-4">
+        {roots.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-slate-300/80 px-5 py-8 text-center text-sm text-slate-400 dark:border-slate-700/80">
+            No feedback yet. Be the first to share your thoughts.
+          </p>
+        ) : (
+          roots.map((item) => {
+            const nested = replies[item._id] || [];
+            const replyOpen = openReply === item._id;
+            return (
+              <article
+                key={item._id}
+                className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white/70 dark:border-slate-800/70 dark:bg-slate-900/40 night:border-purple-900/15"
+              >
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <Author user={item.user} />
+                      <Timestamp value={item.createdAt} />
+                    </div>
+                    {canDelete(item) && (
+                      <button
+                        type="button"
+                        onClick={() => remove(item._id)}
+                        aria-label="Delete comment"
+                        className="focus-ring shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    )}
                   </div>
-                  {canDelete(item) && (
-                    <button
-                      onClick={() => remove(item._id)}
-                      aria-label="Delete comment"
-                      className="text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                  <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    {item.content}
+                  </p>
                 </div>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{item.content}</p>
-              </div>
 
-              <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 px-4 py-3 dark:border-slate-700/60">
-                <CommentReactions commentId={item._id} summary={counts[item._id]} onCountChange={adjustCount} />
-                <button
-                  type="button"
-                  onClick={() => toggleReplyBox(item._id)}
-                  aria-expanded={replyOpen}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-indigo-600 cursor-pointer dark:text-slate-400 dark:hover:text-indigo-400"
-                >
-                  <CornerDownRight className="h-3.5 w-3.5" />
-                  {replyOpen ? 'Cancel' : 'Reply'}
-                  {nested.length > 0 && <span className="text-slate-400">({nested.length})</span>}
-                </button>
-              </div>
-
-              {nested.length > 0 && (
-                <ul className="space-y-2 border-t border-slate-100 px-4 py-3 dark:border-slate-700/60">
-                  {nested.map((reply) => (
-                    <li key={reply._id} className="rounded-xl bg-slate-50 dark:bg-slate-900/40 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 text-xs">
-                          <Author user={reply.user} />
-                          <span className="uppercase px-2 py-0.5 rounded-full bg-slate-200/70 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
-                            reply
-                          </span>
-                          <Timestamp value={reply.createdAt} />
-                        </div>
-                        {canDelete(reply) && (
-                          <button
-                            onClick={() => remove(reply._id)}
-                            aria-label="Delete reply"
-                            className="text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                      <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">{reply.content}</p>
-                      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
-                        <CommentReactions commentId={reply._id} summary={counts[reply._id]} onCountChange={adjustCount} />
-                        <span className="text-[10px] text-slate-400">{new Date(reply.createdAt).toLocaleString()}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {replyOpen && (
-                <form onSubmit={(event) => submitReply(event, item._id)} className="space-y-2 border-t border-slate-100 px-4 py-3 dark:border-slate-700/60">
-                  <textarea
-                    value={replyDraft}
-                    onChange={(e) => setReplyDraft(e.target.value)}
-                    rows={2}
-                    autoFocus
-                    placeholder={user ? 'Write a reply…' : 'Write a reply (posted as guest)…'}
-                    required
-                    className="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 night:bg-black dark:text-white focus:outline-none focus:border-indigo-500 resize-none"
-                  />
-                  {replyError && <p className="text-sm text-rose-500">{replyError}</p>}
+                <div className="flex flex-wrap items-center gap-3 border-t border-slate-200/60 px-4 py-3 dark:border-slate-800/60">
+                  <CommentReactions commentId={item._id} summary={counts[item._id]} onCountChange={adjustCount} />
                   <button
-                    type="submit"
-                    disabled={replyBusy === item._id}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+                    type="button"
+                    onClick={() => toggleReplyBox(item._id)}
+                    aria-expanded={replyOpen}
+                    className="focus-ring inline-flex items-center gap-1.5 rounded text-xs font-semibold text-slate-500 transition-colors hover:text-indigo-600 dark:text-slate-400 dark:hover:text-violet-300"
                   >
-                    {replyBusy === item._id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <SendHorizonal className="w-3.5 h-3.5" />}
-                    Reply
+                    <CornerDownRight className="h-3.5 w-3.5" aria-hidden="true" />
+                    {replyOpen ? 'Cancel' : 'Reply'}
+                    {nested.length > 0 && <span className="text-slate-400">({nested.length})</span>}
                   </button>
-                </form>
-              )}
-            </div>
-          );
-        })}
+                </div>
+
+                {nested.length > 0 && (
+                  <ReplyList
+                    replies={nested}
+                    counts={counts}
+                    canDelete={canDelete}
+                    onDelete={remove}
+                    adjustCount={adjustCount}
+                    busyId={replyBusy}
+                  />
+                )}
+
+                {replyOpen && (
+                  <form
+                    onSubmit={(event) => submitReply(event, item._id)}
+                    className="space-y-3 border-t border-slate-200/60 p-4 dark:border-slate-800/60"
+                  >
+                    <label htmlFor={`reply-${item._id}`} className="sr-only">
+                      Write a reply
+                    </label>
+                    <TextArea
+                      id={`reply-${item._id}`}
+                      value={replyDraft}
+                      onChange={(e) => setReplyDraft(e.target.value)}
+                      rows={2}
+                      autoFocus
+                      placeholder={user ? 'Write a reply…' : 'Write a reply (posted as guest)…'}
+                      required
+                      className="resize-none"
+                    />
+                    {replyError && <Notice tone="error">{replyError}</Notice>}
+                    <button
+                      type="submit"
+                      disabled={replyBusy === item._id}
+                      className="btn-primary btn-icon text-xs"
+                    >
+                      {replyBusy === item._id ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <SendHorizonal className="h-3.5 w-3.5" aria-hidden="true" />}
+                      Reply
+                    </button>
+                  </form>
+                )}
+              </article>
+            );
+          })
+        )}
       </div>
 
-      {/* New comment */}
-      <form onSubmit={submit} className="space-y-3">
-        <textarea
+      <form onSubmit={submit} className="mt-6 space-y-3">
+        <label htmlFor={`new-comment-${parentId}`} className="block text-sm font-bold text-slate-700 dark:text-slate-200">
+          Leave a comment
+        </label>
+        <TextArea
+          id={`new-comment-${parentId}`}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={3}
           placeholder={user ? 'Share your thoughts…' : 'Share your thoughts (posted as guest)…'}
           required
-          className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 night:bg-black dark:text-white focus:outline-none focus:border-indigo-500 resize-none"
+          className="resize-none"
         />
-        {error && <p className="text-sm text-rose-500">{error}</p>}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-colors cursor-pointer disabled:opacity-50"
-        >
-          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendHorizonal className="w-4 h-4" />}
-          Post
+        {error && <Notice tone="error">{error}</Notice>}
+        <button type="submit" disabled={submitting} className="btn-primary btn-icon text-sm">
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <SendHorizonal className="h-4 w-4" aria-hidden="true" />}
+          Post comment
         </button>
       </form>
-    </div>
+    </section>
   );
 }

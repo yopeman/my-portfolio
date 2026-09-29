@@ -19,6 +19,7 @@ import ProjectDetailPage from './pages/ProjectDetailPage.jsx';
 import BlogsPage from './pages/BlogsPage.jsx';
 import BlogDetailPage from './pages/BlogDetailPage.jsx';
 import FeedbackPage from './pages/FeedbackPage.jsx';
+import NotFoundPage from './pages/NotFoundPage.jsx';
 
 export default function App() {
   return (
@@ -50,7 +51,7 @@ export default function App() {
         <Route path="feedback" element={<GuardedRoute permission={{ resource: 'users', action: 'READ' }}><SiteFeedbackAdmin /></GuardedRoute>} />
         <Route path="files" element={<GuardedRoute roles={['owner', 'admin']}><FilesAdmin /></GuardedRoute>} />
       </Route>
-      <Route path="*" element={<HomePage />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

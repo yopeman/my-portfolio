@@ -1,243 +1,237 @@
-import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, HelpCircle, Loader2, Plus, Minus } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Bot, Loader2, MessageSquare, Send, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { markdownComponents } from './markdownComponents';
 import { BASE_URL } from '../data/constants';
 
+const GREETING = {
+  role: 'assistant',
+  content:
+    "Hi there 👋 I'm Yohanes' assistant. Ask about his background, the projects he has built, his skills, or how to get in touch.",
+};
+
+const QUICK_QUESTIONS = [
+  'Who is Yohanes Debebe?',
+  'What are his core backend skills?',
+  'Tell me about the Yope AI project.',
+  'How can I contact Yohanes?',
+];
+
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: "Hello! 👋 I'm Yohanes' digital assistant. Ask me anything about his background, coding projects, skills, or contact info. Or click one of the questions below to get started!"
-    }
-  ]);
+  const [messages, setMessages] = useState([GREETING]);
   const [isLoading, setIsLoading] = useState(false);
-  const [zoom, setZoom] = useState(1); // 1 = default, 1.5 = large, 0.8 = small
 
   const messagesEndRef = useRef(null);
-
-  const quickQuestions = [
-    "Who is Yohanes Debebe?",
-    "What are his core backend skills?",
-    "Tell me about the Yope AI project.",
-    "How can I contact Yohanes?"
-  ];
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const inputRef = useRef(null);
+  const panelRef = useRef(null);
+  const triggerRef = useRef(null);
 
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(scrollToBottom, 100);
-    }
-  }, [messages, isOpen]);
+    if (!isOpen) return undefined;
+    // Move focus into the composer so keyboard users can start typing.
+    const frame = window.requestAnimationFrame(() => inputRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [isOpen]);
 
-  const handleSend = async (textToSend) => {
-    const query = textToSend || input;
-    if (!query.trim()) return;
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const node = messagesEndRef.current;
+    if (node) node.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages, isLoading, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  function close() {
+    setIsOpen(false);
+    // Return focus to the control that opened the panel.
+    window.requestAnimationFrame(() => triggerRef.current?.focus());
+  }
+
+  async function handleSend(textToSend) {
+    const query = (textToSend || input).trim();
+    if (!query || isLoading) return;
 
     if (!textToSend) setInput('');
 
-    // Add user message
-    const updatedMessages = [...messages, { role: 'user', content: query }];
-    setMessages(updatedMessages);
+    const nextMessages = [...messages, { role: 'user', content: query }];
+    setMessages(nextMessages);
     setIsLoading(true);
 
     try {
-      // Send chat log to express backend
       const response = await fetch(`${BASE_URL}/api/chat`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: updatedMessages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          }))
+          messages: nextMessages.map(({ role, content }) => ({ role, content })),
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
+      if (!response.ok) throw new Error('Request failed');
       const data = await response.json();
       setMessages((prev) => [...prev, { role: 'assistant', content: data.response }]);
-    } catch (error) {
-      console.error('Chatbot error:', error);
+    } catch {
       setMessages((prev) => [
-        ...prev, 
-        { 
-          role: 'assistant', 
-          content: "I'm sorry, I'm having trouble connecting to my server right now. Feel free to contact Yohanes directly at **yopeman318@gmail.com**!" 
-        }
+        ...prev,
+        {
+          role: 'assistant',
+          content: "I can't reach the assistant service right now. You can still reach Yohanes directly at **yopeman318@gmail.com**.",
+        },
       ]);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSend();
-    }
-  };
+  }
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 font-sans">
-      {/* Floating Button */}
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-end p-4 sm:p-6">
       {!isOpen && (
         <button
+          ref={triggerRef}
+          type="button"
           onClick={() => setIsOpen(true)}
-          className="flex items-center justify-center w-14 h-14 rounded-full bg-indigo-600 dark:bg-violet-600 night:bg-purple-600 text-white shadow-xl hover:bg-indigo-500 dark:hover:bg-violet-500 night:hover:bg-purple-500 hover:scale-105 transition-all duration-300 cursor-pointer animate-glow-pulse"
-          aria-label="Open Chat Assistant"
+          aria-label="Open the site assistant"
+          aria-expanded={false}
+          className="btn-primary btn-round pointer-events-auto h-14 w-14 shadow-2xl shadow-indigo-600/30"
         >
-          <MessageSquare className="w-6 h-6 animate-pulse" />
+          <MessageSquare className="h-6 w-6" aria-hidden="true" />
         </button>
       )}
 
-      {/* Chat Window Panel */}
       {isOpen && (
-        <div 
-          className="w-[360px] sm:w-[400px] h-[500px] rounded-3xl glass-strong border border-slate-200/80 dark:border-slate-800 night:border-purple-900/30 shadow-2xl flex flex-col overflow-hidden chat-window-enter origin-bottom-right"
-          style={{ transform: `scale(${zoom})`, transformOrigin: 'bottom right' }}
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-label="Site assistant"
+          className="chat-window-enter pointer-events-auto flex h-[min(34rem,calc(100dvh-7rem))] w-full flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white/90 shadow-2xl shadow-slate-900/20 backdrop-blur-2xl sm:w-[24rem] dark:border-slate-800 dark:bg-slate-900/90 night:border-purple-900/30 night:bg-black/90"
         >
-          
-          {/* Header */}
-          <div className="px-5 py-4 bg-slate-50/80 dark:bg-slate-800/50 night:bg-purple-950/10 border-b border-slate-100 dark:border-slate-800/80 night:border-purple-900/20 flex items-center justify-between backdrop-blur-sm">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-violet-950/50 flex items-center justify-center text-indigo-600 dark:text-violet-400">
-                <Bot className="w-5 h-5" />
-              </div>
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200/70 bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3.5 text-white dark:border-slate-800">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
+                <Bot className="h-5 w-5" aria-hidden="true" />
+              </span>
               <div>
-                <h3 className="text-sm font-bold text-slate-800 dark:text-white">Yope Assistant</h3>
-                <span className="flex items-center gap-1 text-[10px] text-emerald-500 font-semibold uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> Live Agent
-                </span>
+                <h2 className="text-sm font-extrabold">Yope Assistant</h2>
+                <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-indigo-100">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" aria-hidden="true" />
+                  Online
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              {/* Zoom controls */}
-              <button
-                onClick={() => setZoom(z => Math.min(1.75, z + 0.2))}
-                className="p-1 rounded hover:bg-slate-150 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
-                title="Expand"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setZoom(z => Math.max(0.8, z - 0.2))}
-                className="p-1 rounded hover:bg-slate-150 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
-                title="Shrink"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1 rounded-lg hover:bg-slate-150 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors ml-1"
-                title="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Close the assistant"
+              className="focus-ring rounded-lg p-2 text-white/80 transition hover:bg-white/15 hover:text-white"
+            >
+              <X className="h-5 w-5" aria-hidden="true" />
+            </button>
           </div>
 
-          {/* Messages View */}
-          <div className="flex-grow p-4 overflow-y-auto space-y-4 ticks-bg">
-            {messages.map((msg, index) => (
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+            {messages.map((message, index) => (
               <div
                 key={index}
-                className={`flex gap-2.5 max-w-[85%] ${
-                  msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''
-                }`}
-                style={{ animation: `staggerSlideIn 0.3s ease-out forwards`, opacity: 0 }}
+                className={`flex max-w-[88%] gap-2.5 ${message.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}
+                style={{ animation: 'staggerSlideIn 0.3s ease-out forwards' }}
               >
-                {msg.role !== 'user' && (
-                  <div className="w-7 h-7 shrink-0 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400">
-                    <Bot className="w-4 h-4" />
-                  </div>
+                {message.role !== 'user' && (
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-violet-500/15 dark:text-violet-300">
+                    <Bot className="h-4 w-4" aria-hidden="true" />
+                  </span>
                 )}
-                
-                <div className={`p-3 rounded-2xl text-xs sm:text-sm leading-relaxed border ${
-                  msg.role === 'user'
-                    ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 border-indigo-600 text-white rounded-tr-none shadow-sm'
-                    : 'bg-white/90 border-slate-100 dark:bg-slate-800/90 dark:border-slate-700/50 night:bg-black/80 night:border-purple-900/10 text-slate-700 dark:text-slate-300 shadow-sm backdrop-blur-md'
-                }`}>
-                  {msg.role === 'user' ? (
-                    <p className="whitespace-pre-line">{msg.content}</p>
+                <div
+                  className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm ${
+                    message.role === 'user'
+                      ? 'rounded-tr-sm bg-gradient-to-br from-indigo-500 to-violet-600 text-white'
+                      : 'rounded-tl-sm border border-slate-200/70 bg-white text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/80 dark:text-slate-200'
+                  }`}
+                >
+                  {message.role === 'user' ? (
+                    <p className="whitespace-pre-line">{message.content}</p>
                   ) : (
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                      <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
+                    <div className="text-sm">
+                      <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
                     </div>
                   )}
                 </div>
               </div>
             ))}
 
-            {/* AI Typing Indicator */}
             {isLoading && (
-              <div className="flex gap-2.5 max-w-[80%]" style={{ animation: `staggerSlideIn 0.3s ease-out forwards`, opacity: 0 }}>
-                <div className="w-7 h-7 rounded-md bg-slate-100 dark:bg-violet-900/40 night:bg-purple-950/60 flex items-center justify-center text-slate-500 dark:text-violet-300 night:text-purple-300">
-                  <Bot className="w-4 h-4" />
-                </div>
-                <div className="p-3 bg-white/90 border border-slate-100 dark:bg-slate-800/90 dark:border-slate-700/50 night:bg-black/80 night:border-purple-900/10 rounded-2xl rounded-tl-none text-slate-400 dark:text-violet-400 night:text-purple-400 flex items-center gap-1 backdrop-blur-md">
-                  <span className="typing-dot"></span>
-                  <span className="typing-dot"></span>
-                  <span className="typing-dot"></span>
+              <div className="flex max-w-[80%] gap-2.5" style={{ animation: 'staggerSlideIn 0.3s ease-out forwards' }}>
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-violet-500/15 dark:text-violet-300">
+                  <Bot className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm border border-slate-200/70 bg-white px-3.5 py-3.5 dark:border-slate-700/60 dark:bg-slate-800/80">
+                  <span className="typing-dot" />
+                  <span className="typing-dot" />
+                  <span className="typing-dot" />
+                  <span className="sr-only">The assistant is typing…</span>
                 </div>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Questions Chips */}
           {messages.length === 1 && !isLoading && (
-            <div className="px-4 py-3 border-t border-slate-100/50 dark:border-slate-800/50 night:border-purple-900/10 bg-slate-50/50 dark:bg-slate-800/20 night:bg-black/40 backdrop-blur-sm">
-              <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
-                <HelpCircle className="w-3 h-3" /> Quick Questions
-              </div>
-              <div className="flex flex-wrap gap-2 max-h-[76px] overflow-y-auto pb-1">
-                {quickQuestions.map((q, idx) => (
+            <div className="shrink-0 border-t border-slate-200/70 px-4 py-3 dark:border-slate-800/70">
+              <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">
+                Try asking
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {QUICK_QUESTIONS.map((question) => (
                   <button
-                    key={idx}
-                    onClick={() => handleSend(q)}
-                    className="px-3 py-1.5 text-xs rounded-lg border text-left cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]
-                      bg-white hover:bg-indigo-50 text-slate-600 border-slate-200 hover:border-indigo-200 hover:text-indigo-700 shadow-sm
-                      dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:border-slate-700 dark:hover:border-slate-500
-                      night:bg-black night:hover:bg-purple-950/30 night:text-purple-400 night:border-purple-900/25 night:hover:border-purple-700/50"
+                    key={question}
+                    type="button"
+                    onClick={() => handleSend(question)}
+                    className="chip hover:-translate-y-0.5 hover:border-indigo-300 hover:text-indigo-600"
                   >
-                    {q}
+                    {question}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Input Box Footer */}
-          <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 night:border-purple-900/20 bg-slate-50/80 dark:bg-slate-800/60 night:bg-black/80 flex items-center gap-2 backdrop-blur-md">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleSend();
+            }}
+            className="flex shrink-0 items-center gap-2 border-t border-slate-200/70 p-3 dark:border-slate-800/70"
+          >
+            <label htmlFor="chat-input" className="sr-only">
+              Message the assistant
+            </label>
             <input
+              id="chat-input"
+              ref={inputRef}
               type="text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyPress}
+              onChange={(event) => setInput(event.target.value)}
               disabled={isLoading}
-              placeholder="Ask me something about Yohanes..."
-              className="flex-grow px-4 py-2.5 text-sm rounded-xl border bg-white dark:bg-slate-900 dark:text-white night:bg-black night:border-purple-900/40 border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:ring-violet-500/20 dark:focus:border-violet-500 night:focus:ring-purple-500/20 night:focus:border-purple-500 transition-all disabled:opacity-75"
+              placeholder="Ask about Yohanes…"
+              className="flex-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/12 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             />
             <button
-              onClick={() => handleSend()}
+              type="submit"
               disabled={isLoading || !input.trim()}
-              className="p-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 dark:from-violet-600 dark:to-violet-500 night:from-purple-600 night:to-purple-500 hover:opacity-90 text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all active:scale-95"
+              aria-label="Send message"
+              className="btn-primary btn-icon shrink-0 disabled:opacity-50"
             >
-              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Send className="h-4 w-4" aria-hidden="true" />}
             </button>
-          </div>
-
+          </form>
         </div>
       )}
     </div>

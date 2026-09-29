@@ -41,6 +41,14 @@ npm run dev
 
 The frontend uses `http://localhost:5000` by default. Set `VITE_API_URL` when the API runs elsewhere.
 
+### Public site
+
+`src/components/ui.jsx` holds the shared public primitives — `PageHeader`, `SectionShell`, `SectionHeading`, `Card`, `Chip`, `Button`, `ButtonLink`, `Notice`, `EmptyState`, `Skeleton`, `ProgressBar`, `Field`, and an accessible `Modal` (focus trap, Escape, scroll lock, focus restore). Public pages and components compose these instead of restyling markup locally, so spacing, type scale, and dark/night theming stay consistent.
+
+Public routes: `/`, `/projects`, `/projects/:slug`, `/plans`, `/blogs`, `/blog/:slug`, `/feedback`, `/login`, and a `NotFoundPage` for unmatched paths.
+
+Section art direction (mesh gradients, fading grid, grain, animated borders) lives in `src/index.css` under the *Public site system* block, driven by the `--mesh-hero`, `--mesh-muted`, and `--shadow-lift` tokens so light, dark, and night themes each get their own backdrop.
+
 ## Expo App
 
 ```bash

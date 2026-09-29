@@ -1,20 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 const NAV_LINKS = [
-  { name: 'About', href: '/#about', isRouterLink: false },
-  { name: 'Skills', href: '/#skills', isRouterLink: false },
-  { name: 'Projects', href: '/projects', isRouterLink: true },
-  { name: 'Plans', href: '/plans', isRouterLink: true },
-  { name: 'Blog', href: '/blogs', isRouterLink: true },
-  { name: 'Plans', href: '/plans', isRouterLink: true },
-  { name: 'Feedback', href: '/feedback', isRouterLink: true },
-  { name: 'Contact', href: '/#contact', isRouterLink: false },
+  { name: 'About', to: '/#about' },
+  { name: 'Skills', to: '/#skills' },
+  { name: 'Projects', to: '/projects' },
+  { name: 'Roadmap', to: '/plans' },
+  { name: 'Blog', to: '/blogs' },
+  { name: 'Feedback', to: '/feedback' },
 ];
 
 export default function Navbar() {
-  const location = useLocation();
+  const { pathname, hash } = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -24,7 +23,9 @@ export default function Navbar() {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       setScrolled(currentScrollY > 20);
-      setHidden(currentScrollY > 120 && currentScrollY > lastScrollY.current);
+      // Auto-hide only when scrolling down past the header, and never while
+      // the mobile drawer is open.
+      setHidden(currentScrollY > 160 && currentScrollY > lastScrollY.current);
       lastScrollY.current = currentScrollY;
     };
     handleScroll();
@@ -32,57 +33,149 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Navigating away closes the drawer. Adjusting state during render (rather
+  // than in an effect) avoids a second commit just to reset the menu.
+  const routeKey = `${pathname}${hash}`;
+  const [lastRouteKey, setLastRouteKey] = useState(routeKey);
+  if (routeKey !== lastRouteKey) {
+    setLastRouteKey(routeKey);
+    setMobileMenuOpen(false);
+  }
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [mobileMenuOpen]);
+
   const isActive = (link) => {
-    if (link.isRouterLink) return location.pathname.startsWith(link.href);
-    return location.pathname === '/' && location.hash === link.href.slice(1);
+    const [path, targetHash] = link.to.split('#');
+    if (targetHash) return pathname === path && hash === `#${targetHash}`;
+    if (path === '/') return false;
+    return pathname === path || pathname.startsWith(`${path}/`);
   };
 
+  const drawerHidden = hidden && !mobileMenuOpen;
+
   return (
-    <header className={`sticky top-0 z-50 w-full border-b glass transition-all duration-300 ${scrolled ? 'navbar-scrolled' : 'border-slate-200/40 dark:border-slate-800/40 night:border-purple-900/10'} ${hidden && !mobileMenuOpen ? '-translate-y-full' : 'translate-y-0'}`}>
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="group flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-lg font-black text-white shadow-lg shadow-indigo-600/20 transition-all duration-300 group-hover:scale-110 group-hover:shadow-indigo-500/40">Y</div>
-          <span className="text-md font-extrabold tracking-tight text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-violet-400">Yohanes DBB</span>
+    <header
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+        scrolled
+          ? 'navbar-scrolled border-b border-slate-200/60 dark:border-slate-800/60 night:border-purple-900/10'
+          : 'border-b border-transparent'
+      } ${drawerHidden ? '-translate-y-full' : 'translate-y-0'}`}
+    >
+      <div className="glass absolute inset-0 -z-10" />
+
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <Link to="/" className="focus-ring group flex items-center gap-2.5 rounded-xl" onClick={() => setMobileMenuOpen(false)}>
+          <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 text-base font-black text-white shadow-lg shadow-indigo-600/25 transition-transform duration-300 group-hover:scale-110">
+            Y
+            <span className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/25" aria-hidden="true" />
+          </span>
+          <span className="flex flex-col leading-none">
+            <span className="text-[15px] font-extrabold tracking-tight text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-violet-300">
+              Yohanes Debebe
+            </span>
+            <span className="mt-1 hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:block">
+              Software Developer
+            </span>
+          </span>
         </Link>
 
-        <nav className="hidden items-center gap-8 text-sm font-semibold text-slate-600 md:flex dark:text-slate-300">
-          {NAV_LINKS.map((link) => (
-            link.isRouterLink ? (
-              <Link key={link.name} to={link.href} aria-current={isActive(link) ? 'page' : undefined} className={`animated-underline py-1 transition-colors hover:text-indigo-600 dark:hover:text-violet-400 ${isActive(link) ? 'active text-indigo-600 dark:text-violet-400' : ''}`}>{link.name}</Link>
-            ) : (
-              <a key={link.name} href={link.href} aria-current={isActive(link) ? 'page' : undefined} className={`animated-underline py-1 transition-colors hover:text-indigo-600 dark:hover:text-violet-400 ${isActive(link) ? 'active text-indigo-600 dark:text-violet-400' : ''}`}>{link.name}</a>
-            )
-          ))}
+        <nav className="hidden items-center gap-1 text-sm font-semibold md:flex" aria-label="Main">
+          {NAV_LINKS.map((link) => {
+            const active = isActive(link);
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                aria-current={active ? 'page' : undefined}
+                className={`focus-ring relative rounded-lg px-3 py-2 transition-colors ${
+                  active
+                    ? 'text-indigo-600 dark:text-violet-300'
+                    : 'text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-violet-300'
+                }`}
+              >
+                {link.name}
+                <span
+                  className={`absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 transition-transform duration-300 ${
+                    active ? 'scale-x-100' : 'scale-x-0'
+                  }`}
+                  aria-hidden="true"
+                />
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
-          <a href="/#contact" className="hidden cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-xs font-bold text-white transition-all duration-300 hover:glow-accent sm:inline-flex">Contact Me</a>
+          <Link
+            to="/#contact"
+            className="focus-ring btn-primary hidden text-xs sm:inline-flex"
+          >
+            Contact me
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
           <button
             type="button"
-            className={`hamburger relative z-50 flex h-8 w-8 flex-col items-center justify-center gap-1.5 focus:outline-none md:hidden ${mobileMenuOpen ? 'hamburger-open' : ''}`}
+            className={`hamburger focus-ring relative z-50 flex h-9 w-9 flex-col items-center justify-center gap-1.5 rounded-lg md:hidden ${
+              mobileMenuOpen ? 'hamburger-open' : ''
+            }`}
             onClick={() => setMobileMenuOpen((open) => !open)}
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-navigation"
           >
-            <span className={`hamburger-line h-0.5 w-6 bg-slate-700 dark:bg-slate-300 transition-all duration-300 ${mobileMenuOpen ? 'hamburger-open' : ''}`} />
-            <span className={`hamburger-line h-0.5 w-6 bg-slate-700 dark:bg-slate-300 transition-all duration-300 ${mobileMenuOpen ? 'opacity-0' : ''}`} />
-            <span className={`hamburger-line h-0.5 w-6 bg-slate-700 dark:bg-slate-300 transition-all duration-300 ${mobileMenuOpen ? 'hamburger-open' : ''}`} />
+            <span className="hamburger-line h-0.5 w-5 rounded-full bg-slate-700 dark:bg-slate-200" />
+            <span className="hamburger-line h-0.5 w-5 rounded-full bg-slate-700 dark:bg-slate-200" />
+            <span className="hamburger-line h-0.5 w-5 rounded-full bg-slate-700 dark:bg-slate-200" />
           </button>
         </div>
       </div>
 
-      <div id="mobile-navigation" className={`glass-strong absolute left-0 top-full w-full overflow-hidden border-b border-slate-200/50 shadow-2xl transition-all duration-300 dark:border-slate-800/60 md:hidden ${mobileMenuOpen ? 'visible max-h-80 opacity-100' : 'invisible max-h-0 opacity-0'}`}>
-        <nav className={`stagger-children flex flex-col px-6 py-4 ${mobileMenuOpen ? 'revealed' : ''}`}>
-          {NAV_LINKS.map((link) => (
-            link.isRouterLink ? (
-              <Link key={link.name} to={link.href} onClick={() => setMobileMenuOpen(false)} className={`border-b border-slate-100 py-3 text-sm font-semibold text-slate-600 last:border-0 dark:border-slate-800/60 dark:text-slate-300 ${isActive(link) ? 'text-indigo-600 dark:text-violet-400' : ''}`}>{link.name}</Link>
-            ) : (
-              <a key={link.name} href={link.href} onClick={() => setMobileMenuOpen(false)} className={`border-b border-slate-100 py-3 text-sm font-semibold text-slate-600 last:border-0 dark:border-slate-800/60 dark:text-slate-300 ${isActive(link) ? 'text-indigo-600 dark:text-violet-400' : ''}`}>{link.name}</a>
-            )
-          ))}
-          <a href="/#contact" onClick={() => setMobileMenuOpen(false)} className="mt-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-2.5 text-center text-sm font-bold text-white">Contact Me</a>
+      {/* Mobile drawer */}
+      <div
+        id="mobile-navigation"
+        hidden={!mobileMenuOpen}
+        className="glass-strong absolute left-0 top-full w-full overflow-hidden border-b border-slate-200/60 shadow-2xl dark:border-slate-800/60 md:hidden"
+      >
+        <nav className="stagger-children revealed flex flex-col gap-1 px-5 py-5" aria-label="Mobile">
+          {NAV_LINKS.map((link) => {
+            const active = isActive(link);
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setMobileMenuOpen(false)}
+                aria-current={active ? 'page' : undefined}
+                className={`focus-ring flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
+                  active
+                    ? 'bg-indigo-500/10 text-indigo-600 dark:bg-violet-500/10 dark:text-violet-300'
+                    : 'text-slate-600 hover:bg-slate-100/70 dark:text-slate-300 dark:hover:bg-slate-800/70'
+                }`}
+              >
+                {link.name}
+                <ArrowRight className="h-4 w-4 opacity-40" aria-hidden="true" />
+              </Link>
+            );
+          })}
+          <Link
+            to="/#contact"
+            onClick={() => setMobileMenuOpen(false)}
+            className="btn-primary mt-3 w-full"
+          >
+            Contact me
+          </Link>
         </nav>
       </div>
     </header>
