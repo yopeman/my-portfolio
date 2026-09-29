@@ -69,7 +69,7 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="ticks-bg relative flex min-h-screen flex-col overflow-x-hidden bg-slate-100/80 dark:bg-slate-950 night:bg-black">
+    <div className="ticks-bg relative flex min-h-screen flex-col overflow-x-clip bg-slate-100/80 dark:bg-slate-950 night:bg-black">
       <div className="pointer-events-none absolute -right-32 top-20 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl animate-morph" />
       <div className="pointer-events-none absolute bottom-0 left-1/4 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl animate-float-slow" />
 
@@ -102,7 +102,7 @@ export default function AdminLayout() {
       {mobileOpen && <button type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="fixed inset-0 top-16 z-30 bg-slate-950/30 backdrop-blur-sm md:hidden" />}
 
       <div className="relative flex flex-1">
-        <aside className={`fixed inset-y-0 left-0 top-16 z-50 flex w-72 flex-col border-r border-slate-200/70 bg-white/90 px-4 py-5 shadow-2xl shadow-slate-900/10 backdrop-blur-2xl transition-transform duration-300 md:sticky md:top-16 md:z-20 md:h-[calc(100vh-4rem)] md:w-64 md:translate-x-0 md:border-slate-200/70 md:bg-white/65 md:shadow-none dark:border-slate-800/70 dark:bg-slate-950/90 night:border-purple-900/20 night:bg-black/90 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <aside className={`fixed inset-y-0 left-0 top-16 z-50 flex w-72 flex-col border-r border-slate-200/70 bg-white/90 px-4 py-5 shadow-2xl shadow-slate-900/10 backdrop-blur-2xl transition-transform duration-300 md:sticky md:top-16 md:z-20 md:h-[calc(100vh-4rem)] md:w-64 md:translate-x-0 md:self-start md:border-slate-200/70 md:bg-white/65 md:shadow-none dark:border-slate-800/70 dark:bg-slate-950/90 night:border-purple-900/20 night:bg-black/90 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="mb-5 flex items-center justify-between px-2 md:hidden"><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-600 dark:text-violet-400">Navigation</p><p className="mt-1 text-sm font-extrabold text-slate-900 dark:text-white">Workspace menu</p></div><button type="button" onClick={() => setMobileOpen(false)} aria-label="Close navigation" className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white"><X className="h-4 w-4" /></button></div>
           <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1" aria-label="Admin navigation">
             {visibleGroups.map((group) => (
@@ -122,7 +122,7 @@ export default function AdminLayout() {
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1">
+        <main className="min-h-0 min-w-0 flex-1">
           <div className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 sm:py-9 lg:px-10 lg:py-10"><div className="page-enter"><Outlet /></div></div>
         </main>
       </div>
