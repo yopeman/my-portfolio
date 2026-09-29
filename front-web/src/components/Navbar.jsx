@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { name: 'Skills', href: '/#skills', isRouterLink: false },
   { name: 'Projects', href: '/projects', isRouterLink: true },
   { name: 'Blog', href: '/blogs', isRouterLink: true },
+  { name: 'Plans', href: '/plans', isRouterLink: true },
   { name: 'Contact', href: '/#contact', isRouterLink: false },
 ];
 

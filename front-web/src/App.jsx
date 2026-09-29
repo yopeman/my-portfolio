@@ -16,6 +16,7 @@ import ProjectsPage from './pages/ProjectsPage.jsx';
 import ProjectDetailPage from './pages/ProjectDetailPage.jsx';
 import BlogsPage from './pages/BlogsPage.jsx';
 import BlogDetailPage from './pages/BlogDetailPage.jsx';
+import PlansPage from './pages/PlansPage.jsx';
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
       <Route path="/projects/:slug" element={<ProjectDetailPage />} />
       <Route path="/blogs" element={<BlogsPage />} />
       <Route path="/blog/:slug" element={<BlogDetailPage />} />
+      <Route path="/plans" element={<PlansPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route
         path="/admin"

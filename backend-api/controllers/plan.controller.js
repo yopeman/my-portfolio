@@ -24,15 +24,22 @@ const PLAN_FIELDS = [
 ];
 
 const PERIODS = ['year', 'half', 'quarter', 'month', 'week', 'day'];
+// Ordered from most to least privileged. A plan is visible to a user when the
+// user's role rank is at least as high as the plan's required visibility.
 const VISIBILITIES = ['owner', 'admin', 'member', 'user', 'guest'];
+const VISIBILITY_RANK = new Map(VISIBILITIES.map((role, index) => [role, index]));
 const CHECKLIST_STATUSES = ['pending', 'in progress', 'completed', 'cancelled', 'failed'];
 const SAFE_IMAGE_MIME_TYPES = new Set(['image/avif', 'image/gif', 'image/jpeg', 'image/png', 'image/webp']);
 
 function normalizeVisibility(value) {
   const values = Array.isArray(value) ? value : value === undefined || value === null || value === '' ? [] : [value];
   const unique = [...new Set(values.map(String))];
-  if (unique.some((visibility) => !VISIBILITIES.includes(visibility))) throw ApiError.badRequest('visibility contains an invalid role');
-  return unique.length > 0 ? unique : ['guest'];
+  if (unique.some((visibility) => !VISIBILITY_RANK.has(visibility))) throw ApiError.badRequest('visibility contains an invalid role');
+  if (unique.length === 0) return 'guest';
+  // Legacy documents may still hold an array; keep the most permissive entry.
+  return unique.reduce((lowest, current) =>
+    VISIBILITY_RANK.get(current) > VISIBILITY_RANK.get(lowest) ? current : lowest
+  );
 }
 
 function normalizeOrder(value, index) {
@@ -194,11 +201,12 @@ async function attachFiles(plans, includeDetails = false) {
 }
 
 function canView(plan, user) {
-  const visibility = Array.isArray(plan.visibility) ? plan.visibility : [];
-  if (visibility.includes('guest')) return true;
-  if (!user) return false;
-  if (user.role === 'owner') return true;
-  return visibility.includes(user.role);
+  const required = Array.isArray(plan.visibility) ? plan.visibility[0] : plan.visibility;
+  const requiredRank = VISIBILITY_RANK.has(required) ? VISIBILITY_RANK.get(required) : VISIBILITY_RANK.get('guest');
+  // Guests are anyone without an account, so they only see guest-level plans.
+  if (!user) return requiredRank >= VISIBILITY_RANK.get('guest');
+  const userRank = VISIBILITY_RANK.has(user.role) ? VISIBILITY_RANK.get(user.role) : VISIBILITY_RANK.get('guest');
+  return userRank <= requiredRank;
 }
 
 async function descendantPlanIds(rootId) {

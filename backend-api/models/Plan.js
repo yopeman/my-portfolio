@@ -20,10 +20,11 @@ const checklistSchema = new Schema(
 const planSchema = new Schema(
   {
     slug: { type: String, required: true, trim: true, lowercase: true },
+    // Minimum role required to view the plan: owner > admin > member > user > guest
     visibility: {
-      type: [String],
+      type: String,
       enum: ['owner', 'admin', 'member', 'user', 'guest'],
-      default: ['guest'],
+      default: 'guest',
     },
     period: {
       type: String,
