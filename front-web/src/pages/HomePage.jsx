@@ -8,27 +8,11 @@ import RoadmapSection from '../components/RoadmapSection.jsx';
 import Contact from '../components/Contact.jsx';
 import SiteFeedbackSection from '../components/SiteFeedbackSection.jsx';
 import PublicLayout from '../components/PublicLayout.jsx';
-import { useAsyncResource } from '../hooks/useAsyncResource.js';
-import { aboutApi } from '../api/about.js';
-import { mapAboutLike } from '../services/adapters.js';
+import useAbout from '../hooks/useAbout.js';
 import { SectionShell } from '../components/ui.jsx';
 
-const EMPTY_ABOUT = {
-  headline: '',
-  about: '',
-  contact: '',
-  skills: '',
-  educations: [],
-  experiences: [],
-  images: [],
-};
-
 export default function HomePage() {
-  const { data, loading, error } = useAsyncResource(
-    () => aboutApi.get().then((r) => r.about),
-    [],
-  );
-  const aboutMe = data ? mapAboutLike(data) : EMPTY_ABOUT;
+  const { aboutMe, loading, error } = useAbout();
 
   return (
     <PublicLayout>

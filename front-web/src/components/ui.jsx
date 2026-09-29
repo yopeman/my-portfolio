@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, Info, Loader2, X } from 'lucide-react';
+import { AlertCircle, ArrowRight, CheckCircle2, Info, Loader2, X } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    Shared public-site primitives.
@@ -116,6 +116,50 @@ export function Card({ as: Tag = 'div', interactive = true, className = '', chil
     <Tag className={`${interactiveClass} ${className}`} {...rest}>
       {children}
     </Tag>
+  );
+}
+
+/**
+ * Summary card that closes a home-page section: a few real numbers pulled from
+ * the API plus a link through to the section's dedicated page.
+ */
+export function SectionLinkCard({ icon: Icon, eyebrow, title, description, to, linkLabel, facts = [], children, className = '' }) {
+  return (
+    <Card interactive={false} className={`mt-8 p-6 sm:p-8 ${className}`}>
+      <div className="flex items-start gap-3.5">
+        {Icon && (
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/15 to-fuchsia-500/15 text-indigo-600 dark:text-violet-300">
+            <Icon className="h-5 w-5" aria-hidden="true" />
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          {eyebrow && (
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">{eyebrow}</p>
+          )}
+          <h3 className="mt-1 text-lg font-extrabold text-slate-900 dark:text-white">{title}</h3>
+          {description && (
+            <p className="mt-1.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{description}</p>
+          )}
+        </div>
+      </div>
+
+      {facts.length > 0 && (
+        <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {facts.map((fact) => (
+            <div key={fact.label} className="rounded-xl border border-slate-200/60 bg-white/60 px-3.5 py-3 dark:border-slate-700/60 dark:bg-slate-800/40 night:border-purple-900/15">
+              <dt className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">{fact.label}</dt>
+              <dd className="counter-value mt-1 text-lg font-extrabold text-slate-900 dark:text-white">{fact.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {children}
+
+      <ButtonLink to={to} variant="secondary" size="sm" className="mt-6" iconRight={ArrowRight}>
+        {linkLabel}
+      </ButtonLink>
+    </Card>
   );
 }
 

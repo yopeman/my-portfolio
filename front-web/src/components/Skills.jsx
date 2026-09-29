@@ -1,10 +1,11 @@
 import Markdown from 'markdown-to-jsx';
-import { Sparkles } from 'lucide-react';
+import { Layers, Sparkles } from 'lucide-react';
 import { markdownComponents } from './markdownComponents';
 import SlideImage from './SlideImage';
 import AnimatedSection from './AnimatedSection';
 import { useScrollReveal } from '../hooks/useScrollReveal';
-import { Card, ProgressBar, SectionHeading, SectionShell } from './ui.jsx';
+import { summarizeSkills } from '../services/skillsSummary.js';
+import { Card, ProgressBar, SectionHeading, SectionLinkCard, SectionShell } from './ui.jsx';
 
 // Flattens markdown children back into a plain string so the trailing
 // "(80%)" the adapter appends can be split off the skill name.
@@ -51,9 +52,10 @@ function SkillBadge({ children }) {
   );
 }
 
-export default function Skills({ aboutMe }) {
+export default function Skills({ aboutMe, showHeading = true, showSummary = true }) {
   const images = aboutMe?.images || [];
   const skills = aboutMe?.skills || '';
+  const summary = summarizeSkills(skills);
 
   const skillsMarkdownOptions = {
     overrides: {
@@ -85,14 +87,16 @@ export default function Skills({ aboutMe }) {
     <SectionShell id="skills" size={images.length ? 'wide' : 'narrow'}>
       <div className={`grid items-start gap-12 ${images.length ? 'lg:grid-cols-[1.2fr_1fr] lg:gap-16' : ''}`}>
         <div className="order-2 lg:order-1">
-          <AnimatedSection>
-            <SectionHeading
-              eyebrow="Toolkit"
-              icon={Sparkles}
-              title={'Skills & expertise'}
-              description="Languages, backend architecture, AI workflows, and the tooling that keeps shipping calm."
-            />
-          </AnimatedSection>
+          {showHeading && (
+            <AnimatedSection>
+              <SectionHeading
+                eyebrow="Toolkit"
+                icon={Sparkles}
+                title={'Skills & expertise'}
+                description="Languages, backend architecture, AI workflows, and the tooling that keeps shipping calm."
+              />
+            </AnimatedSection>
+          )}
 
           <AnimatedSection delay={80}>
             <Card interactive={false} className="mt-8 p-6 sm:p-8">
@@ -107,6 +111,41 @@ export default function Skills({ aboutMe }) {
               )}
             </Card>
           </AnimatedSection>
+
+          {/* Mini data + the link through to the dedicated page. */}
+          {showSummary && summary.total > 0 && (
+            <AnimatedSection delay={160}>
+              <SectionLinkCard
+                icon={Layers}
+                eyebrow="At a glance"
+                title="The full toolkit"
+                description={
+                  summary.average === null
+                    ? `${summary.categories.length} categor${summary.categories.length === 1 ? 'y' : 'ies'} across the stack.`
+                    : `Averaging ${summary.average}% proficiency across ${summary.categories.length} categor${summary.categories.length === 1 ? 'y' : 'ies'}.`
+                }
+                to="/skills"
+                linkLabel="Open all skills"
+                facts={[
+                  { label: 'Skills', value: summary.total },
+                  { label: 'Categories', value: summary.categories.length },
+                  { label: 'Avg. level', value: summary.average === null ? '—' : `${summary.average}%` },
+                ]}
+              >
+                <ul className="mt-5 flex flex-wrap gap-2">
+                  {summary.categories.map((category) => (
+                    <li
+                      key={category.name}
+                      className="rounded-full border border-slate-200/70 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700/70 dark:text-slate-300"
+                    >
+                      {category.name}
+                      <span className="ml-1.5 text-slate-400">{category.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              </SectionLinkCard>
+            </AnimatedSection>
+          )}
         </div>
 
         {images.length > 0 && (

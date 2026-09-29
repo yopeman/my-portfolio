@@ -176,7 +176,7 @@ export default function Hero({ aboutMe }) {
               Explore my work
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
             </MagneticLink>
-            <MagneticLink to="/#contact" className="btn-secondary px-6 py-3.5 text-sm">
+            <MagneticLink to="/contact" className="btn-secondary px-6 py-3.5 text-sm">
               <Sparkles className="h-4 w-4" aria-hidden="true" />
               Let&rsquo;s talk
             </MagneticLink>

@@ -9,12 +9,13 @@ const SOCIALS = [
 ];
 
 const SECTIONS = [
-  { name: 'About', to: '/#about' },
-  { name: 'Skills', to: '/#skills' },
+  { name: 'About', to: '/about' },
+  { name: 'Skills', to: '/skills' },
   { name: 'Projects', to: '/projects' },
   { name: 'Roadmap', to: '/plans' },
   { name: 'Blog', to: '/blogs' },
-  { name: 'Contact', to: '/#contact' },
+  { name: 'Feedback', to: '/feedback' },
+  { name: 'Contact', to: '/contact' },
 ];
 
 export default function Footer() {

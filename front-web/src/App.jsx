@@ -20,11 +20,17 @@ import BlogsPage from './pages/BlogsPage.jsx';
 import BlogDetailPage from './pages/BlogDetailPage.jsx';
 import FeedbackPage from './pages/FeedbackPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
+import AboutPage from './pages/AboutPage.jsx';
+import SkillsPage from './pages/SkillsPage.jsx';
+import ContactPage from './pages/ContactPage.jsx';
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/skills" element={<SkillsPage />} />
+      <Route path="/contact" element={<ContactPage />} />
       <Route path="/projects" element={<ProjectsPage />} />
       <Route path="/projects/:slug" element={<ProjectDetailPage />} />
       <Route path="/plans" element={<PlansPage />} />

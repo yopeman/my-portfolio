@@ -9,6 +9,7 @@ import {
   MapPin,
   MessageSquare,
   Phone,
+  Radio,
   Send,
   SendHorizonal,
   Sparkles,
@@ -23,6 +24,7 @@ import {
   Field,
   Notice,
   SectionHeading,
+  SectionLinkCard,
   SectionShell,
   TextArea,
   TextInput,
@@ -92,7 +94,7 @@ function ContactCard({ label, value }) {
   );
 }
 
-export default function Contact({ aboutMe }) {
+export default function Contact({ aboutMe, showHeading = true, showSummary = true }) {
   const images = aboutMe?.images || [];
   const { ref: staggerRef, isRevealed } = useStaggerReveal({ threshold: 0.1 });
   const contactList = parseContactInfo(aboutMe?.contact);
@@ -178,14 +180,16 @@ export default function Contact({ aboutMe }) {
     <SectionShell id="contact" size={images.length ? 'wide' : 'narrow'} tone="muted">
       <div className={`grid items-start gap-12 ${images.length ? 'lg:grid-cols-2 lg:gap-16' : ''}`}>
         <div className="order-2 lg:order-1">
-          <AnimatedSection>
-            <SectionHeading
-              eyebrow="Contact"
-              icon={MessageSquare}
-              title="Get in touch"
-              description="A project you want to discuss, a backend role that is open, or a question about my AI work — any of those is a good reason to write."
-            />
-          </AnimatedSection>
+          {showHeading && (
+            <AnimatedSection>
+              <SectionHeading
+                eyebrow="Contact"
+                icon={MessageSquare}
+                title="Get in touch"
+                description="A project you want to discuss, a backend role that is open, or a question about my AI work — any of those is a good reason to write."
+              />
+            </AnimatedSection>
+          )}
 
           {contactList.length > 0 && (
             <div
@@ -312,6 +316,36 @@ export default function Contact({ aboutMe }) {
               </Notice>
             )}
           </Card>
+
+          {/* Mini data + the link through to the dedicated page. */}
+          {showSummary && contactList.length > 0 && (
+            <AnimatedSection delay={120}>
+              <SectionLinkCard
+                icon={Radio}
+                eyebrow="At a glance"
+                title="The full contact page"
+                description="Every listed channel in one place, alongside the message form and the newsletter signup."
+                to="/contact"
+                linkLabel="Open the contact page"
+                facts={[
+                  { label: 'Channels', value: contactList.length },
+                  { label: 'Form', value: 'Open' },
+                  { label: 'Newsletter', value: 'Open' },
+                ]}
+              >
+                <ul className="mt-5 flex flex-wrap gap-2">
+                  {contactList.map((item, index) => (
+                    <li
+                      key={`${item.label}-${index}`}
+                      className="rounded-full border border-slate-200/70 px-2.5 py-1 text-xs font-semibold capitalize text-slate-600 dark:border-slate-700/70 dark:text-slate-300"
+                    >
+                      {item.label}
+                    </li>
+                  ))}
+                </ul>
+              </SectionLinkCard>
+            </AnimatedSection>
+          )}
         </div>
 
         {images.length > 0 && (

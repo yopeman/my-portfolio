@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { MessagesSquare, User } from 'lucide-react';
+import { ArrowUpRight, BookOpen, MessagesSquare, User } from 'lucide-react';
 import { markdownComponents } from './markdownComponents';
 import SlideImage from './SlideImage';
 import AnimatedSection from './AnimatedSection';
@@ -9,7 +9,7 @@ import FeedbackSection from './FeedbackSection.jsx';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useAsyncResource } from '../hooks/useAsyncResource.js';
 import { projectsApi } from '../api/projects.js';
-import { Card, SectionHeading, SectionShell, StatTile } from './ui.jsx';
+import { Card, SectionHeading, SectionLinkCard, SectionShell, StatTile } from './ui.jsx';
 
 function useCountUp(target, active, duration = 2000) {
   const [count, setCount] = useState(0);
@@ -50,8 +50,22 @@ function AnimatedStat({ end, label, delay = 0 }) {
   );
 }
 
-// Year the portfolio/engineering career began, used for the "Years" stat.
-const START_YEAR = 2026;
+// Fallback only. The real start year comes from the earliest dated entry, so
+// the figure stays correct without editing code every January.
+const FALLBACK_START_YEAR = 2026;
+
+function earliestYear(aboutMe) {
+  const dates = [
+    ...(aboutMe?.experiences || []),
+    ...(aboutMe?.educations || []),
+  ]
+    .map((entry) => entry.startDate)
+    .filter(Boolean)
+    .map((value) => new Date(value).getFullYear())
+    .filter((year) => Number.isFinite(year));
+
+  return dates.length ? Math.min(...dates) : FALLBACK_START_YEAR;
+}
 
 function youtubeEmbedUrl(markdown) {
   if (!markdown) return '';
@@ -61,7 +75,20 @@ function youtubeEmbedUrl(markdown) {
   return match ? `https://www.youtube-nocookie.com/embed/${match[1]}` : '';
 }
 
-export default function About({ aboutMe }) {
+// Flattens the bio markdown down to a readable one-line teaser.
+function bioSnippet(markdown, maxLength = 240) {
+  if (!markdown) return '';
+  const plain = markdown
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[#>*_`~|-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return plain.length > maxLength ? `${plain.slice(0, maxLength).trimEnd()}…` : plain;
+}
+
+export default function About({ aboutMe, showHeading = true, showSummary = true }) {
   const images = aboutMe?.images || [];
   const bio = aboutMe?.about || '';
 
@@ -74,25 +101,31 @@ export default function About({ aboutMe }) {
 
   const currentYear = new Date().getFullYear();
   const embedUrl = youtubeEmbedUrl(bio);
+  const yearsOfExperience = Math.max(0, currentYear - earliestYear(aboutMe));
+  const projectCount = projectMeta?.total ?? 0;
+  const techCount = aboutMe?.skillCount ?? 0;
+  const snippet = bioSnippet(bio);
 
   const stats = [
-    { label: 'Years', end: Math.max(0, currentYear - START_YEAR), delay: 100 },
-    { label: 'Projects', end: projectMeta?.total ?? 0, delay: 240 },
-    { label: 'Technologies', end: aboutMe?.skillCount ?? 0, delay: 380 },
+    { label: 'Years', end: yearsOfExperience, delay: 100 },
+    { label: 'Projects', end: projectCount, delay: 240 },
+    { label: 'Technologies', end: techCount, delay: 380 },
   ];
 
   return (
     <SectionShell id="about" tone="muted" size={images.length ? 'wide' : 'narrow'}>
       <div className={`grid items-center gap-12 ${images.length ? 'lg:grid-cols-[1fr_1.2fr] lg:gap-16' : ''}`}>
         <div className="order-2 lg:order-1">
-          <AnimatedSection>
-            <SectionHeading
-              eyebrow="Introduction"
-              icon={User}
-              title="About me"
-              description="A short version, then the details: what I build, what I reach for, and the problems I keep coming back to."
-            />
-          </AnimatedSection>
+          {showHeading && (
+            <AnimatedSection>
+              <SectionHeading
+                eyebrow="Introduction"
+                icon={User}
+                title="About me"
+                description="A short version, then the details: what I build, what I reach for, and the problems I keep coming back to."
+              />
+            </AnimatedSection>
+          )}
 
           <AnimatedSection delay={80}>
             <Card interactive={false} className="mt-8 p-6 sm:p-8">
@@ -131,6 +164,40 @@ export default function About({ aboutMe }) {
                   A short walkthrough of how I think about building software.
                 </figcaption>
               </figure>
+            </AnimatedSection>
+          )}
+
+          {/* Mini data + the link through to the dedicated page. */}
+          {showSummary && (
+            <AnimatedSection delay={160}>
+              <SectionLinkCard
+                icon={BookOpen}
+                eyebrow="At a glance"
+                title="The full profile"
+                description={snippet || 'Experience, education, and background in one place.'}
+                to="/about"
+                linkLabel="Open the full profile"
+                facts={[
+                  { label: 'Years', value: `${yearsOfExperience}+` },
+                  { label: 'Projects', value: `${projectCount}+` },
+                  { label: 'Technologies', value: `${techCount}+` },
+                ]}
+              >
+                {aboutMe?.experiences?.length > 0 && (
+                  <p className="mt-5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="font-extrabold uppercase tracking-[0.14em] text-slate-400">Worked at</span>
+                    {aboutMe.experiences.slice(0, 4).map((experience, index) => (
+                      <span
+                        key={experience._id || index}
+                        className="rounded-full border border-slate-200/70 px-2.5 py-1 font-semibold dark:border-slate-700/70"
+                      >
+                        {experience.company || experience.role}
+                      </span>
+                    ))}
+                    <ArrowUpRight className="h-3.5 w-3.5 opacity-40" aria-hidden="true" />
+                  </p>
+                )}
+              </SectionLinkCard>
             </AnimatedSection>
           )}
         </div>

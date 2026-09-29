@@ -4,8 +4,8 @@ import { ArrowRight } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 const NAV_LINKS = [
-  { name: 'About', to: '/#about' },
-  { name: 'Skills', to: '/#skills' },
+  { name: 'About', to: '/about' },
+  { name: 'Skills', to: '/skills' },
   { name: 'Projects', to: '/projects' },
   { name: 'Roadmap', to: '/plans' },
   { name: 'Blog', to: '/blogs' },
@@ -119,10 +119,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
-          <Link
-            to="/#contact"
-            className="focus-ring btn-primary hidden text-xs sm:inline-flex"
-          >
+          <Link to="/contact" className="focus-ring btn-primary hidden text-xs sm:inline-flex">
             Contact me
             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
@@ -170,7 +167,7 @@ export default function Navbar() {
             );
           })}
           <Link
-            to="/#contact"
+            to="/contact"
             onClick={() => setMobileMenuOpen(false)}
             className="btn-primary mt-3 w-full"
           >
