@@ -53,4 +53,47 @@ export function summarizeSkills(markdown) {
   };
 }
 
+/**
+ * Truncates the skills markdown to the first `limit` entries so a summary
+ * section can show a handful of badges and leave the rest to the full page.
+ * Headings left without any entries are dropped.
+ */
+export function previewSkills(markdown, limit) {
+  const source = markdown || '';
+  const total = summarizeSkills(source).total;
+
+  if (!limit || limit < 1 || total <= limit) {
+    return { markdown: source, shown: total, hidden: 0 };
+  }
+
+  const groups = [];
+  for (const line of source.split('\n')) {
+    const heading = line.match(/^(#{1,6})\s+(.+)$/);
+    if (heading) {
+      groups.push({ heading: heading[2].trim(), level: heading[1].length, items: [] });
+      continue;
+    }
+    const item = line.match(/^(\s*)-\s+(.+)$/);
+    if (!item) continue;
+    if (groups.length === 0) groups.push({ heading: null, level: 2, items: [] });
+    groups[groups.length - 1].items.push({ indent: item[1], text: item[2] });
+  }
+
+  const kept = [];
+  let shown = 0;
+
+  for (const group of groups) {
+    if (shown >= limit) break;
+    const items = group.items.slice(0, limit - shown);
+    if (items.length === 0) continue;
+    shown += items.length;
+    kept.push(
+      group.heading ? `${'#'.repeat(group.level)} ${group.heading}` : null,
+      ...items.map((item) => `${item.indent}- ${item.text}`),
+    );
+  }
+
+  return { markdown: kept.filter(Boolean).join('\n'), shown, hidden: total - shown };
+}
+
 export default summarizeSkills;

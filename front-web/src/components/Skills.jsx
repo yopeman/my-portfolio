@@ -1,10 +1,11 @@
 import Markdown from 'markdown-to-jsx';
-import { Layers, Sparkles } from 'lucide-react';
+import { ArrowRight, Layers, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { markdownComponents } from './markdownComponents';
 import SlideImage from './SlideImage';
 import AnimatedSection from './AnimatedSection';
 import { useScrollReveal } from '../hooks/useScrollReveal';
-import { summarizeSkills } from '../services/skillsSummary.js';
+import { previewSkills, summarizeSkills } from '../services/skillsSummary.js';
 import { Card, ProgressBar, SectionHeading, SectionLinkCard, SectionShell } from './ui.jsx';
 
 // Flattens markdown children back into a plain string so the trailing
@@ -52,10 +53,12 @@ function SkillBadge({ children }) {
   );
 }
 
-export default function Skills({ aboutMe, showHeading = true, showSummary = true }) {
+export default function Skills({ aboutMe, showHeading = true, showSummary = true, limit = 0 }) {
   const images = aboutMe?.images || [];
   const skills = aboutMe?.skills || '';
   const summary = summarizeSkills(skills);
+  // The home page shows a handful of entries; the rest live in the full table.
+  const { markdown: shownSkills, hidden } = previewSkills(skills, limit);
 
   const skillsMarkdownOptions = {
     overrides: {
@@ -102,11 +105,23 @@ export default function Skills({ aboutMe, showHeading = true, showSummary = true
             <Card interactive={false} className="mt-8 p-6 sm:p-8">
               {skills ? (
                 <div className="text-sm">
-                  <Markdown options={skillsMarkdownOptions}>{skills}</Markdown>
+                  <Markdown options={skillsMarkdownOptions}>{shownSkills}</Markdown>
                 </div>
               ) : (
                 <p className="text-sm text-slate-400">
                   No skills have been added yet. Publish them from the admin dashboard to fill this section.
+                </p>
+              )}
+
+              {hidden > 0 && (
+                <p className="mt-6 border-t border-slate-200/70 pt-5 text-sm dark:border-slate-700/70">
+                  <Link
+                    to="/skills"
+                    className="link-underline inline-flex items-center gap-1.5 font-bold text-indigo-600 dark:text-violet-300"
+                  >
+                    + {hidden} more {hidden === 1 ? 'skill' : 'skills'} in the full table
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Link>
                 </p>
               )}
             </Card>

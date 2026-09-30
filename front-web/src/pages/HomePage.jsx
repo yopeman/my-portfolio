@@ -26,7 +26,7 @@ export default function HomePage() {
 
       {/* Narrative: who this is, what it is built with, where it came from. */}
       <About aboutMe={aboutMe} />
-      <Skills aboutMe={aboutMe} />
+      <Skills aboutMe={aboutMe} limit={12} />
       <Timeline aboutMe={aboutMe} />
 
       {/* Proof: shipped work, writing, and the plan behind it. */}
