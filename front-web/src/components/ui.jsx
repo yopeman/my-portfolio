@@ -30,7 +30,7 @@ export function Container({ size = 'wide', className = '', children }) {
  * is what gives the public pages their depth; keeping it in one place stops
  * each page from reinventing a slightly different backdrop.
  */
-export function PageHeader({ eyebrow, icon: Icon, title, highlight, description, meta, size = 'default', children }) {
+export function PageHeader({ eyebrow, icon: Icon, title, highlight, description, meta, size = 'wide', children }) {
   return (
     <header className="relative isolate overflow-hidden border-b border-slate-200/60 dark:border-slate-800/60 night:border-purple-900/10">
       <div className="mesh-hero absolute inset-0 -z-10" />
