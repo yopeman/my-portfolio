@@ -31,6 +31,32 @@
   - name
   - progress (1-100)
   - order (float)
+- educations:
+  - institution
+  - degree
+  - field
+  - location
+  - startDate
+  - endDate
+  - cgpa
+  - description
+  - link
+  - order
+  - timestamps: { createdAt, updatedAt, deletedAt }
+- experiences
+  - company
+  - role
+  - type: full-time, part-time, contract, internship, freelance
+  - location
+  - remote
+  - startDate
+  - endDate       // null = current
+  - description
+  - highlights: []
+  - skills: []
+  - link
+  - order
+  - timestamps (createdAt, updatedAt, deletedAt)
 - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Projects
@@ -91,7 +117,7 @@
 
 ## Plans
 - slug (unique)
-- visibility: [] value in (owner, admin, member, user, guest)
+- visibility: minimum role that can view, one of (owner, admin, member, user, guest)
 - period: year, half, quarter, month, week, day
 - year (e.g. 2026)
 - periodNumber
@@ -112,16 +138,19 @@
 - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Feedback:
-  - parent entity: about, project, blog, plan
+  - parent entity: about, project, blog, plan, system, feedback
   - parent id
-  - type: feedback, comment, reply
+    - a reply sets parent entity to feedback and parent id to the comment _id
+    - the site itself has no row, so parent entity system always uses the well-known id 000000000000000000000001
+  - type: comment, reply
   - user id
   - content
   - timestamps (createdAt, updatedAt, deletedAt)
 
 ## Reactions:
-  - parent entity: about, project, blog, plan, feedback
+  - parent entity: about, project, blog, plan, system, feedback
   - parent id
+    - the site itself has no row, so parent entity system always uses the well-known id 000000000000000000000001
   - user id
   - type: like, dislike, love
   - timestamps (createdAt, updatedAt, deletedAt)

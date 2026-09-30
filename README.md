@@ -1,38 +1,37 @@
 # Portfolio Monorepo
 
-This repository is a personal portfolio monorepo containing a web site, an Expo app, a backend API, and several project pages and assets.
+Personal portfolio monorepo with a Vite + React website, Express + MongoDB API, and Expo companion app.
 
-**Overview**
+## Architecture
 
-- **Purpose:** Source for a portfolio site and companion apps showcasing projects and skills.
-- **Contents:** Static web frontend, mobile app, a small Node.js API, project folders, and build scripts.
+- `backend-api` — Express 5 + Mongoose API for portfolio content, authentication, files, feedback, and admin operations.
+- `front-web` — Vite + React public site and guarded admin dashboard.
+- `front-app` — Expo / React Native companion app.
+- MongoDB is the sole source of truth for About, Projects, and file metadata.
 
-**Repository Structure**
+## Prerequisites
 
-- [about-me](about-me) — Markdown content and assets used across builds.
-- [backend-api](backend-api) — Minimal Node.js backend serving portfolio data and APIs.
-- [front-app](front-app) — Expo / React Native application (mobile) and example app.
-- [front-web](front-web) — Vite + React web frontend (production site).
-- [projects](projects) — Individual project folders and README files.
-- [scripts](scripts) — Utility scripts (e.g., `compile-portfolio.js`).
+- Node.js
+- MongoDB running locally at `mongodb://127.0.0.1:27017/portfolio`, or configured through `MONGODB_URI`
+- npm
 
-**Quick Start (Prerequisites)**
-
-- Node.js (v16+ recommended)
-- npm or yarn
-- For `front-app`: Expo CLI (`npm install -g expo-cli`) or use `npx expo`
-
-**Run Backend (development)**
+## Backend
 
 ```bash
 cd backend-api
 npm install
+cp .env.example .env
+npm run seed
 npm start
 ```
 
-The backend reads sample data from [backend-api/data/portfolioData.js](backend-api/data/portfolioData.js).
+`npm run seed` only bootstraps the owner configured by `SEED_OWNER_*`. About and Projects must be created through the authenticated admin API or dashboard.
 
-**Run Frontend (web, development)**
+The API exposes `/api/about`, `/api/projects`, `/api/blogs`, `/api/plans`, `/api/requests`, `/api/subscribers`, `/api/auth`, `/api/users`, `/api/files`, `/api/feedback`, `/api/reactions`, `/api/contact`, `/api/subscribe`, `/api/ai`, and `/api/chat`.
+
+`POST /api/ai/enhance` rewrites About, Project, or Blog form values with the LLM and returns the improved values. It never writes to the database — the admin dashboard applies the response to the form so you can review and undo it before saving. It requires the same `UPDATE` permission as editing that content, and `GROQ_API_KEY` must be set.
+
+## Frontend
 
 ```bash
 cd front-web
@@ -40,9 +39,25 @@ npm install
 npm run dev
 ```
 
-Open the local dev server (usually http://localhost:5173) to view the site.
+The frontend uses `http://localhost:5000` by default. Set `VITE_API_URL` when the API runs elsewhere.
 
-**Run Front App (Expo)**
+### Public site
+
+`src/components/ui.jsx` holds the shared public primitives — `PageHeader`, `SectionShell`, `SectionHeading`, `SectionLinkCard`, `Card`, `Chip`, `Button`, `ButtonLink`, `Notice`, `EmptyState`, `Skeleton`, `ProgressBar`, `Field`, and an accessible `Modal` (focus trap, Escape, scroll lock, focus restore). Public pages and components compose these instead of restyling markup locally, so spacing, type scale, and dark/night theming stay consistent.
+
+Public routes: `/`, `/about`, `/skills`, `/experience`, `/projects`, `/projects/:slug`, `/plans`, `/blogs`, `/blog/:slug`, `/contact`, `/feedback`, `/login`, and a `NotFoundPage` for unmatched paths.
+
+### Navigation model
+
+The navbar and footer both link to eight home-page anchors — `/#about`, `/#skills`, `/#experience`, `/#projects`, `/#blogs`, `/#plans`, `/#contact`, `/#feedback` — so the nav is a single row of jump targets. Every one of those sections then closes with an "At a glance" `SectionLinkCard` that shows real numbers from the API plus a link through to the section's own page. The inline nav only appears at `xl` and above; below that the drawer takes over, since eight items no longer fit a single row.
+
+Discussions follow the same split: the home page caps a thread with `FeedbackSection`'s `limit` and renders a "View all N comments" link, while the section's own page renders the full thread.
+
+`src/hooks/useAbout.js` loads and normalises the profile for every page that needs it, and `src/services/skillsSummary.js` parses the skills markdown into categories, counts, and proficiency levels for the summaries.
+
+Section art direction (mesh gradients, fading grid, grain, animated borders) lives in `src/index.css` under the *Public site system* block, driven by the `--mesh-hero`, `--mesh-muted`, and `--shadow-lift` tokens so light, dark, and night themes each get their own backdrop.
+
+## Expo App
 
 ```bash
 cd front-app
@@ -50,40 +65,18 @@ npm install
 npx expo start
 ```
 
-Follow the Expo instructions to run on a simulator or a physical device.
-
-**Build (production)**
-
-- Front-web:
+## Checks
 
 ```bash
 cd front-web
+npm run lint
 npm run build
 ```
 
-- Front-app: follow Expo build/eas instructions if producing a native binary.
-- Backend: deploy `backend-api` to your Node host or serverless platform.
+The backend currently has no automated test, lint, or typecheck script.
 
-**Data & Assets**
+## Data and Files
 
-- Primary portfolio data sources:
-  - [backend-api/data/portfolioData.js](backend-api/data/portfolioData.js)
-  - [front-web/src/data/portfolioData.js](front-web/src/data/portfolioData.js)
-- Content in the `about-me` and `front-web/public/about` folders is used for static pages.
-
-**Scripts**
-
-- `scripts/compile-portfolio.js` — helper script to prepare or compile portfolio data for the site.
-
-**Contributing**
-
-- Open an issue or submit a pull request with changes.
-- Run relevant apps locally to validate changes before submitting.
-
-**License**
-
-This repository does not include a LICENSE file. Add one (e.g., MIT) if you want to make licensing explicit.
-
----
-
-If you want, I can: add a `LICENSE`, expand setup instructions with exact Node/npm versions, or add CI and deployment notes.
+- Public content is loaded from MongoDB through the API; there are no static portfolio fallbacks.
+- File metadata is stored in MongoDB. Uploaded binaries use the configured local or Cloudinary storage driver.
+- The current public site has no About or Project images and does not expose resume or transcript links.

@@ -1,63 +1,177 @@
 import Markdown from 'markdown-to-jsx';
+import { ArrowRight, Layers, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { markdownComponents } from './markdownComponents';
 import SlideImage from './SlideImage';
+import AnimatedSection from './AnimatedSection';
+import { useScrollReveal } from '../hooks/useScrollReveal';
+import { previewSkills, summarizeSkills } from '../services/skillsSummary.js';
+import { Card, ProgressBar, SectionHeading, SectionLinkCard, SectionShell } from './ui.jsx';
 
-export default function Skills({ aboutMe }) {
-  // Skill badge markdown options
+// Flattens markdown children back into a plain string so the trailing
+// "(80%)" the adapter appends can be split off the skill name.
+function toText(node) {
+  if (node === null || node === undefined || node === false || node === true) return '';
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(toText).join('');
+  if (node?.props?.children !== undefined) return toText(node.props.children);
+  return '';
+}
+
+const PROGRESS_PATTERN = /^(.*?)\s*\((\d{1,3})%\)\s*$/;
+
+function SkillBadge({ children }) {
+  const { ref, isRevealed } = useScrollReveal({ threshold: 0.2 });
+  const text = toText(children);
+  const match = text.match(PROGRESS_PATTERN);
+
+  if (!match) {
+    return (
+      <span
+        ref={ref}
+        className={`chip reveal h-fit hover:-translate-y-0.5 hover:border-indigo-300 hover:text-indigo-600 ${isRevealed ? 'revealed' : ''}`}
+      >
+        {text}
+      </span>
+    );
+  }
+
+  const [, name, rawProgress] = match;
+  const progress = Math.max(0, Math.min(100, Number(rawProgress)));
+
+  return (
+    <div
+      ref={ref}
+      className={`reveal flex h-fit w-full flex-col rounded-2xl border border-slate-200/60 bg-white/70 px-4 py-3 transition-[border-color,box-shadow] duration-300 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-500/10 sm:min-w-[15rem] dark:border-slate-700/60 dark:bg-slate-800/50 night:border-purple-900/15 night:bg-black/50 ${isRevealed ? 'revealed' : ''}`}
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{name}</span>
+        <span className="counter-value text-xs font-extrabold text-indigo-600 dark:text-violet-300">{progress}%</span>
+      </div>
+      <ProgressBar value={progress} label={`${name} proficiency`} size="sm" className="mt-2.5" />
+    </div>
+  );
+}
+
+export default function Skills({ aboutMe, showHeading = true, showSummary = true, limit = 0, size }) {
+  const images = aboutMe?.images || [];
+  const skills = aboutMe?.skills || '';
+  const summary = summarizeSkills(skills);
+  // The home page shows a handful of entries; the rest live in the full table.
+  const { markdown: shownSkills, hidden } = previewSkills(skills, limit);
+
   const skillsMarkdownOptions = {
     overrides: {
       ...markdownComponents,
+      // The markdown already sits under a section heading.
       h1: { component: () => null },
       h2: {
         component: ({ children }) => (
-          <h4 className="text-sm font-bold text-indigo-600 dark:text-violet-400 uppercase tracking-wider mb-3 pl-1">
+          <h3 className="mt-8 mb-3 pl-1 text-[11px] font-extrabold uppercase tracking-[0.18em] text-indigo-600 first:mt-0 dark:text-violet-300">
             {children}
-          </h4>
+          </h3>
         ),
       },
       ul: {
         component: ({ children }) => (
-          <div className="flex flex-wrap gap-2 mb-8">{children}</div>
+          <ul className="mt-3 flex list-none flex-wrap gap-2.5 [&:first-child]:mt-0">{children}</ul>
         ),
       },
-      li: {
+      ol: {
         component: ({ children }) => (
-          <span className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200/70 dark:bg-slate-800 dark:hover:bg-slate-700/80 night:bg-purple-950/20 night:border-purple-900/10 text-slate-700 dark:text-slate-200 night:text-purple-300 border border-slate-200/50 dark:border-slate-700/60 transition-colors shadow-sm">
-            {children}
-          </span>
+          <ol className="mt-3 flex list-none flex-wrap gap-2.5 [&:first-child]:mt-0">{children}</ol>
         ),
       },
+      li: { component: SkillBadge },
     },
   };
 
   return (
-    <section id="skills" className="border-b border-slate-100 dark:border-slate-800 night:border-purple-900/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid grid-cols-1 lg:grid-cols-2 gap-0 items-center">
+    <SectionShell id="skills" size={size || (images.length ? 'wide' : 'narrow')}>
+      <div className={`grid items-start gap-12 ${images.length ? 'lg:grid-cols-[1.2fr_1fr] lg:gap-16' : ''}`}>
+        <div className="order-2 lg:order-1">
+          {showHeading && (
+            <AnimatedSection>
+              <SectionHeading
+                eyebrow="Toolkit"
+                icon={Sparkles}
+                title={'Skills & expertise'}
+                description="Languages, backend architecture, AI workflows, and the tooling that keeps shipping calm."
+              />
+            </AnimatedSection>
+          )}
 
-        {/* Left – skills content */}
-        <div className="py-20 lg:pr-16 space-y-10">
-          <div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              Skills &amp; Expertise
-            </h2>
-            <p className="mt-3 text-lg text-slate-500 dark:text-slate-400">
-              Languages, backend architectures, AI workflows, and development tooling.
-            </p>
-          </div>
-          <div className="p-6 sm:p-8 bg-white/80 dark:bg-slate-900/60 night:bg-black/60 backdrop-blur-sm rounded-3xl border border-slate-200/50 dark:border-slate-800/80 night:border-purple-900/10 shadow-sm">
-            <Markdown options={skillsMarkdownOptions}>
-              {aboutMe.skills || ''}
-            </Markdown>
-          </div>
+          <AnimatedSection delay={80}>
+            <Card interactive={false} className="mt-8 p-6 sm:p-8">
+              {skills ? (
+                <div className="text-sm">
+                  <Markdown options={skillsMarkdownOptions}>{shownSkills}</Markdown>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400">
+                  No skills have been added yet. Publish them from the admin dashboard to fill this section.
+                </p>
+              )}
+
+              {hidden > 0 && (
+                <p className="mt-6 border-t border-slate-200/70 pt-5 text-sm dark:border-slate-700/70">
+                  <Link
+                    to="/skills"
+                    className="link-underline inline-flex items-center gap-1.5 font-bold text-indigo-600 dark:text-violet-300"
+                  >
+                    + {hidden} more {hidden === 1 ? 'skill' : 'skills'} in the full table
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Link>
+                </p>
+              )}
+            </Card>
+          </AnimatedSection>
+
+          {/* Mini data + the link through to the dedicated page. */}
+          {showSummary && summary.total > 0 && (
+            <AnimatedSection delay={160}>
+              <SectionLinkCard
+                icon={Layers}
+                eyebrow="At a glance"
+                title="The full toolkit"
+                description={
+                  summary.average === null
+                    ? `${summary.categories.length} categor${summary.categories.length === 1 ? 'y' : 'ies'} across the stack.`
+                    : `Averaging ${summary.average}% proficiency across ${summary.categories.length} categor${summary.categories.length === 1 ? 'y' : 'ies'}.`
+                }
+                to="/skills"
+                linkLabel="Open all skills"
+                facts={[
+                  { label: 'Skills', value: summary.total },
+                  { label: 'Categories', value: summary.categories.length },
+                  { label: 'Avg. level', value: summary.average === null ? '—' : `${summary.average}%` },
+                ]}
+              >
+                <ul className="mt-5 flex flex-wrap gap-2">
+                  {summary.categories.map((category) => (
+                    <li
+                      key={category.name}
+                      className="rounded-full border border-slate-200/70 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700/70 dark:text-slate-300"
+                    >
+                      {category.name}
+                      <span className="ml-1.5 text-slate-400">{category.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              </SectionLinkCard>
+            </AnimatedSection>
+          )}
         </div>
 
-        {/* Right – crossfading image */}
-        <div className="hidden lg:flex items-center justify-center py-16 pl-8">
-          <SlideImage
-            className="w-full aspect-[4/5] max-h-[80vh] shadow-2xl shadow-slate-900/10"
-          />
-        </div>
+        {images.length > 0 && (
+          <AnimatedSection direction="left" delay={120} className="order-1 hidden lg:order-2 lg:block">
+            <SlideImage
+              images={images}
+              className="aspect-[4/5] max-h-[70vh] w-full shadow-2xl shadow-indigo-950/20"
+            />
+          </AnimatedSection>
+        )}
       </div>
-    </section>
+    </SectionShell>
   );
 }

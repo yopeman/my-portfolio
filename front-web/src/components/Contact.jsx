@@ -1,89 +1,154 @@
 import { useState } from 'react';
 import confetti from 'canvas-confetti';
 import {
-  Phone, Mail, Github, Linkedin, Send, MapPin, ExternalLink,
-  SendHorizonal, Globe, Check, AlertCircle, Loader2
+  Github,
+  Globe,
+  Linkedin,
+  Loader2,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Phone,
+  Radio,
+  Send,
+  SendHorizonal,
+  Sparkles,
 } from 'lucide-react';
+import AnimatedSection from './AnimatedSection';
 import SlideImage from './SlideImage';
 import { BASE_URL } from '../data/constants';
+import { requestsApi } from '../api/requests.js';
+import { useStaggerReveal } from '../hooks/useScrollReveal';
+import {
+  Card,
+  Field,
+  Notice,
+  SectionHeading,
+  SectionLinkCard,
+  SectionShell,
+  TextArea,
+  TextInput,
+} from './ui.jsx';
 
-export default function Contact({ aboutMe }) {
-  // Contact Form State
-  const [contactName, setContactName] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [contactMessage, setContactMessage] = useState('');
-  const [isContactLoading, setIsContactLoading] = useState(false);
-  const [contactStatus, setContactStatus] = useState({ type: '', text: '' });
+const CONTACT_ICONS = {
+  phone: { icon: Phone, tone: 'text-indigo-500' },
+  email: { icon: Mail, tone: 'text-emerald-500' },
+  github: { icon: Github, tone: 'text-slate-700 dark:text-slate-200' },
+  linkedin: { icon: Linkedin, tone: 'text-blue-600 dark:text-blue-400' },
+  telegram: { icon: Send, tone: 'text-sky-500' },
+  location: { icon: MapPin, tone: 'text-rose-500' },
+};
 
-  // Subscribe Form State
-  const [subEmail, setSubEmail] = useState('');
-  const [isSubLoading, setIsSubLoading] = useState(false);
-  const [subStatus, setSubStatus] = useState({ type: '', text: '' });
+function isContactLink(value) {
+  return /^(?:https?:|mailto:|tel:)/i.test(String(value || ''));
+}
 
-  // Parse contact info from markdown
-  const parseContactInfo = (markdown) => {
-    if (!markdown) return [];
-    const lines = markdown.split('\n');
-    const items = [];
-    lines.forEach(line => {
-      const match = line.match(/^\-\s+([^:]+):\s+(.+)$/);
-      if (match) {
-        let label = match[1].trim();
-        let value = match[2].trim();
-        if (value.startsWith('[') && value.includes('](')) {
-          const urlMatch = value.match(/\]\(([^\)]+)\)/);
-          if (urlMatch) value = urlMatch[1];
-        }
-        items.push({ label, value });
-      }
-    });
-    return items;
-  };
-
-  const contactList = parseContactInfo(aboutMe.contact);
-
-  const getContactIcon = (label) => {
-    switch (label.toLowerCase()) {
-      case 'phone':    return <Phone    className="w-5 h-5 text-indigo-500" />;
-      case 'email':    return <Mail     className="w-5 h-5 text-emerald-500" />;
-      case 'github':   return <Github   className="w-5 h-5 text-slate-800 dark:text-slate-200" />;
-      case 'linkedin': return <Linkedin className="w-5 h-5 text-blue-600" />;
-      case 'telegram': return <Send     className="w-5 h-5 text-sky-500" />;
-      case 'location': return <MapPin   className="w-5 h-5 text-rose-500" />;
-      default:         return <Globe    className="w-5 h-5 text-indigo-500" />;
+// The contact block is stored as a "- Label: value" markdown list.
+function parseContactInfo(markdown) {
+  if (!markdown) return [];
+  const items = [];
+  for (const line of markdown.split('\n')) {
+    const match = line.match(/^-\s+([^:]+):\s+(.+)$/);
+    if (!match) continue;
+    let value = match[2].trim();
+    if (value.startsWith('[') && value.includes('](')) {
+      const urlMatch = value.match(/\]\(([^)]+)\)/);
+      if (urlMatch) value = urlMatch[1];
     }
-  };
+    items.push({ label: match[1].trim(), value });
+  }
+  return items;
+}
 
-  const handleContactSubmit = async (e) => {
-    e.preventDefault();
-    if (!contactName || !contactEmail || !contactMessage) return;
+function ContactCard({ label, value }) {
+  const match = CONTACT_ICONS[label.toLowerCase()];
+  const Icon = match?.icon || Globe;
+  const tone = match?.tone || 'text-indigo-500';
+  const isLink = isContactLink(value);
+
+  return (
+    <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/60 bg-white/70 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:border-slate-700/60 dark:bg-slate-800/40 night:border-purple-900/15 night:bg-black/50">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/10 to-fuchsia-500/10">
+        <Icon className={`h-5 w-5 ${tone}`} aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
+          {label}
+        </span>
+        {isLink ? (
+          <a
+            href={value}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="focus-ring link-underline mt-0.5 block truncate rounded text-sm font-bold text-slate-800 dark:text-slate-100"
+          >
+            {value.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+          </a>
+        ) : (
+          <span className="mt-0.5 block truncate text-sm font-bold text-slate-800 dark:text-slate-100">
+            {value}
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+export default function Contact({ aboutMe, showHeading = true, showSummary = true, size }) {
+  const images = aboutMe?.images || [];
+  const { ref: staggerRef, isRevealed } = useStaggerReveal({ threshold: 0.1 });
+  const contactList = parseContactInfo(aboutMe?.contact);
+
+  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
+  const [contactStatus, setContactStatus] = useState({ type: '', text: '' });
+  const [isContactLoading, setIsContactLoading] = useState(false);
+
+  const [subEmail, setSubEmail] = useState('');
+  const [subStatus, setSubStatus] = useState({ type: '', text: '' });
+  const [isSubLoading, setIsSubLoading] = useState(false);
+
+  const setField = (key) => (event) => setForm((c) => ({ ...c, [key]: event.target.value }));
+
+  async function handleContactSubmit(event) {
+    event.preventDefault();
     setIsContactLoading(true);
     setContactStatus({ type: '', text: '' });
     try {
-      const response = await fetch(`${BASE_URL}/api/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: contactName, email: contactEmail, phone: contactPhone, message: contactMessage }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setContactStatus({ type: 'success', text: 'Thank you! Your message has been sent successfully.' });
-        setContactName(''); setContactEmail(''); setContactMessage('');
+      // Two independent sinks: the mail relay and the admin request inbox.
+      // Success is reported if either one lands.
+      const [emailResult, requestResult] = await Promise.allSettled([
+        fetch(`${BASE_URL}/api/contact`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: form.name,
+            email: form.email,
+            phone: form.phone,
+            message: form.message,
+          }),
+        }),
+        requestsApi.create({ message: form.message }),
+      ]);
+
+      const emailOk = emailResult.status === 'fulfilled' && (await emailResult.value.json()).ok !== false;
+      const requestOk = requestResult.status === 'fulfilled';
+
+      if (emailOk || requestOk) {
+        setContactStatus({ type: 'success', text: 'Thank you! Your message has been sent.' });
+        setForm((current) => ({ ...current, name: '', email: '', message: '' }));
         confetti({ particleCount: 80, spread: 60, origin: { y: 0.8 } });
       } else {
-        setContactStatus({ type: 'error', text: data.error || 'Something went wrong. Please try again.' });
+        setContactStatus({ type: 'error', text: 'Something went wrong. Please try again.' });
       }
     } catch {
-      setContactStatus({ type: 'error', text: 'Could not connect to the mail server. Please try again later.' });
+      setContactStatus({ type: 'error', text: 'Could not reach the server. Please try again later.' });
     } finally {
       setIsContactLoading(false);
     }
-  };
+  }
 
-  const handleSubscribeSubmit = async (e) => {
-    e.preventDefault();
-    if (!subEmail) return;
+  async function handleSubscribeSubmit(event) {
+    event.preventDefault();
     setIsSubLoading(true);
     setSubStatus({ type: '', text: '' });
     try {
@@ -94,133 +159,204 @@ export default function Contact({ aboutMe }) {
       });
       const data = await response.json();
       if (response.ok) {
-        setSubStatus({ type: 'success', text: 'Subscribed successfully! Check your inbox.' });
+        const isNew = data.created !== false;
+        setSubStatus({
+          type: 'success',
+          text: isNew ? 'Subscribed. Check your inbox for confirmation.' : data.message || 'You are already subscribed.',
+        });
         setSubEmail('');
-        confetti({ particleCount: 50, spread: 40, origin: { y: 0.9 } });
+        if (isNew) confetti({ particleCount: 50, spread: 40, origin: { y: 0.9 } });
       } else {
         setSubStatus({ type: 'error', text: data.error || 'Failed to subscribe.' });
       }
     } catch {
-      setSubStatus({ type: 'error', text: 'Could not connect to the server.' });
+      setSubStatus({ type: 'error', text: 'Could not reach the server.' });
     } finally {
       setIsSubLoading(false);
     }
-  };
+  }
 
   return (
-    <section id="contact" className="border-b border-slate-100 dark:border-slate-800 night:border-purple-900/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid grid-cols-1 lg:grid-cols-2 gap-0 items-center">
-
-        {/* Left – contact content */}
-        <div className="py-20 lg:pr-16 space-y-8">
-          <div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              Get In Touch
-            </h2>
-            <p className="mt-4 text-md text-slate-500 dark:text-slate-400 leading-relaxed">
-              Have a project you would like to discuss, a backend role open, or questions about my AI applications? Contact me through any channel or send a direct message using the form.
-            </p>
-          </div>
-
-          {/* Contact cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {contactList.map((item, idx) => (
-              <div key={idx} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/30 night:bg-black/60 border border-slate-200/40 dark:border-slate-800/60 night:border-purple-900/15 flex items-center gap-3.5 hover:shadow-sm transition-shadow">
-                <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 night:bg-purple-950/20 border border-slate-100 dark:border-slate-700/50 shrink-0">
-                  {getContactIcon(item.label)}
-                </div>
-                <div className="overflow-hidden">
-                  <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{item.label}</div>
-                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
-                    {item.value.startsWith('http') ? (
-                      <a href={item.value} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-violet-400 flex items-center gap-0.5">
-                        Link <ExternalLink className="w-3 h-3" />
-                      </a>
-                    ) : item.value}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Subscribe */}
-          <div className="p-6 rounded-3xl bg-indigo-500/[0.03] dark:bg-violet-500/[0.03] border border-indigo-500/10 dark:border-violet-500/10 night:border-purple-900/10 space-y-4">
-            <h4 className="text-md font-bold text-slate-800 dark:text-slate-100">Subscribe to updates</h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Get notified when I release new articles, tutorials, or open-source libraries.
-            </p>
-            <form onSubmit={handleSubscribeSubmit} className="flex gap-2">
-              <input
-                type="email" value={subEmail} onChange={(e) => setSubEmail(e.target.value)}
-                placeholder="Enter your email" required
-                className="flex-grow px-3.5 py-2 text-sm rounded-xl border border-slate-200 bg-white dark:bg-slate-800 night:bg-black dark:text-white night:border-purple-900/15 focus:outline-none focus:border-indigo-500"
+    <SectionShell id="contact" size={size || (images.length ? 'wide' : 'narrow')} tone="muted">
+      <div className={`grid items-start gap-12 ${images.length ? 'lg:grid-cols-2 lg:gap-16' : ''}`}>
+        <div className="order-2 lg:order-1">
+          {showHeading && (
+            <AnimatedSection>
+              <SectionHeading
+                eyebrow="Contact"
+                icon={MessageSquare}
+                title="Get in touch"
+                description="A project you want to discuss, a backend role that is open, or a question about my AI work — any of those is a good reason to write."
               />
-              <button type="submit" disabled={isSubLoading}
-                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-violet-700 dark:hover:bg-violet-600 night:bg-purple-700 text-white font-semibold text-xs uppercase tracking-wider transition-colors shrink-0 flex items-center justify-center cursor-pointer">
-                {isSubLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Subscribe'}
+            </AnimatedSection>
+          )}
+
+          {contactList.length > 0 && (
+            <div
+              ref={staggerRef}
+              className={`stagger-children mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 ${isRevealed ? 'revealed' : ''}`}
+            >
+              {contactList.map((item, index) => (
+                <ContactCard key={`${item.label}-${index}`} {...item} />
+              ))}
+            </div>
+          )}
+
+          <Card interactive={false} className="mt-6 p-6">
+            <h3 className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white">
+              <Sparkles className="h-4 w-4 text-indigo-500" aria-hidden="true" />
+              Subscribe to updates
+            </h3>
+            <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+              Get notified when I publish a new article or release a tool.
+            </p>
+            <form onSubmit={handleSubscribeSubmit} className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <label htmlFor="subscribe-email" className="sr-only">
+                Email address
+              </label>
+              <TextInput
+                id="subscribe-email"
+                type="email"
+                value={subEmail}
+                onChange={(event) => setSubEmail(event.target.value)}
+                placeholder="you@example.com"
+                required
+                className="sm:flex-1"
+              />
+              <button
+                type="submit"
+                disabled={isSubLoading}
+                className="btn-primary shrink-0 px-5 py-3 text-xs uppercase tracking-wider"
+              >
+                {isSubLoading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : 'Subscribe'}
               </button>
             </form>
             {subStatus.text && (
-              <div className={`flex items-center gap-1.5 text-xs font-semibold ${subStatus.type === 'success' ? 'text-emerald-600' : 'text-rose-500'}`}>
-                {subStatus.type === 'success' ? <Check className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
+              <Notice tone={subStatus.type === 'success' ? 'success' : 'error'} className="mt-4">
                 {subStatus.text}
-              </div>
+              </Notice>
             )}
-          </div>
+          </Card>
 
-          {/* Contact form */}
-          <div className="p-6 sm:p-8 bg-white/80 dark:bg-slate-900/50 night:bg-black/60 backdrop-blur-sm rounded-3xl border border-slate-200/50 dark:border-slate-800/80 night:border-purple-900/10 shadow-sm space-y-5">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Send a Message</h3>
-            <form onSubmit={handleContactSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Name</label>
-                  <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Your Name" required
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white dark:bg-slate-800 night:bg-black dark:text-white night:border-purple-900/15 focus:outline-none focus:border-indigo-500" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Phone</label>
-                  <input type="tel" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+251 9XX XXX XXXX"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white dark:bg-slate-800 night:bg-black dark:text-white night:border-purple-900/15 focus:outline-none focus:border-indigo-500" />
-                </div>
+          <Card interactive={false} className="mt-6 p-6 sm:p-8">
+            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">Send a message</h3>
+            <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+              Fields marked with an asterisk are required.
+            </p>
+
+            <form onSubmit={handleContactSubmit} className="mt-6 space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field id="contact-name" label="Name" required>
+                  <TextInput
+                    id="contact-name"
+                    name="name"
+                    value={form.name}
+                    onChange={setField('name')}
+                    placeholder="Your name"
+                    autoComplete="name"
+                    required
+                  />
+                </Field>
+                <Field id="contact-phone" label="Phone" hint="Optional">
+                  <TextInput
+                    id="contact-phone"
+                    name="phone"
+                    type="tel"
+                    value={form.phone}
+                    onChange={setField('phone')}
+                    placeholder="+251 9XX XXX XXX"
+                    autoComplete="tel"
+                  />
+                </Field>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email</label>
-                <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="name@example.com" required
-                  className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white dark:bg-slate-800 night:bg-black dark:text-white night:border-purple-900/15 focus:outline-none focus:border-indigo-500" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Message</label>
-                <textarea rows="4" value={contactMessage} onChange={(e) => setContactMessage(e.target.value)} placeholder="Tell me about your project..." required
-                  className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-white dark:bg-slate-800 night:bg-black dark:text-white night:border-purple-900/15 focus:outline-none focus:border-indigo-500 resize-none" />
-              </div>
-              <button type="submit" disabled={isContactLoading}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 dark:bg-violet-600 dark:hover:bg-violet-500 night:bg-purple-600 text-white font-bold text-sm transition-colors shadow-md shadow-indigo-600/10 cursor-pointer disabled:opacity-50">
-                {isContactLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</> : <>Send Message <SendHorizonal className="w-4 h-4" /></>}
+
+              <Field id="contact-email" label="Email" required>
+                <TextInput
+                  id="contact-email"
+                  name="email"
+                  type="email"
+                  value={form.email}
+                  onChange={setField('email')}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  required
+                />
+              </Field>
+
+              <Field id="contact-message" label="Message" required>
+                <TextArea
+                  id="contact-message"
+                  name="message"
+                  rows={5}
+                  value={form.message}
+                  onChange={setField('message')}
+                  placeholder="Tell me about your project…"
+                  required
+                />
+              </Field>
+
+              <button type="submit" disabled={isContactLoading} className="btn-primary w-full py-3.5">
+                {isContactLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Sending…
+                  </>
+                ) : (
+                  <>
+                    Send message
+                    <SendHorizonal className="h-4 w-4" aria-hidden="true" />
+                  </>
+                )}
               </button>
             </form>
+
             {contactStatus.text && (
-              <div className={`p-4 rounded-xl border flex items-start gap-2.5 text-sm font-semibold ${
-                contactStatus.type === 'success'
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-900/35 dark:text-emerald-400'
-                  : 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/20 dark:border-rose-900/35 dark:text-rose-400'
-              }`}>
-                {contactStatus.type === 'success'
-                  ? <Check className="w-5 h-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
-                  : <AlertCircle className="w-5 h-5 shrink-0 text-rose-500 mt-0.5" />}
-                <span className="leading-relaxed">{contactStatus.text}</span>
-              </div>
+              <Notice tone={contactStatus.type === 'success' ? 'success' : 'error'} className="mt-4">
+                {contactStatus.text}
+              </Notice>
             )}
-          </div>
+          </Card>
+
+          {/* Mini data + the link through to the dedicated page. */}
+          {showSummary && contactList.length > 0 && (
+            <AnimatedSection delay={120}>
+              <SectionLinkCard
+                icon={Radio}
+                eyebrow="At a glance"
+                title="The full contact page"
+                description="Every listed channel in one place, alongside the message form and the newsletter signup."
+                to="/contact"
+                linkLabel="Open the contact page"
+                facts={[
+                  { label: 'Channels', value: contactList.length },
+                  { label: 'Form', value: 'Open' },
+                  { label: 'Newsletter', value: 'Open' },
+                ]}
+              >
+                <ul className="mt-5 flex flex-wrap gap-2">
+                  {contactList.map((item, index) => (
+                    <li
+                      key={`${item.label}-${index}`}
+                      className="rounded-full border border-slate-200/70 px-2.5 py-1 text-xs font-semibold capitalize text-slate-600 dark:border-slate-700/70 dark:text-slate-300"
+                    >
+                      {item.label}
+                    </li>
+                  ))}
+                </ul>
+              </SectionLinkCard>
+            </AnimatedSection>
+          )}
         </div>
 
-        {/* Right – crossfading image */}
-        <div className="hidden lg:flex items-center justify-center py-16 pl-8">
-          <SlideImage
-            className="w-full aspect-[4/5] max-h-[80vh] shadow-2xl shadow-slate-900/10"
-          />
-        </div>
+        {images.length > 0 && (
+          <AnimatedSection direction="right" delay={120} className="order-1 hidden lg:order-2 lg:block">
+            <SlideImage
+              images={images}
+              className="aspect-[4/5] max-h-[70vh] w-full shadow-2xl shadow-indigo-950/20"
+            />
+          </AnimatedSection>
+        )}
       </div>
-    </section>
+    </SectionShell>
   );
 }
