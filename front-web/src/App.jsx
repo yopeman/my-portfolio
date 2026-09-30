@@ -13,6 +13,7 @@ import AboutAdmin from './pages/admin/AboutAdmin.jsx';
 import PlansAdminPage from './pages/admin/PlansAdmin.jsx';
 import SiteFeedbackAdmin from './pages/admin/SiteFeedbackAdmin.jsx';
 import FilesAdmin from './pages/admin/FilesAdmin.jsx';
+import ProfileAdmin from './pages/admin/ProfileAdmin.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import PlansPage from './pages/PlansPage.jsx';
 import ProjectDetailPage from './pages/ProjectDetailPage.jsx';
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="plans" element={<GuardedRoute permission={{ resource: 'plans', action: 'READ' }}><PlansAdminPage /></GuardedRoute>} />
         <Route path="feedback" element={<GuardedRoute permission={{ resource: 'users', action: 'READ' }}><SiteFeedbackAdmin /></GuardedRoute>} />
         <Route path="files" element={<GuardedRoute roles={['owner', 'admin']}><FilesAdmin /></GuardedRoute>} />
+        <Route path="profile" element={<ProfileAdmin />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

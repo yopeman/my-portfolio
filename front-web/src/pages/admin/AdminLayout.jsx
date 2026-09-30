@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { ArrowUpRight, CalendarRange, FileText, FolderKanban, ImageIcon, Inbox, LayoutDashboard, LogOut, Mail, Menu, MessageSquareHeart, UserRound, Users, X } from 'lucide-react';
+import { ArrowUpRight, CalendarRange, FileText, FolderKanban, ImageIcon, Inbox, LayoutDashboard, LogOut, Mail, Menu, MessageSquareHeart, Settings, UserRound, Users, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import ThemeToggle from '../../components/ThemeToggle.jsx';
 
@@ -31,6 +31,7 @@ const NAV_GROUPS = [
       { to: '/admin/users', label: 'Users', icon: Users, resource: 'users' },
       { to: '/admin/about', label: 'About', icon: UserRound, resource: 'about' },
       { to: '/admin/plans', label: 'Plans', icon: CalendarRange, resource: 'plans' },
+      { to: '/admin/profile', label: 'My Profile', icon: Settings },
     ],
   },
 ];
@@ -90,10 +91,10 @@ export default function AdminLayout() {
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <Link to="/" className="hidden items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-white/70 hover:text-indigo-600 sm:inline-flex dark:text-slate-400 dark:hover:bg-slate-800/70 dark:hover:text-violet-300">View site <ArrowUpRight className="h-3.5 w-3.5" /></Link>
             <ThemeToggle />
-            <div className="hidden items-center gap-2.5 border-l border-slate-200/80 pl-3 sm:flex dark:border-slate-700/80">
+            <Link to="/admin/profile" className="hidden items-center gap-2.5 rounded-xl border-l border-slate-200/80 py-1 pl-3 pr-2 transition hover:bg-slate-100/60 sm:flex dark:border-slate-700/80 dark:hover:bg-slate-800/60" title="Manage your profile">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-xs font-extrabold text-indigo-700 dark:bg-violet-950/60 dark:text-violet-300">{initials(user?.name)}</div>
               <div className="hidden min-w-0 lg:block"><p className="max-w-28 truncate text-xs font-bold text-slate-700 dark:text-slate-200">{user?.name}</p><p className="text-[10px] capitalize text-slate-400">{user?.role}</p></div>
-            </div>
+            </Link>
             <button type="button" onClick={logout} aria-label="Log out" className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:-translate-y-0.5 hover:bg-rose-50 hover:text-rose-600 dark:text-slate-400 dark:hover:bg-rose-950/30 dark:hover:text-rose-300"><LogOut className="h-4 w-4" /></button>
           </div>
         </div>
@@ -117,7 +118,10 @@ export default function AdminLayout() {
           </div>
           <div className="mt-4 flex items-center gap-2.5 rounded-2xl border border-slate-200/70 bg-white/60 p-3 dark:border-slate-800/70 dark:bg-slate-900/50">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 text-xs font-extrabold text-white">{initials(user?.name)}</div>
-            <div className="min-w-0 flex-1"><p className="truncate text-xs font-bold text-slate-700 dark:text-slate-200">{user?.name || 'Administrator'}</p><p className="text-[10px] capitalize text-slate-400">{user?.role || 'admin'}</p></div>
+            <Link to="/admin/profile" className="min-w-0 flex-1 transition hover:text-indigo-600 dark:hover:text-violet-300">
+              <p className="truncate text-xs font-bold text-slate-700 dark:text-slate-200">{user?.name || 'Administrator'}</p>
+              <p className="text-[10px] capitalize text-slate-400">{user?.role || 'admin'}</p>
+            </Link>
             <button type="button" onClick={logout} aria-label="Log out" className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-300"><LogOut className="h-3.5 w-3.5" /></button>
           </div>
         </aside>
