@@ -94,7 +94,7 @@ function ContactCard({ label, value }) {
   );
 }
 
-export default function Contact({ aboutMe, showHeading = true, showSummary = true }) {
+export default function Contact({ aboutMe, showHeading = true, showSummary = true, size }) {
   const images = aboutMe?.images || [];
   const { ref: staggerRef, isRevealed } = useStaggerReveal({ threshold: 0.1 });
   const contactList = parseContactInfo(aboutMe?.contact);
@@ -177,7 +177,7 @@ export default function Contact({ aboutMe, showHeading = true, showSummary = tru
   }
 
   return (
-    <SectionShell id="contact" size={images.length ? 'wide' : 'narrow'} tone="muted">
+    <SectionShell id="contact" size={size || (images.length ? 'wide' : 'narrow')} tone="muted">
       <div className={`grid items-start gap-12 ${images.length ? 'lg:grid-cols-2 lg:gap-16' : ''}`}>
         <div className="order-2 lg:order-1">
           {showHeading && (

@@ -30,7 +30,7 @@ export default function AboutPage() {
       {/* The home page carries a summary of this; here the heading lives in the
           page header and the section runs without its own. */}
       <div className="pt-10 sm:pt-14">
-        <About aboutMe={aboutMe} showHeading={false} showSummary={false} />
+        <About aboutMe={aboutMe} showHeading={false} showSummary={false} size="wide" />
         <Timeline aboutMe={aboutMe} />
       </div>
 

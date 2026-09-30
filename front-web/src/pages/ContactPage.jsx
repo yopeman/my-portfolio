@@ -27,7 +27,7 @@ export default function ContactPage() {
       </Container>
 
       <div className="pt-10 sm:pt-14">
-        <Contact aboutMe={aboutMe} showHeading={false} showSummary={false} />
+        <Contact aboutMe={aboutMe} showHeading={false} showSummary={false} size="wide" />
       </div>
 
       <Container size="narrow" className="pb-16 text-center">

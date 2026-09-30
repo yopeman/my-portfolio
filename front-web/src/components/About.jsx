@@ -96,7 +96,7 @@ function formatFileSize(bytes) {
   return `${exponent === 0 ? value : value.toFixed(1)} ${units[exponent]}`;
 }
 
-export default function About({ aboutMe, showHeading = true, showSummary = true }) {
+export default function About({ aboutMe, showHeading = true, showSummary = true, size }) {
   const images = aboutMe?.images || [];
   const documents = aboutMe?.documents || [];
   const bio = aboutMe?.about || '';
@@ -122,7 +122,7 @@ export default function About({ aboutMe, showHeading = true, showSummary = true 
   ];
 
   return (
-    <SectionShell id="about" tone="muted" size={images.length ? 'wide' : 'narrow'}>
+    <SectionShell id="about" tone="muted" size={size || (images.length ? 'wide' : 'narrow')}>
       <div className={`grid items-center gap-12 ${images.length ? 'lg:grid-cols-[1fr_1.2fr] lg:gap-16' : ''}`}>
         <div className="order-2 lg:order-1">
           {showHeading && (
