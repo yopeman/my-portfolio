@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { ArrowUpRight, BookOpen, MessagesSquare, User } from 'lucide-react';
+import { ArrowUpRight, BookOpen, Download, FileText, MessagesSquare, User } from 'lucide-react';
 import { markdownComponents } from './markdownComponents';
 import SlideImage from './SlideImage';
 import AnimatedSection from './AnimatedSection';
@@ -88,8 +88,17 @@ function bioSnippet(markdown, maxLength = 240) {
   return plain.length > maxLength ? `${plain.slice(0, maxLength).trimEnd()}…` : plain;
 }
 
+function formatFileSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const exponent = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
+  const value = bytes / 1024 ** exponent;
+  return `${exponent === 0 ? value : value.toFixed(1)} ${units[exponent]}`;
+}
+
 export default function About({ aboutMe, showHeading = true, showSummary = true }) {
   const images = aboutMe?.images || [];
+  const documents = aboutMe?.documents || [];
   const bio = aboutMe?.about || '';
 
   // Total project count comes from the API meta so the full set is counted
@@ -211,6 +220,45 @@ export default function About({ aboutMe, showHeading = true, showSummary = true 
           </AnimatedSection>
         )}
       </div>
+
+      {documents.length > 0 && (
+        <AnimatedSection className="mt-12">
+          <h3 className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
+            Documents &amp; downloads
+          </h3>
+          <ul className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {documents.map((doc) => (
+              <li key={doc._id || doc.url}>
+                <a
+                  href={doc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download={doc.name}
+                  className="focus-ring group flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/70 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-300 dark:border-slate-700/70 dark:bg-slate-800/60 dark:hover:border-violet-500/50"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-violet-300">
+                    <FileText className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold text-slate-800 transition-colors group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-violet-300">
+                      {doc.name}
+                    </span>
+                    <span className="block text-[11px] text-slate-400">
+                      {[doc.mimeType.split('/')[1]?.toUpperCase(), formatFileSize(doc.size)]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                  </span>
+                  <Download
+                    className="h-4 w-4 shrink-0 text-slate-300 transition-colors group-hover:text-indigo-500"
+                    aria-hidden="true"
+                  />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </AnimatedSection>
+      )}
 
       {aboutMe?._id && (
         <AnimatedSection className="mt-20">

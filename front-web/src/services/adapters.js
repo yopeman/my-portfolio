@@ -172,6 +172,16 @@ export function mapAboutLike(about) {
     educations: educationsToList(about?.educations),
     experiences: experiencesToList(about?.experiences),
     images: files.filter(isImageFile).map(fileUrl).filter(Boolean),
+    documents: files
+      .filter((file) => !isImageFile(file))
+      .map((file) => ({
+        _id: file._id,
+        name: file.title || file.name || 'Attachment',
+        url: fileUrl(file),
+        mimeType: file.mimeType || '',
+        size: file.size || 0,
+      }))
+      .filter((file) => file.url),
   };
 }
 

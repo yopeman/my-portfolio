@@ -236,6 +236,7 @@ function publicFile(file) {
     path: value.path,
     size: value.size,
     mimeType: value.mimeType,
+    isImage: isImageFile(value),
   };
 }
 
@@ -246,7 +247,9 @@ async function attachFiles(about, includeDetails = false) {
     parentId: about._id,
     deletedAt: null,
   }).sort({ order: 1, createdAt: 1 });
-  about._doc.files = includeDetails ? files : files.filter(isImageFile).map(publicFile);
+  // Every file is exposed: images feed the gallery, anything else (pdf, doc,
+  // ...) is offered as a download on the public profile.
+  about._doc.files = includeDetails ? files : files.map(publicFile);
   about._doc.educations = (about.educations || []).filter((education) => !education.deletedAt);
   about._doc.experiences = (about.experiences || []).filter((experience) => !experience.deletedAt);
   return about;
