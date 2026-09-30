@@ -38,7 +38,7 @@ export default function SkillsPage() {
       </Container>
 
       <div className="pt-10 sm:pt-14">
-        <Skills aboutMe={aboutMe} showHeading={false} showSummary={false} />
+        <Skills aboutMe={aboutMe} showHeading={false} showSummary={false} size="wide" />
       </div>
 
       {summary.categories.length > 0 && (

@@ -53,7 +53,7 @@ function SkillBadge({ children }) {
   );
 }
 
-export default function Skills({ aboutMe, showHeading = true, showSummary = true, limit = 0 }) {
+export default function Skills({ aboutMe, showHeading = true, showSummary = true, limit = 0, size }) {
   const images = aboutMe?.images || [];
   const skills = aboutMe?.skills || '';
   const summary = summarizeSkills(skills);
@@ -87,7 +87,7 @@ export default function Skills({ aboutMe, showHeading = true, showSummary = true
   };
 
   return (
-    <SectionShell id="skills" size={images.length ? 'wide' : 'narrow'}>
+    <SectionShell id="skills" size={size || (images.length ? 'wide' : 'narrow')}>
       <div className={`grid items-start gap-12 ${images.length ? 'lg:grid-cols-[1.2fr_1fr] lg:gap-16' : ''}`}>
         <div className="order-2 lg:order-1">
           {showHeading && (
