@@ -28,7 +28,7 @@ const env = {
   seed: {
     ownerEmail: process.env.SEED_OWNER_EMAIL || 'yopeman318@gmail.com',
     ownerPassword: process.env.SEED_OWNER_PASSWORD || 'seed-owner-pass-change-me',
-    ownerName: process.env.SEED_OWNER_NAME || 'Yohanes Debebe',
+    ownerName: process.env.SEED_OWNER_NAME || 'Yope Man',
   },
 };
 
