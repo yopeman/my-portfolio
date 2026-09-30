@@ -134,7 +134,7 @@ export default function Hero({ aboutMe }) {
 
       <div
         className={`relative mx-auto grid min-h-[calc(100svh-4rem)] max-w-8xl grid-cols-1 items-center px-4 sm:px-6 lg:px-8 ${
-          images.length ? 'lg:grid-cols-2 lg:gap-12' : 'max-w-4xl'
+          images.length ? 'lg:grid-cols-2 lg:gap-12' : ''
         }`}
       >
         <div className="py-16 sm:py-20 lg:py-24">
