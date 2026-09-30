@@ -106,7 +106,7 @@ export default function BlogDetailPage() {
       <div className="relative isolate">
         <div className="mesh-muted absolute inset-0 -z-10" />
 
-        <Container size="narrow" className="py-10 sm:py-14">
+        <Container size="wide" className="py-10 sm:py-14">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
             <Link to="/blogs" className="focus-ring rounded transition-colors hover:text-indigo-600 dark:hover:text-violet-300">
               Blog

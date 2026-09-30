@@ -11,14 +11,15 @@ const SOCIALS = [
 // Mirrors the navbar: every link jumps to a home-page section, and each
 // section carries its own link through to the full page.
 const SECTIONS = [
-  { name: 'About', to: '/#about' },
-  { name: 'Skills', to: '/#skills' },
-  { name: 'Experience', to: '/#experience' },
-  { name: 'Projects', to: '/#projects' },
-  { name: 'Blog', to: '/#blogs' },
-  { name: 'Plans', to: '/#plans' },
-  { name: 'Contact', to: '/#contact' },
-  { name: 'Feedback', to: '/#feedback' },
+  { name: 'About', to: '/about' },
+  { name: 'Skills', to: '/skills' },
+  { name: 'Experience', to: '/experience' },
+  { name: 'Education', to: '/experience' },
+  { name: 'Projects', to: '/projects' },
+  { name: 'Blog', to: '/blogs' },
+  { name: 'Plans', to: '/plans' },
+  { name: 'Contact', to: '/contact' },
+  { name: 'Feedback', to: '/feedback' },
 ];
 
 export default function Footer() {

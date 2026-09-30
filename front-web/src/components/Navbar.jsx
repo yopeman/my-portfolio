@@ -6,15 +6,15 @@ import ThemeToggle from './ThemeToggle';
 // Every top-level section is a home-page anchor. The section itself carries
 // an "open full page" link, so the nav stays a single row of jump targets.
 const NAV_LINKS = [
-  { name: 'About', to: '/#about' },
-  { name: 'Skills', to: '/#skills' },
-  { name: 'Experience', to: '/#experience' },
-  { name: 'Education', to: '/#experience' },
-  { name: 'Projects', to: '/#projects' },
-  { name: 'Blog', to: '/#blogs' },
-  { name: 'Roadmap', to: '/#plans' },
-  { name: 'Contact', to: '/#contact' },
-  { name: 'Feedback', to: '/#feedback' },
+  { name: 'About', to: '/about' },
+  { name: 'Skills', to: '/skills' },
+  { name: 'Experience', to: '/experience' },
+  { name: 'Education', to: '/experience' },
+  { name: 'Projects', to: '/projects' },
+  { name: 'Blog', to: '/blogs' },
+  { name: 'Roadmap', to: '/plans' },
+  { name: 'Contact', to: '/contact' },
+  { name: 'Feedback', to: '/feedback' },
 ];
 
 // Which home anchor to highlight while a section's own page is open.

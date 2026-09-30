@@ -14,7 +14,7 @@ export default function FeedbackPage() {
         description="One thread for the whole site. Ask for a feature, flag something broken, or leave a note on what is working. Sign in to react; comments post as guest otherwise."
       />
 
-      <SectionShell size="narrow" divider={false}>
+      <SectionShell size="wide" divider={false}>
         <SiteFeedbackSection showHeading={false} />
       </SectionShell>
     </PublicLayout>

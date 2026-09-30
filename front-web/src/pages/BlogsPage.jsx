@@ -94,7 +94,7 @@ export default function BlogsPage() {
         )}
       </PageHeader>
 
-      <SectionShell size="narrow" divider={false}>
+      <SectionShell size="wide" divider={false}>
         {error && (
           <Notice tone="error" className="mb-10" title="Posts unavailable">
             The blog list could not be loaded from the database.
@@ -108,7 +108,7 @@ export default function BlogsPage() {
             ))}
           </div>
         ) : visibleBlogs.length > 0 ? (
-          <AnimatedSection stagger className="space-y-5">
+          <AnimatedSection stagger className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {visibleBlogs.map((blog) => {
               const published = formatDate(blog.publishedAt);
               return (
