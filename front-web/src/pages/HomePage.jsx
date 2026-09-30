@@ -24,9 +24,11 @@ export default function HomePage() {
 
       <Hero aboutMe={aboutMe} />
 
-      {/* Narrative: who this is, what it is built with, where it came from. */}
-      <About aboutMe={aboutMe} />
-      <Skills aboutMe={aboutMe} limit={12} />
+      {/* Narrative: who this is, what it is built with, where it came from.
+          Without a slide image these three would collapse to a narrow column,
+          so the home page pins them to the wide shell. */}
+      <About aboutMe={aboutMe} size="wide" />
+      <Skills aboutMe={aboutMe} limit={12} size="wide" />
       <Timeline aboutMe={aboutMe} />
 
       {/* Proof: shipped work, writing, and the plan behind it. */}
@@ -35,7 +37,7 @@ export default function HomePage() {
       <RoadmapSection />
 
       {/* Conversion. */}
-      <Contact aboutMe={aboutMe} />
+      <Contact aboutMe={aboutMe} size="wide" />
 
       {/* Feedback: a few of the latest, then through to the full thread. */}
       <SectionShell id="feedback" size="wide" divider={false}>
