@@ -70,6 +70,46 @@ export const uploadFile = asyncHandler(async (req, res) => {
   return res.status(201).json({ file });
 });
 
+const SAFE_IMAGE_MIME_TYPES = new Set(['image/avif', 'image/gif', 'image/jpeg', 'image/png', 'image/webp']);
+
+function isImageFile(file) {
+  return SAFE_IMAGE_MIME_TYPES.has(file.mimeType) || /\.(?:avif|gif|jpe?g|png|webp)$/i.test(file.path || '');
+}
+
+function galleryFile(file) {
+  const value = typeof file.toObject === 'function' ? file.toObject() : file;
+  return {
+    _id: value._id,
+    parentEntity: value.parentEntity,
+    parentId: value.parentId,
+    order: value.order ?? 0,
+    title: value.title || '',
+    alt: value.alt || '',
+    name: value.name || '',
+    path: value.path,
+    size: value.size ?? 0,
+    mimeType: value.mimeType || '',
+    isImage: isImageFile(value),
+    createdAt: value.createdAt,
+  };
+}
+
+export const listGallery = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = parsePagination({ ...req.query, limit: req.query.limit ?? 100 });
+  const filter = { deletedAt: null };
+  if (req.query.parentEntity) {
+    if (!PARENT_ENTITIES.includes(req.query.parentEntity)) throw ApiError.badRequest('Invalid parentEntity');
+    filter.parentEntity = req.query.parentEntity;
+  }
+
+  const [items, total] = await Promise.all([
+    File.find(filter).sort({ order: 1, createdAt: 1 }).skip(skip).limit(limit).lean(),
+    File.countDocuments(filter),
+  ]);
+
+  return res.json({ items: items.map(galleryFile), meta: pageMeta(page, limit, total) });
+});
+
 export const listFiles = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
   const filter = { deletedAt: null };

@@ -17,6 +17,7 @@ const SECTIONS = [
   { name: 'Education', to: '/experience' },
   { name: 'Projects', to: '/projects' },
   { name: 'Blog', to: '/blogs' },
+  { name: 'Gallery', to: '/gallery' },
   { name: 'Plans', to: '/plans' },
   { name: 'Contact', to: '/contact' },
   { name: 'Feedback', to: '/feedback' },

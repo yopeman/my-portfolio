@@ -2,6 +2,7 @@ import { http } from './client.js';
 
 export const filesApi = {
   list: (params) => http.get('/files', { params }),
+  gallery: (params) => http.get('/files/gallery', { params }),
   upload: (parentEntity, parentId, file, onProgress, metadata = {}) => {
     const form = new FormData();
     form.append('parentEntity', parentEntity);

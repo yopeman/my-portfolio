@@ -19,6 +19,7 @@ import ProjectDetailPage from './pages/ProjectDetailPage.jsx';
 import BlogsPage from './pages/BlogsPage.jsx';
 import BlogDetailPage from './pages/BlogDetailPage.jsx';
 import FeedbackPage from './pages/FeedbackPage.jsx';
+import GalleryPage from './pages/GalleryPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import AboutPage from './pages/AboutPage.jsx';
 import SkillsPage from './pages/SkillsPage.jsx';
@@ -39,6 +40,7 @@ export default function App() {
       <Route path="/blogs" element={<BlogsPage />} />
       <Route path="/blog/:slug" element={<BlogDetailPage />} />
       <Route path="/feedback" element={<FeedbackPage />} />
+      <Route path="/gallery" element={<GalleryPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route
         path="/admin"

@@ -6,6 +6,8 @@ import { createUploadMiddleware } from '../config/storage.js';
 
 const router = Router();
 
+router.get('/gallery', fileController.listGallery);
+
 router.get('/', authenticate, fileController.authorizeLibrary, fileController.listFiles);
 
 router.post(
