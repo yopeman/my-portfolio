@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, LayoutDashboard, LogIn, LogOut, Phone, User } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import { useAuth } from '../contexts/AuthContext.jsx';
 
 // Every top-level section is a home-page anchor. The section itself carries
 // an "open full page" link, so the nav stays a single row of jump targets.
@@ -35,6 +36,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
   const lastScrollY = useRef(0);
 
   useEffect(() => {
@@ -96,10 +98,10 @@ export default function Navbar() {
           </span>
           <span className="flex flex-col leading-none">
             <span className="text-[15px] font-extrabold tracking-tight text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-violet-300">
-              Yohanes Debebe
+              Yohanes DBB
             </span>
             <span className="mt-1 hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:block">
-              Software Developer
+              Developer
             </span>
           </span>
         </Link>
@@ -131,10 +133,49 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          {isAuthenticated ? (
+            <div className="hidden items-center gap-1.5 lg:flex">
+              <Link
+                to="/admin"
+                className="focus-ring btn-primary !h-9 !gap-1.5 !px-3"
+              >
+                <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+                Dashboard
+              </Link>
+              <span
+                className="flex max-w-[10rem] items-center gap-1.5 rounded-lg border border-slate-200/70 px-2.5 py-1.5 text-[13px] font-semibold text-slate-600 dark:border-slate-800/70 dark:text-slate-300"
+                title={user?.name || user?.email}
+              >
+                <User className="h-4 w-4 shrink-0 opacity-60" aria-hidden="true" />
+                <span className="truncate">{user?.name || user?.email}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => logout()}
+                className="focus-ring flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200/70 text-slate-600 transition-colors hover:bg-slate-100/70 hover:text-indigo-600 dark:border-slate-800/70 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-violet-300"
+                aria-label="Log out"
+              >
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="focus-ring btn-secondary !h-9 !w-9 !p-0 sm:!w-auto sm:!gap-1.5 sm:!px-3.5"
+              aria-label="Log in"
+            >
+              <LogIn className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden text-[13px] font-semibold sm:inline">Log in</span>
+            </Link>
+          )}
           <ThemeToggle />
-          <Link to="/contact" className="focus-ring btn-primary hidden text-xs sm:inline-flex">
-            Contact me
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          <Link
+            to="/contact"
+            aria-label="Contact me"
+            className="focus-ring btn-primary !h-9 !w-9 !p-0 lg:!h-auto lg:!w-auto lg:!px-4 lg:!py-2"
+          >
+            <Phone className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden lg:inline">Contact me</span>
           </Link>
           <button
             type="button"
@@ -159,7 +200,7 @@ export default function Navbar() {
         hidden={!mobileMenuOpen}
         className="glass-strong absolute left-0 top-full w-full overflow-hidden border-b border-slate-200/60 shadow-2xl dark:border-slate-800/60 xl:hidden"
       >
-        <nav className="stagger-children revealed flex flex-col gap-1 px-5 py-5" aria-label="Mobile">
+        <nav className="stagger-children revealed flex min-h-full flex-col gap-1 px-5 py-5" aria-label="Mobile">
           {NAV_LINKS.map((link) => {
             const active = activeSection === link.to.slice(link.to.indexOf('#'));
             return (
@@ -186,6 +227,38 @@ export default function Navbar() {
           >
             Contact me
           </Link>
+          {isAuthenticated ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                logout();
+              }}
+              className="focus-ring mt-1 flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100/70 dark:text-slate-300 dark:hover:bg-slate-800/70"
+            >
+              <span className="truncate">{user?.name || user?.email}</span>
+              <LogOut className="h-4 w-4 opacity-40" aria-hidden="true" />
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className="focus-ring btn-secondary mt-1 w-full"
+            >
+              <LogIn className="h-4 w-4" aria-hidden="true" />
+              Log in
+            </Link>
+          )}
+          {isAuthenticated && (
+            <Link
+              to="/admin"
+              onClick={() => setMobileMenuOpen(false)}
+              className="focus-ring btn-secondary mt-1 w-full"
+            >
+              <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+              Dashboard
+            </Link>
+          )}
         </nav>
       </div>
     </header>
