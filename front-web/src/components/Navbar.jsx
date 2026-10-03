@@ -161,11 +161,11 @@ export default function Navbar() {
           ) : (
             <Link
               to="/login"
-              className="focus-ring btn-secondary !h-9 !w-9 !p-0 sm:!w-auto sm:!gap-1.5 sm:!px-3.5"
+              className="focus-ring btn-secondary !hidden !h-9 !gap-1.5 !px-3.5 sm:!inline-flex"
               aria-label="Log in"
             >
               <LogIn className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden text-[13px] font-semibold sm:inline">Log in</span>
+              <span className="text-[13px] font-semibold">Log in</span>
             </Link>
           )}
           <ThemeToggle />

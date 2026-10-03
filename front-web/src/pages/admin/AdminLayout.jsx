@@ -89,7 +89,7 @@ export default function AdminLayout() {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <Link to="/" className="hidden items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-white/70 hover:text-indigo-600 sm:inline-flex dark:text-slate-400 dark:hover:bg-slate-800/70 dark:hover:text-violet-300">View site <ArrowUpRight className="h-3.5 w-3.5" /></Link>
+            <Link to="/" aria-label="View site" className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-white/70 hover:text-indigo-600 sm:px-3 dark:text-slate-400 dark:hover:bg-slate-800/70 dark:hover:text-violet-300">View site <span className="hidden sm:inline">site</span><ArrowUpRight className="h-3.5 w-3.5" /></Link>
             <ThemeToggle />
             <Link to="/admin/profile" className="hidden items-center gap-2.5 rounded-xl border-l border-slate-200/80 py-1 pl-3 pr-2 transition hover:bg-slate-100/60 sm:flex dark:border-slate-700/80 dark:hover:bg-slate-800/60" title="Manage your profile">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-xs font-extrabold text-indigo-700 dark:bg-violet-950/60 dark:text-violet-300">{initials(user?.name)}</div>
