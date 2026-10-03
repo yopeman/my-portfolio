@@ -14,15 +14,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { WebView } from 'react-native-webview';
 
-const INITIAL_URL = 'https://vectoradvert.com/erp/hr/#/ceo-dashboard';
+const INITIAL_URL = 'https://yohanesdbb.vercel.app/';
 const MAX_PULL = 120; // How many pixels to pull for a full 360° rotation
 
 export type WebViewScreenProps = {
+  /** Page to load. Defaults to the ERP dashboard. */
+  url?: string;
   /** Called by the Android hardware back button when there is no history to go back to. */
   onClose?: () => void;
 };
 
-export function WebViewScreen({ onClose }: WebViewScreenProps) {
+export function WebViewScreen({ url = INITIAL_URL, onClose }: WebViewScreenProps) {
   const webViewRef = useRef<WebView>(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [isAtTop, setIsAtTop] = useState(true); // Controls whether the pull gesture is enabled
@@ -133,7 +135,8 @@ export function WebViewScreen({ onClose }: WebViewScreenProps) {
         <Animated.View style={styles.webViewWrapper}>
           <WebView
             ref={webViewRef}
-            source={{ uri: INITIAL_URL }}
+            source={{ uri: url }}
+            originWhitelist={['*']}
             style={styles.webView}
             // --- Crucial: Disable native pull-to-refresh ---
             bounces={false} // iOS
